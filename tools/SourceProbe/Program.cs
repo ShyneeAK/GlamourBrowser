@@ -32,7 +32,7 @@ foreach (var arg in args.Skip(1).Where(a => uint.TryParse(a, out _)))
 {
     var id = uint.Parse(arg);
     Console.WriteLine($"\n{id} {items.GetRow(id).Name.ExtractText()} · patch {index.PatchOf(id)} · {string.Join(", ", index.CategoriesOf(id).Select(SourceCategories.DisplayName))}");
-    foreach (var s in index.SourcesOf(id).Take(8))
+    foreach (var s in index.SourcesOf(id).Take(20))
         Console.WriteLine($"  [{SourceCategories.DisplayName(s.Category)}] {s.Title} · {s.Detail} · cost {s.CostAmount}x{s.CostItemId} · {s.Action}");
 }
 

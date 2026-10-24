@@ -71,6 +71,10 @@ public class ClassifierTests
     }
 
     [Fact]
+    public void StoreLinks_ProductUrl()
+        => Assert.Equal("https://store.finalfantasyxiv.com/ffxivstore/de-de/product/35", StoreLinks.ProductUrl(35));
+
+    [Fact]
     public void SpecialShopCost_Type8IsGil() => Assert.Equal(1u, SpecialShopCost.ResolveItemId(3, 8, OrderedTomestones));
 
     [Fact]

@@ -9,3 +9,6 @@ public sealed record MapFlag(uint TerritoryId, uint MapId, float X, float Y) : S
 public sealed record DutyFinder(uint ContentFinderConditionId) : SourceAction;
 
 public sealed record OpenRecipe(uint RecipeId) : SourceAction;
+
+/// <summary>Mog Station product, see <see cref="StoreLinks.ProductUrl"/>.</summary>
+public sealed record OpenStore(uint StoreId) : SourceAction;

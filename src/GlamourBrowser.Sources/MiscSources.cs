@@ -30,7 +30,8 @@ public static class MiscSources
         foreach (var item in SupplementalCsv.Load<StoreItem>(data, CsvLoader.StoreItemResourceName, log))
         {
             if (relevant.Contains(item.ItemId))
-                builder.Add(item.ItemId, new ItemSource(SourceCategory.MogStation, "Mogstation", item.PriceCentsUSD > 0 ? $"{item.PriceCentsUSD / 100.0:0.00} $" : "Shop"));
+                builder.Add(item.ItemId, new ItemSource(SourceCategory.MogStation, "Mogstation", item.PriceCentsUSD > 0 ? $"{item.PriceCentsUSD / 100.0:0.00} $" : "Shop",
+                    item.StoreId != 0 ? new OpenStore(item.StoreId) : null));
         }
     }
 
