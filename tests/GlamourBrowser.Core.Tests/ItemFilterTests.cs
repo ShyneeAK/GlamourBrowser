@@ -92,6 +92,13 @@ public class ItemFilterTests
     }
 
     [Fact]
+    public void PageCount_InvalidPageSize_DoesNotThrow()
+    {
+        Assert.Equal(20, ItemFilter.PageCount(20, 0));
+        Assert.Equal(3, ItemFilter.ClampPage(3, 20, -1));
+    }
+
+    [Fact]
     public void ClampPage_AfterFilterShrinks()
     {
         Assert.Equal(1, ItemFilter.ClampPage(5, 20, 18));

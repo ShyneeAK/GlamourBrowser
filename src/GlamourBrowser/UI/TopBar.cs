@@ -62,10 +62,10 @@ public sealed class TopBar
         var columns = config.Columns;
         var rows = config.Rows;
         ImGui.SetNextItemWidth(80 * scale);
-        var gridChanged = ImGui.SliderInt("##columns", ref columns, 2, 10, "%d Spalten");
+        var gridChanged = ImGui.SliderInt("##columns", ref columns, 2, 10, "%d Spalten", ImGuiSliderFlags.AlwaysClamp);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(80 * scale);
-        gridChanged |= ImGui.SliderInt("##rows", ref rows, 1, 6, "%d Zeilen");
+        gridChanged |= ImGui.SliderInt("##rows", ref rows, 1, 6, "%d Zeilen", ImGuiSliderFlags.AlwaysClamp);
         if (gridChanged)
             state.SetGrid(columns, rows);
 

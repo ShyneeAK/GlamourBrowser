@@ -52,8 +52,8 @@ public sealed class SettingsWindow : Window
 
         var columns = config.Columns;
         var rows = config.Rows;
-        var gridChanged = ImGui.SliderInt("Spalten", ref columns, 2, 10);
-        gridChanged |= ImGui.SliderInt("Zeilen", ref rows, 1, 6);
+        var gridChanged = ImGui.SliderInt("Spalten", ref columns, 2, 10, "%d", ImGuiSliderFlags.AlwaysClamp);
+        gridChanged |= ImGui.SliderInt("Zeilen", ref rows, 1, 6, "%d", ImGuiSliderFlags.AlwaysClamp);
         if (gridChanged)
             state.SetGrid(columns, rows);
 
@@ -62,7 +62,7 @@ public sealed class SettingsWindow : Window
             state.SetTileMode((TileMode)mode);
 
         var views = config.ParallelViews;
-        if (ImGui.SliderInt("Parallele Ansichten", ref views, 1, 3))
+        if (ImGui.SliderInt("Parallele Ansichten", ref views, 1, 3, "%d", ImGuiSliderFlags.AlwaysClamp))
         {
             config.ParallelViews = views;
             pool.MaxViews = views;

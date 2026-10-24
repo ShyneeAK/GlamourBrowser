@@ -35,4 +35,12 @@ public class PageLayoutTests
         Assert.Equal(0f, r.TileWidth);
         Assert.Equal(128, r.RenderWidth);
     }
+
+    [Fact]
+    public void ClampGrid_KeepsColumnsAndRowsInRange()
+    {
+        Assert.Equal((2, 1), PageLayout.ClampGrid(0, 0));
+        Assert.Equal((10, 6), PageLayout.ClampGrid(99, 99));
+        Assert.Equal((6, 3), PageLayout.ClampGrid(6, 3));
+    }
 }

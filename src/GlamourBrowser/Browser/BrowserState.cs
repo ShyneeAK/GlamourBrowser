@@ -29,6 +29,8 @@ public sealed class BrowserState
         this.queue = queue;
         this.cache = cache;
         this.config = config;
+        // A config edited by hand (or saved by an older version) must not break loading.
+        (config.Columns, config.Rows) = PageLayout.ClampGrid(config.Columns, config.Rows);
 
         appearance.Changed += InvalidateTiles;
         ownership.Changed += OnOwnershipChanged;
@@ -69,8 +71,7 @@ public sealed class BrowserState
 
     public void SetGrid(int columns, int rows)
     {
-        config.Columns = columns;
-        config.Rows = rows;
+        (config.Columns, config.Rows) = PageLayout.ClampGrid(columns, rows);
         config.Save();
         Refresh();
     }

@@ -9,6 +9,15 @@ public static class PageLayout
 
     public static readonly int[] RenderSteps = [128, 192, 256, 384, 576];
 
+    public const int MinColumns = 2;
+    public const int MaxColumns = 10;
+    public const int MinRows = 1;
+    public const int MaxRows = 6;
+
+    /// <summary>Columns 2–10, rows 1–6, whatever a slider or an edited config delivers.</summary>
+    public static (int Columns, int Rows) ClampGrid(int columns, int rows)
+        => (Math.Clamp(columns, MinColumns, MaxColumns), Math.Clamp(rows, MinRows, MaxRows));
+
     public static PageLayoutResult Compute(int columns, int rows, float availableWidth, float availableHeight, float spacing, float labelHeight)
     {
         var byWidth = (availableWidth - (columns - 1) * spacing) / columns;

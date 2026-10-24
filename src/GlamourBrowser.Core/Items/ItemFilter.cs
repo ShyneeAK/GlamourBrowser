@@ -23,12 +23,19 @@ public static class ItemFilter
             .ToList();
     }
 
+    /// <summary>At least one page; a page size below 1 counts as 1 (never divides by zero).</summary>
     public static int PageCount(int itemCount, int pageSize)
-        => Math.Max(1, (itemCount + pageSize - 1) / pageSize);
+    {
+        pageSize = Math.Max(1, pageSize);
+        return Math.Max(1, (itemCount + pageSize - 1) / pageSize);
+    }
 
     public static int ClampPage(int pageIndex, int itemCount, int pageSize)
         => Math.Clamp(pageIndex, 0, PageCount(itemCount, pageSize) - 1);
 
     public static IReadOnlyList<GlamourItem> Page(IReadOnlyList<GlamourItem> items, int pageIndex, int pageSize)
-        => items.Skip(pageIndex * pageSize).Take(pageSize).ToList();
+    {
+        pageSize = Math.Max(1, pageSize);
+        return items.Skip(pageIndex * pageSize).Take(pageSize).ToList();
+    }
 }
