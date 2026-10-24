@@ -171,13 +171,15 @@ public sealed class TileGrid
         if (item.DyeCount > 0)
             icons.Add((at =>
             {
-                GameIcon.DrawAt(drawList, 0, at, new Vector2(iconSize), FontAwesomeIcon.PaintBrush, colors.TextMuted);
+                GameIcon.DrawAt(drawList, TraitIcons.Dye, at, new Vector2(iconSize), FontAwesomeIcon.PaintBrush, colors.TextMuted);
                 drawList.AddText(ImGui.GetFont(), ImGui.GetFontSize() * 0.75f, at + new Vector2(iconSize * 0.6f, iconSize * 0.35f), colors.Text, item.DyeCount.ToString());
             }, TileInfo.DyeText(item.DyeCount)));
         if (item.Trade != Tradability.Bound)
         {
-            var glyph = item.Trade == Tradability.Marketable ? FontAwesomeIcon.Store : FontAwesomeIcon.ExchangeAlt;
-            icons.Add((at => GameIcon.DrawAt(drawList, 0, at, new Vector2(iconSize), glyph, colors.TextMuted), TileInfo.TradeText(item.Trade)));
+            var (tradeIcon, glyph) = item.Trade == Tradability.Marketable
+                ? (TraitIcons.Marketable, FontAwesomeIcon.Store)
+                : (TraitIcons.Tradable, FontAwesomeIcon.ExchangeAlt);
+            icons.Add((at => GameIcon.DrawAt(drawList, tradeIcon, at, new Vector2(iconSize), glyph, colors.TextMuted), TileInfo.TradeText(item.Trade)));
         }
         var badge = JobBadges.For(JobBadges.CollapseClasses(item.ClassJobIds, jobs.ParentOf), jobs.GroupOf, jobs.All.Count);
         if (badge.Kind != JobBadgeKind.None)

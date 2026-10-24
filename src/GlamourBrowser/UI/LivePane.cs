@@ -395,17 +395,17 @@ public sealed unsafe class LivePane
     {
         var colors = theme.Colors;
         var size = new Vector2(ImGui.GetTextLineHeight());
-        GameIcon.Draw(0, size, FontAwesomeIcon.PaintBrush, item.DyeCount > 0 ? colors.Text : colors.TextMuted);
+        GameIcon.Draw(item.DyeCount > 0 ? TraitIcons.Dye : 0, size, FontAwesomeIcon.PaintBrush, colors.TextMuted);
         ImGui.SameLine();
         ImGui.TextUnformatted(item.DyeCount > 0 ? $"Färbbar ({DyeText(item.DyeCount)})" : "Nicht färbbar");
         ImGui.SameLine();
-        var (glyph, text) = item.Trade switch
+        var (tradeIcon, glyph, text) = item.Trade switch
         {
-            Tradability.Marketable => (FontAwesomeIcon.Store, "Marktbrett"),
-            Tradability.Tradable => (FontAwesomeIcon.ExchangeAlt, "Handelbar"),
-            _ => (FontAwesomeIcon.Lock, "Gebunden"),
+            Tradability.Marketable => (TraitIcons.Marketable, FontAwesomeIcon.Store, "Marktbrett"),
+            Tradability.Tradable => (TraitIcons.Tradable, FontAwesomeIcon.ExchangeAlt, "Handelbar"),
+            _ => (0u, FontAwesomeIcon.Lock, "Gebunden"),
         };
-        GameIcon.Draw(0, size, glyph, colors.TextMuted);
+        GameIcon.Draw(tradeIcon, size, glyph, colors.TextMuted);
         ImGui.SameLine();
         ImGui.TextUnformatted(text);
     }

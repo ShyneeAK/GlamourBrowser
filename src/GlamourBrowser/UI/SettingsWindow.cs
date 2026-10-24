@@ -19,6 +19,7 @@ public sealed class SettingsWindow : Window
     private readonly Theme.Theme theme;
     private IDisposable? themeScope;
     private IDisposable? fontScope;
+    private int? scaleDraft;
 
     private static readonly string[] AccentNames = ["Blau", "Violett", "Türkis", "Rosé", "Bernstein"];
 
@@ -77,14 +78,16 @@ public sealed class SettingsWindow : Window
         if (ImGui.Combo("Waffen-Kacheln", ref weapons, ["Waffe gezogen", "Waffe weggesteckt"], 2))
             state.SetDrawWeaponsOnTiles(weapons == 0);
 
-        var percent = (int)MathF.Round(config.UiScale * 100);
-        ImGui.SliderInt("Skalierung", ref percent, 50, 300, "%d %%", ImGuiSliderFlags.AlwaysClamp);
-        // Fonts are rebuilt only once the slider is released.
+        // The value being dragged is kept across frames; fonts are rebuilt only once the slider is released.
+        var percent = scaleDraft ?? (int)MathF.Round(config.UiScale * 100);
+        if (ImGui.SliderInt("Skalierung", ref percent, 50, 300, "%d %%", ImGuiSliderFlags.AlwaysClamp))
+            scaleDraft = percent;
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
             config.UiScale = percent / 100f;
             config.Save();
             UiScale.Set(config.UiScale);
+            scaleDraft = null;
         }
 
         var views = config.ParallelViews;
