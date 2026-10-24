@@ -30,6 +30,13 @@ namespace GlamourBrowser.Rendering;
 public sealed unsafe class CharaViewHandle : IDisposable
 {
     public const uint StateReady = 6;
+
+    /// <summary>
+    /// Bit in DrawObjectData.State that keeps a weapon from being drawn in our views (its DrawObject
+    /// then lacks Flags bit 0x01). The game's try-on view never has it set; clearing it shows the weapon.
+    /// Found by comparing both views with /gbrowser diag.
+    /// </summary>
+    private const byte WeaponHiddenStateBit = 0x08;
     private const ushort ClientObjectBase = 240;
 
     private CharaView* view;
@@ -84,9 +91,9 @@ public sealed unsafe class CharaViewHandle : IDisposable
     }
 
     /// <summary>
-    /// Shows headgear and shows/hides weapons on the view's character, like the game's try-on view does
-    /// in its Update (TryonCharaView vf10 calls HideHeadgear and HideWeapons unconditionally). Call after
-    /// the items have loaded; the flags in ModelData alone do not make weapons visible.
+    /// Shows headgear and shows/hides weapons on the view's character. HideHeadgear/HideWeapons mirror the
+    /// game's try-on view (TryonCharaView vf10); weapons additionally need <see cref="WeaponHiddenStateBit"/>
+    /// cleared. Call after the items have loaded.
     /// </summary>
     public void ApplyVisibility(bool showWeapons)
     {
@@ -97,6 +104,13 @@ public sealed unsafe class CharaViewHandle : IDisposable
             return;
         character->DrawData.HideHeadgear(0, false);
         character->DrawData.HideWeapons(!showWeapons);
+        for (var i = 0; i < 2; i++)
+        {
+            ref var weapon = ref character->DrawData.WeaponData[i];
+            weapon.State = showWeapons
+                ? (byte)(weapon.State & ~WeaponHiddenStateBit)
+                : (byte)(weapon.State | WeaponHiddenStateBit);
+        }
     }
 
     /// <summary>Draws the weapon (in hand) for weapon tiles, sheathes it otherwise.</summary>
@@ -179,30 +193,6 @@ public sealed unsafe class CharaViewHandle : IDisposable
                 text += $", obj {(nint)o:X} flags {o->Flags:X2} objFlags {o->Object.ObjectFlags:X} parent {(nint)o->Object.ParentObject:X} pos {o->Object.Position} scale {o->Object.Scale}";
         }
         return text;
-    }
-
-    /// <summary>Diagnostics experiment: clear bit 0x08 of the weapons' DrawObjectData.State.</summary>
-    public void ExperimentClearWeaponStateBit()
-    {
-        var character = view != null && view->State == StateReady ? view->GetCharacter() : null;
-        if (character == null)
-            return;
-        for (var i = 0; i < 2; i++)
-            character->DrawData.WeaponData[i].State &= unchecked((byte)~0x08);
-    }
-
-    /// <summary>Diagnostics experiment: set bit 0x01 of the weapons' DrawObject.Flags.</summary>
-    public void ExperimentSetWeaponDrawFlag()
-    {
-        var character = view != null && view->State == StateReady ? view->GetCharacter() : null;
-        if (character == null)
-            return;
-        for (var i = 0; i < 2; i++)
-        {
-            var o = character->DrawData.WeaponData[i].DrawData.DrawObject;
-            if (o != null)
-                o->Flags |= 0x01;
-        }
     }
 
     private GameObjectStruct* ViewCharacter()

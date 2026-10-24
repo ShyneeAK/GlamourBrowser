@@ -94,18 +94,11 @@ public sealed class Plugin : IDalamudPlugin
             mainWindow.Toggle();
             return;
         }
-        var experiment = parts.Length > 1 ? parts[1] : "";
 
         Framework.RunOnFrameworkThread(() =>
         {
             lock (RenderSync.Lock)
             {
-                if (experiment == "state")
-                    live.View?.ExperimentClearWeaponStateBit();
-                else if (experiment == "flag")
-                    live.View?.ExperimentSetWeaponDrawFlag();
-                if (experiment != "")
-                    Log.Information($"[diag] experiment '{experiment}' applied to live view");
                 Log.Information($"[diag] live: {live.DescribeWeapons()}");
                 unsafe
                 {

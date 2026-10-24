@@ -62,8 +62,6 @@ public sealed unsafe class LivePreview : IDisposable
 
     public string DescribeWeapons() => view?.DescribeWeapons() ?? "live: no view";
 
-    public CharaViewHandle? View => view;
-
     /// <summary>Call once per framework tick, after the render pool.</summary>
     public void Tick()
     {
@@ -120,6 +118,7 @@ public sealed unsafe class LivePreview : IDisposable
         {
             view.SetWeaponDrawn(WeaponDrawn);
             appliedWeaponDrawn = WeaponDrawn;
+            appliedWeaponVisible = null;
         }
 
         ApplyCameraInput(view);
