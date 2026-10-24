@@ -181,6 +181,30 @@ public sealed unsafe class CharaViewHandle : IDisposable
         return text;
     }
 
+    /// <summary>Diagnostics experiment: clear bit 0x08 of the weapons' DrawObjectData.State.</summary>
+    public void ExperimentClearWeaponStateBit()
+    {
+        var character = view != null && view->State == StateReady ? view->GetCharacter() : null;
+        if (character == null)
+            return;
+        for (var i = 0; i < 2; i++)
+            character->DrawData.WeaponData[i].State &= unchecked((byte)~0x08);
+    }
+
+    /// <summary>Diagnostics experiment: set bit 0x01 of the weapons' DrawObject.Flags.</summary>
+    public void ExperimentSetWeaponDrawFlag()
+    {
+        var character = view != null && view->State == StateReady ? view->GetCharacter() : null;
+        if (character == null)
+            return;
+        for (var i = 0; i < 2; i++)
+        {
+            var o = character->DrawData.WeaponData[i].DrawData.DrawObject;
+            if (o != null)
+                o->Flags |= 0x01;
+        }
+    }
+
     private GameObjectStruct* ViewCharacter()
         => view != null && view->State == StateReady ? (GameObjectStruct*)view->GetCharacter() : null;
 
