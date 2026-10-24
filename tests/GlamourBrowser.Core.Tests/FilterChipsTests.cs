@@ -1,4 +1,5 @@
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Sources;
 using GlamourBrowser.Core.Ui;
 
 namespace GlamourBrowser.Core.Tests;
@@ -51,4 +52,20 @@ public class FilterChipsTests
 
     [Fact]
     public void WearableChipOnlyWhenOff() => Assert.Empty(Chips(new FilterState { WearableOnly = true }));
+
+    [Fact]
+    public void CategoryAndExpansionChips()
+    {
+        var state = new FilterState
+        {
+            Categories = new HashSet<SourceCategory> { SourceCategory.Raid },
+            Expansions = new HashSet<Expansion> { Expansion.Dawntrail },
+        };
+        var chips = Chips(state);
+
+        Assert.Equal(["Raid", "DT"], chips.Select(c => c.Label));
+        var without = chips[0].WithoutThis;
+        Assert.Empty(without.Categories);
+        Assert.Equal(new HashSet<Expansion> { Expansion.Dawntrail }, without.Expansions);
+    }
 }

@@ -1,11 +1,16 @@
+using GlamourBrowser.Core.Sources;
+
 namespace GlamourBrowser.Core.Items;
 
 public static class ItemFilter
 {
-    public static IReadOnlyList<GlamourItem> Apply(IEnumerable<GlamourItem> items, FilterState filter, Func<uint, bool> isOwned, byte race, byte sex)
+    /// <param name="categoriesOf">Source categories per item; null while the source index is not ready (category filter ignored).</param>
+    /// <param name="patchOf">Patch per item (0 = unknown); null ignores the expansion filter and sorts by level.</param>
+    public static IReadOnlyList<GlamourItem> Apply(IEnumerable<GlamourItem> items, FilterState filter, Func<uint, bool> isOwned, byte race, byte sex,
+                                                   Func<uint, IReadOnlySet<SourceCategory>>? categoriesOf = null, Func<uint, float>? patchOf = null)
     {
         var search = filter.SearchText.Trim();
-        return items
+        var filtered = items
             .Where(i => search.Length == 0 || i.Name.Contains(search, StringComparison.OrdinalIgnoreCase))
             .Where(i => filter.Slots.Count == 0 || filter.Slots.Contains(i.Slot))
             .Where(i => filter.ClassJobId is not { } job || i.ClassJobIds.Contains(job))
@@ -18,6 +23,21 @@ public static class ItemFilter
                 _ => true,
             })
             .Where(i => !filter.WearableOnly || i.Restriction.Allows(race, sex))
+            .Where(i => categoriesOf == null || filter.Categories.Count == 0 || categoriesOf(i.Id).Overlaps(filter.Categories))
+            .Where(i => patchOf == null || filter.Expansions.Count == 0
+                        || Expansions.FromPatch(patchOf(i.Id)) is { } expansion && filter.Expansions.Contains(expansion));
+
+        if (filter.Sort == SortOrder.Newest && patchOf != null)
+        {
+            // Unknown patch (0) sorts last.
+            return filtered
+                .OrderByDescending(i => patchOf(i.Id) > 0)
+                .ThenByDescending(i => patchOf(i.Id))
+                .ThenByDescending(i => i.Id)
+                .ToList();
+        }
+
+        return filtered
             .OrderByDescending(i => i.LevelEquip)
             .ThenBy(i => i.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();

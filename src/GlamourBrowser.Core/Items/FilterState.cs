@@ -1,3 +1,5 @@
+using GlamourBrowser.Core.Sources;
+
 namespace GlamourBrowser.Core.Items;
 
 public enum OwnershipFilter
@@ -18,4 +20,7 @@ public sealed record FilterState
     public IReadOnlySet<int> DyeCounts { get; init; } = new HashSet<int>();
     public OwnershipFilter Ownership { get; init; } = OwnershipFilter.All;
     public bool WearableOnly { get; init; } = true;
+    public IReadOnlySet<SourceCategory> Categories { get; init; } = new HashSet<SourceCategory>();
+    public IReadOnlySet<Expansion> Expansions { get; init; } = new HashSet<Expansion>();
+    public SortOrder Sort { get; init; } = SortOrder.Level;
 }

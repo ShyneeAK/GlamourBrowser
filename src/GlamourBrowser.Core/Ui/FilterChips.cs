@@ -1,4 +1,5 @@
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Sources;
 
 namespace GlamourBrowser.Core.Ui;
 
@@ -33,6 +34,12 @@ public static class FilterChips
 
         if (!state.WearableOnly)
             chips.Add(new FilterChip("Auch nicht tragbare", state with { WearableOnly = true }));
+
+        foreach (var category in Enum.GetValues<SourceCategory>().Where(state.Categories.Contains))
+            chips.Add(new FilterChip(SourceCategories.DisplayName(category), state with { Categories = state.Categories.Where(c => c != category).ToHashSet() }));
+
+        foreach (var expansion in Enum.GetValues<Expansion>().Where(state.Expansions.Contains))
+            chips.Add(new FilterChip(Expansions.DisplayName(expansion), state with { Expansions = state.Expansions.Where(e => e != expansion).ToHashSet() }));
 
         return chips;
     }
