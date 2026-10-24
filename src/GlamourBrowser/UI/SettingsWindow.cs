@@ -36,6 +36,13 @@ public sealed class SettingsWindow : Window
         if (ImGui.Combo("Kachel-Modus", ref mode, ["Aktuelles Outfit", "Unterwäsche"], 2))
             state.SetTileMode((TileMode)mode);
 
+        var dim = config.DimMissing;
+        if (ImGui.Checkbox("Fehlende Items abgedunkelt darstellen", ref dim))
+        {
+            config.DimMissing = dim;
+            config.Save();
+        }
+
         var views = config.ParallelViews;
         if (ImGui.SliderInt("Parallele Ansichten", ref views, 1, 3))
         {

@@ -118,27 +118,28 @@ public sealed class TileGrid
         }
         var hovered = ImGui.IsItemHovered();
 
+        var owned = ownership.Current?.IsOwned(item.Id) ?? false;
+        var tint = TileStyle.TintFor(owned, config.DimMissing);
         var drawList = ImGui.GetWindowDrawList();
         drawList.AddRectFilled(pos, pos + size, TileBackground);
 
         var key = state.KeyFor(item);
         if (cache.TryGet(key, out var texture) && texture != null)
         {
-            drawList.AddImage(texture.Handle, pos, pos + size);
+            drawList.AddImage(texture.Handle, pos, pos + size, Vector2.Zero, Vector2.One, tint);
         }
         else
         {
             var icon = Plugin.TextureProvider.GetFromGameIcon(new GameIconLookup(item.IconId)).GetWrapOrEmpty();
             var iconSize = new Vector2(MathF.Min(size.X * 0.5f, 64 * ImGuiHelpers.GlobalScale));
             var iconPos = pos + (size - iconSize) / 2;
-            drawList.AddImage(icon.Handle, iconPos, iconPos + iconSize);
+            drawList.AddImage(icon.Handle, iconPos, iconPos + iconSize, Vector2.Zero, Vector2.One, tint);
         }
 
         var failed = pool.Failures.TryGetValue(key, out var error);
         if (failed)
             drawList.AddText(pos + new Vector2(4, 2), ErrorColor, "!");
 
-        var owned = ownership.Current?.IsOwned(item.Id) ?? false;
         var selected = state.Selected?.Id == item.Id;
         drawList.AddRect(pos, pos + size, selected ? SelectedColor : owned ? OwnedColor : MissingColor, 0, ImDrawFlags.None, selected ? 3 : owned ? 2 : 1);
 
