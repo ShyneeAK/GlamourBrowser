@@ -30,6 +30,8 @@ public static class SourceIcons
             SourceCategory.GoldSaucer => ItemIcon(29),
             SourceCategory.PvP => ItemIcon(25),
             SourceCategory.GilVendor => ItemIcon(1),
+            SourceCategory.Quest => 71201,        // quest marker "!"
+            SourceCategory.Achievement => 6,      // main menu: achievements
             SourceCategory.Crafting => 62108,     // Carpenter
             SourceCategory.JobArtifact => 62119,  // Paladin
             _ => 0,

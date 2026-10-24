@@ -58,11 +58,6 @@ public sealed unsafe class LivePane
         DrawLive(new Vector2(avail.X, MathF.Min(avail.X * 960f / 576f, avail.Y * 0.55f)));
 
         ImGui.Spacing();
-        var slots = state.Filter.Slots;
-        if (SlotBar.Draw("slotbar", ref slots, theme))
-            state.Filter = state.Filter with { Slots = slots };
-
-        ImGui.Spacing();
         using var card = ImRaii.Child("##itemcard", Vector2.Zero, true);
         if (card.Success)
             DrawItemCard();

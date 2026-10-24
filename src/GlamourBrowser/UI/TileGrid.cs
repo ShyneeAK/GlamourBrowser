@@ -24,6 +24,8 @@ namespace GlamourBrowser.UI;
 public sealed class TileGrid
 {
     private const uint ErrorColor = 0xFF4040E0;
+    // Trait and source icons at the bottom of a tile, relative to the line height.
+    private const float TraitIconScale = 1.5f;
 
     private readonly BrowserState state;
     private readonly TileCache<IDalamudTextureWrap> cache;
@@ -51,6 +53,12 @@ public sealed class TileGrid
 
     public void Draw()
     {
+        // Slot selection sits above the tiles it filters.
+        var slots = state.Filter.Slots;
+        if (SlotBar.Draw("slotbar", ref slots, theme))
+            state.Filter = state.Filter with { Slots = slots };
+        ImGui.Spacing();
+
         if (pool.IsPaused)
         {
             ImGui.TextDisabled("Pausiert");
@@ -127,7 +135,8 @@ public sealed class TileGrid
         drawList.PushClipRect(pos, pos + size, true);
         if (rows > 0)
         {
-            var stripHeight = rows == 3 ? lineHeight * 3.4f + 8 : lineHeight * (rows + 0.2f) + 4 + rows;
+            var iconSize = lineHeight * TraitIconScale;
+            var stripHeight = rows == 3 ? lineHeight * 2.2f + iconSize + 10 : lineHeight * (rows + 0.2f) + 4 + rows;
             var shadeTop = pos + new Vector2(0, size.Y - stripHeight);
             drawList.AddRectFilled(shadeTop, pos + size, 0xB0000000, rounding, ImDrawFlags.RoundCornersBottom);
             var textX = 6f;
@@ -143,7 +152,7 @@ public sealed class TileGrid
                 drawList.AddText(shadeTop + new Vector2(textX, 4 + lineHeight), colors.TextMuted, Truncate(line, size.X - 12));
             }
             if (rows >= 3)
-                DrawTraitIcons(drawList, item, categories, shadeTop + new Vector2(textX, 6 + lineHeight * 2), size.X - 12, lineHeight);
+                DrawTraitIcons(drawList, item, categories, shadeTop + new Vector2(textX, 6 + lineHeight * 2), size.X - 12, iconSize);
         }
 
         if (pool.Failures.ContainsKey(key))
