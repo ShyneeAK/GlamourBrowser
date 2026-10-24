@@ -5,29 +5,27 @@ namespace GlamourBrowser.Core.Tests;
 public class TileStyleTests
 {
     [Fact]
-    public void Owned_GreenFrameWithBadge()
+    public void Owned_GreenFrameAndBadge()
     {
         var frame = TileStyle.FrameFor(owned: true, selected: false);
         Assert.Equal(TileStyle.OwnedColor, frame.Color);
+        Assert.Equal(TileStyle.OwnedColor, frame.BadgeColor);
         Assert.Equal(2f, frame.Thickness);
-        Assert.True(frame.OwnedBadge);
     }
 
     [Fact]
-    public void Missing_ThinGrayFrameWithoutBadge()
+    public void Missing_GrayFrameAndBadge()
     {
         var frame = TileStyle.FrameFor(owned: false, selected: false);
         Assert.Equal(TileStyle.MissingColor, frame.Color);
-        Assert.Equal(1f, frame.Thickness);
-        Assert.False(frame.OwnedBadge);
+        Assert.Equal(TileStyle.MissingColor, frame.BadgeColor);
+        Assert.Equal(2f, frame.Thickness);
     }
 
     [Fact]
-    public void Selected_WhiteFrameKeepsBadge()
+    public void Selected_WhiteFrameKeepsOwnershipBadge()
     {
-        var frame = TileStyle.FrameFor(owned: true, selected: true);
-        Assert.Equal(TileStyle.SelectedColor, frame.Color);
-        Assert.Equal(3f, frame.Thickness);
-        Assert.True(frame.OwnedBadge);
+        Assert.Equal(new TileFrame(TileStyle.SelectedColor, 3f, TileStyle.OwnedColor), TileStyle.FrameFor(owned: true, selected: true));
+        Assert.Equal(new TileFrame(TileStyle.SelectedColor, 3f, TileStyle.MissingColor), TileStyle.FrameFor(owned: false, selected: true));
     }
 }

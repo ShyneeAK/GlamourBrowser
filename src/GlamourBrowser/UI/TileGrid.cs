@@ -138,13 +138,10 @@ public sealed class TileGrid
         var owned = ownership.Current?.IsOwned(item.Id) ?? false;
         var frame = TileStyle.FrameFor(owned, state.Selected?.Id == item.Id);
         drawList.AddRect(pos, pos + size, frame.Color, 0, ImDrawFlags.None, frame.Thickness);
-        if (frame.OwnedBadge)
-        {
-            // Green corner triangle, top right.
-            var badge = MathF.Max(10f, size.X * 0.12f);
-            var corner = pos + new Vector2(size.X, 0);
-            drawList.AddTriangleFilled(corner, corner - new Vector2(badge, 0), corner + new Vector2(0, badge), TileStyle.OwnedColor);
-        }
+        // Corner triangle, top right: green when owned, gray when missing.
+        var badge = MathF.Max(10f, size.X * 0.12f);
+        var corner = pos + new Vector2(size.X, 0);
+        drawList.AddTriangleFilled(corner, corner - new Vector2(badge, 0), corner + new Vector2(0, badge), frame.BadgeColor);
 
         ImGui.TextUnformatted(Truncate(item.Name, size.X));
         ImGui.EndGroup();
