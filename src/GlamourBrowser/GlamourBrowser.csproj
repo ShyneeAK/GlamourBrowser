@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
+  <PropertyGroup>
+    <Version>0.1.0.0</Version>
+    <Author>ShyneeAK</Author>
+    <Name>GlamourBrowser</Name>
+    <Punchline>Glamour-Raster mit gerenderten Charakter-Kacheln.</Punchline>
+    <Description>Zeigt alle ausruestbaren Items als Seiten-Raster mit gerenderten Bildern des eigenen Charakters, filterbar, mit Besitzstatus und Fundort pro Item.</Description>
+    <RepoUrl>https://example.invalid/glamourbrowser</RepoUrl>
+    <Tags>glamour;transmog</Tags>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GlamourBrowser.Core\GlamourBrowser.Core.csproj" />
+  </ItemGroup>
+</Project>
