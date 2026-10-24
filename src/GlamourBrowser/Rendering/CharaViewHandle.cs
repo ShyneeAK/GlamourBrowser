@@ -142,16 +142,26 @@ public sealed unsafe class CharaViewHandle : IDisposable
             view->ToggleDrawWeapon(drawn);
     }
 
-    /// <summary>Dresses every slot except <paramref name="except"/>: from the snapshot, or empty for underwear.</summary>
+    /// <summary>
+    /// Undresses the character completely (weapons included), then dresses every slot except
+    /// <paramref name="except"/> from the snapshot; underwear stays empty. SetItemSlotData(slot, 0) does not
+    /// clear a slot, so without UnequipGear items of earlier tiles (or the initial copy) would remain.
+    /// </summary>
     public void ApplyOutfit(OutfitSnapshot outfit, TileMode mode, EquipSlot except)
     {
-        foreach (var slot in Enum.GetValues<EquipSlot>())
-        {
-            if (slot == except)
-                continue;
+        if (view == null || view->State != StateReady)
+            return;
 
-            var entry = mode == TileMode.CurrentOutfit ? outfit.Find(slot) : null;
-            SetItem(slot, entry?.ItemId ?? 0, entry?.Stain0 ?? 0, entry?.Stain1 ?? 0);
+        // Clears all 14 item entries and marks the view dirty (0x309), like the try-on window's
+        // "hide other equipment".
+        view->UnequipGear(false, true);
+        if (mode != TileMode.CurrentOutfit)
+            return;
+
+        foreach (var entry in outfit.Entries)
+        {
+            if (entry.Slot != except)
+                SetItem(entry.Slot, entry.ItemId, entry.Stain0, entry.Stain1);
         }
     }
 
