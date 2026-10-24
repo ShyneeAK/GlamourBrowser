@@ -4,6 +4,7 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using GlamourBrowser.Data;
+using GlamourBrowser.Ownership;
 using GlamourBrowser.UI;
 
 namespace GlamourBrowser;
@@ -27,11 +28,21 @@ public sealed class Plugin : IDalamudPlugin
 
     private readonly WindowSystem windowSystem = new("GlamourBrowser");
     private readonly MainWindow mainWindow;
+    private readonly OwnershipService ownership;
+    private readonly InventoryReader inventoryReader;
+    private readonly RetainerReader retainerReader;
+    private readonly DresserReader dresserReader;
+    private readonly ArmoireReader armoireReader;
 
     public Plugin()
     {
         var catalog = ItemCatalogLoader.Load(DataManager);
-        mainWindow = new MainWindow(catalog);
+        ownership = new OwnershipService();
+        inventoryReader = new InventoryReader(ownership);
+        retainerReader = new RetainerReader(ownership);
+        dresserReader = new DresserReader(ownership);
+        armoireReader = new ArmoireReader(ownership);
+        mainWindow = new MainWindow(catalog, ownership);
         windowSystem.AddWindow(mainWindow);
 
         CommandManager.AddHandler(CommandName, new CommandInfo((_, _) => mainWindow.Toggle())
@@ -51,5 +62,11 @@ public sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.OpenConfigUi -= mainWindow.Toggle;
         windowSystem.RemoveAllWindows();
         CommandManager.RemoveHandler(CommandName);
+
+        armoireReader.Dispose();
+        dresserReader.Dispose();
+        retainerReader.Dispose();
+        inventoryReader.Dispose();
+        ownership.Dispose();
     }
 }
