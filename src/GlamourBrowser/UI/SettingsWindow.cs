@@ -65,6 +65,10 @@ public sealed class SettingsWindow : Window
         if (ImGui.Combo("Pose", ref pose, ["Standard", "Meine Idle-Pose"], 2))
             state.SetUseIdlePose(pose == 1);
 
+        var weapons = config.DrawWeaponsOnTiles ? 0 : 1;
+        if (ImGui.Combo("Waffen-Kacheln", ref weapons, ["Waffe gezogen", "Waffe weggesteckt"], 2))
+            state.SetDrawWeaponsOnTiles(weapons == 0);
+
         var views = config.ParallelViews;
         if (ImGui.SliderInt("Parallele Ansichten", ref views, 1, 3, "%d", ImGuiSliderFlags.AlwaysClamp))
         {

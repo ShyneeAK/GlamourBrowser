@@ -41,6 +41,8 @@ public sealed unsafe class RenderPool : IDisposable
         public PoseGate? PoseGate { get; set; }
         public byte? LastPose { get; set; }
         public bool PoseChanged { get; set; }
+        public bool WeaponDrawn { get; set; }
+        public StanceGate? StanceGate { get; set; }
         public (TileMode Mode, ulong Hash, EquipSlot Slot)? DressedAs { get; set; }
         public bool Busy => Key != null;
     }
@@ -200,7 +202,7 @@ public sealed unsafe class RenderPool : IDisposable
                     worker.DressedAs = (key.Mode, key.AppearanceHash, item.Slot);
                 }
                 view.SetItem(item.Slot, key.ItemId, key.Stain0, key.Stain1);
-                // Tiles keep the weapon sheathed: drawing it plays an animation that would have to finish first.
+                // Weapon tiles may draw the weapon: the draw animation has to finish first (StanceGate in the Pose phase).
                 view.ApplyCamera(cameraFor(item.Slot));
                 // The previous tile left the animation frozen.
                 view.SetAnimationPaused(false);
@@ -211,6 +213,20 @@ public sealed unsafe class RenderPool : IDisposable
                     // The tile then renders in the standard pose.
                     poseWarned = true;
                     Plugin.Log.Warning($"Idle pose {key.Pose} could not be applied; tiles use the standard pose");
+                }
+                worker.StanceGate = null;
+                if (key.WeaponDrawn || worker.WeaponDrawn)
+                {
+                    var changed = worker.WeaponDrawn != key.WeaponDrawn;
+                    if (changed)
+                        view.SetWeaponDrawn(key.WeaponDrawn);
+                    worker.WeaponDrawn = key.WeaponDrawn;
+                    if (key.WeaponDrawn)
+                    {
+                        // The timeline playing before the draw is the reference the gate waits to see replaced.
+                        worker.StanceGate = new StanceGate(PoseBlendFrames, PoseTimeoutFrames, expectChange: changed);
+                        worker.StanceGate.Step(view.BaseTimeline().Playing);
+                    }
                 }
                 worker.Frames = 0;
                 worker.Phase = Phase.Loading;
@@ -255,13 +271,13 @@ public sealed unsafe class RenderPool : IDisposable
 
             case Phase.Pose:
                 var (playing, overridden) = view.BaseTimeline();
-                var poseState = worker.PoseGate!.Step(playing);
+                var poseState = worker.StanceGate?.Step(playing) ?? worker.PoseGate!.Step(playing);
                 if (poseState == PoseGateState.Wait)
                     return;
                 if (poseDiagnosticsBudget > 0 && worker.Key!.Value.Pose != TileKey.StandardPose)
                 {
                     poseDiagnosticsBudget--;
-                    Plugin.Log.Information($"[pose] tile {worker.Key.Value.ItemId}: pose {worker.Key.Value.Pose}, wanted {PoseTimelines.For(worker.Key.Value.Pose)}, playing {playing}, override {overridden}, {worker.PoseGate.Frames} frames, {poseState}");
+                    Plugin.Log.Information($"[pose] tile {worker.Key.Value.ItemId}: pose {worker.Key.Value.Pose}, wanted {PoseTimelines.For(worker.Key.Value.Pose)}, playing {playing}, override {overridden}, {worker.PoseGate?.Frames} frames, {poseState}");
                 }
                 if (poseState == PoseGateState.Timeout && !poseWarned)
                 {

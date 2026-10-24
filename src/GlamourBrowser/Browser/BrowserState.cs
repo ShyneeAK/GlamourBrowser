@@ -94,6 +94,13 @@ public sealed class BrowserState
         RequestTiles();
     }
 
+    public void SetDrawWeaponsOnTiles(bool drawn)
+    {
+        config.DrawWeaponsOnTiles = drawn;
+        config.Save();
+        RequestTiles();
+    }
+
     public void SetUseIdlePose(bool useIdlePose)
     {
         config.UseIdlePose = useIdlePose;
@@ -110,10 +117,20 @@ public sealed class BrowserState
 
     public TileKey KeyFor(GlamourItem item)
         => new(item.Id, 0, 0, config.TileMode, appearance.Hash, Layout.RenderWidth == 0 ? PageLayout.RenderSteps[0] : Layout.RenderWidth,
-               StanceFor(item).Pose, Stance.ToMs(moments.Get(Plugin.PlayerState.ContentId, StanceFor(item))));
+               StanceFor(item) is var stance && stance.WeaponDrawn ? TileKey.StandardPose : stance.Pose,
+               Stance.ToMs(moments.Get(Plugin.PlayerState.ContentId, stance)), stance.WeaponDrawn);
 
-    /// <summary>How the character stands on the item's tile.</summary>
-    public Stance StanceFor(GlamourItem item) => new(false, config.UseIdlePose ? appearance.IdlePose : TileKey.StandardPose);
+    /// <summary>The stance for moments saved with the weapon drawn.</summary>
+    public static readonly Stance WeaponDrawnStance = new(true, 0);
+
+    /// <summary>How the character stands on the item's tile: weapons drawn (when enabled), otherwise the idle pose.</summary>
+    public Stance StanceFor(GlamourItem item)
+        => config.DrawWeaponsOnTiles && item.Slot is EquipSlot.MainHand or EquipSlot.OffHand
+            ? WeaponDrawnStance
+            : IdleStance;
+
+    /// <summary>Standing without a drawn weapon: the player's idle pose, or the standard pose when that is turned off.</summary>
+    public Stance IdleStance => new(false, config.UseIdlePose ? appearance.IdlePose : TileKey.StandardPose);
 
     /// <summary>Filters again and re-requests the visible tiles.</summary>
     public void Refresh()

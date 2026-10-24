@@ -316,7 +316,8 @@ public sealed unsafe class LivePane
     private void DrawPoseMoment(GlamourItem item)
     {
         var contentId = Plugin.PlayerState.ContentId;
-        var stance = live.WeaponDrawn ? new Stance(true, 0) : state.StanceFor(item);
+        // The stance the live view shows right now.
+        var stance = live.WeaponDrawn ? BrowserState.WeaponDrawnStance : state.IdleStance;
         var paused = live.PausedAt != null;
         if (IconButton.Draw("##playpause", 0, paused ? FontAwesomeIcon.Play : FontAwesomeIcon.Pause, paused ? "Abspielen" : "Anhalten", theme))
         {
