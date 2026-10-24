@@ -16,7 +16,8 @@ public sealed unsafe class LivePreview : IDisposable
     private readonly Func<EquipSlot, CameraPreset?> cameraFor;
     private CharaViewHandle? view;
     private CharaViewHandle? suspended;
-    private (uint ItemId, TileMode Mode, ulong Hash, CameraPreset? Camera, byte Pose)? applied;
+    private (uint ItemId, TileMode Mode, ulong Hash, CameraPreset? Camera)? applied;
+    private byte? appliedPose;
     private float rotateX, rotateY, panX, panY, zoom;
     private bool reset;
 
@@ -99,6 +100,7 @@ public sealed unsafe class LivePreview : IDisposable
             view = new CharaViewHandle(Slot);
             view.Create(character, appearance.Race, appearance.Sex);
             applied = null;
+            appliedPose = null;
             appliedWeaponDrawn = null;
             appliedWeaponVisible = null;
         }
@@ -108,16 +110,23 @@ public sealed unsafe class LivePreview : IDisposable
             return;
 
         var camera = cameraFor(item.Slot);
-        var pose = config.UseIdlePose ? appearance.IdlePose : TileKey.StandardPose;
-        var wanted = (item.Id, config.TileMode, appearance.Hash, camera, pose);
+        var wanted = (item.Id, config.TileMode, appearance.Hash, camera);
         if (applied != wanted && view.IsIdle)
         {
             view.ApplyOutfit(appearance.Outfit, config.TileMode, item.Slot);
             view.SetItem(item.Slot, item.Id, 0, 0);
             view.ApplyCamera(camera);
-            view.ApplyIdlePose(pose);
             applied = wanted;
+            appliedPose = null;
             appliedWeaponVisible = null;
+        }
+
+        // With the weapon drawn the battle stance is the base animation: an idle pose override would hide it.
+        var pose = config.UseIdlePose && !WeaponDrawn ? appearance.IdlePose : TileKey.StandardPose;
+        if (appliedPose != pose && view.State == CharaViewHandle.StateReady)
+        {
+            view.ApplyIdlePose(pose);
+            appliedPose = pose;
         }
 
         // Visibility has to be applied after the new items have loaded.
