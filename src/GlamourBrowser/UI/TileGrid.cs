@@ -109,7 +109,8 @@ public sealed class TileGrid
         // Name on a dark gradient along the bottom edge.
         var lineHeight = ImGui.GetTextLineHeight();
         var shadeTop = pos + new Vector2(0, size.Y - lineHeight * 2.2f);
-        drawList.AddRectFilledMultiColor(shadeTop, pos + size, 0x00000000, 0x00000000, 0xCC000000, 0xCC000000);
+        // A rounded strip (a gradient cannot be rounded and would stick out at the corners).
+        drawList.AddRectFilled(shadeTop, pos + size, 0xB0000000, rounding, ImDrawFlags.RoundCornersBottom);
         drawList.AddText(pos + new Vector2(6, size.Y - lineHeight - 5), colors.Text, Truncate(item.Name, size.X - 12));
 
         var failed = pool.Failures.TryGetValue(key, out var error);
@@ -120,9 +121,11 @@ public sealed class TileGrid
         var frame = TileStyle.FrameFor(owned, state.Selected?.Id == item.Id, colors.Accent);
         drawList.AddRect(pos, pos + size, frame.Color, rounding, ImDrawFlags.None, frame.Thickness);
         // Corner triangle, top right: green when owned, gray when missing.
+        // Inset so the tip stays inside the rounded corner (radius 8: an inset of 0.3·r lies within the arc).
         var badge = MathF.Max(10f, size.X * 0.12f);
-        var corner = pos + new Vector2(size.X, 0);
-        drawList.AddTriangleFilled(corner + new Vector2(-1, 1), corner - new Vector2(badge, -1), corner + new Vector2(-1, badge), frame.BadgeColor);
+        var inset = rounding * 0.3f;
+        var corner = pos + new Vector2(size.X - inset, inset);
+        drawList.AddTriangleFilled(corner, corner - new Vector2(badge, 0), corner + new Vector2(0, badge), frame.BadgeColor);
 
         if (hovered)
             DrawTooltip(item, failed ? error : null);
