@@ -17,9 +17,9 @@ namespace GlamourBrowser.Rendering;
 /// </summary>
 public sealed unsafe class RenderPool : IDisposable
 {
-    private static readonly uint[] Slots = [7, 6, 5];
     private const int SettleFrames = 1;
     private const int TimeoutFrames = 600;
+    private const int MaxVisibilityRetries = 30;
     private static readonly TimeSpan IdleRelease = TimeSpan.FromSeconds(5);
 
     private enum Phase { WaitReady, Apply, Loading, Settle, Copy }
@@ -32,7 +32,7 @@ public sealed unsafe class RenderPool : IDisposable
         public int Frames { get; set; }
         public Stopwatch Stopwatch { get; } = new();
         public Task<IDalamudTextureWrap>? CopyTask { get; set; }
-        public int VisibilityRetries { get; set; }
+        public SettleGate? Gate { get; set; }
         public (TileMode Mode, ulong Hash, EquipSlot Slot)? DressedAs { get; set; }
         public bool Busy => Key != null;
     }
@@ -62,7 +62,7 @@ public sealed unsafe class RenderPool : IDisposable
     public IReadOnlyDictionary<TileKey, string> Failures => failures;
 
     /// <summary>True while the live preview may take slot 7 (no worker on it).</summary>
-    public bool LiveSlotFree => liveReserved && workers.All(w => w.View.Index != Slots[0]);
+    public bool LiveSlotFree => liveReserved && workers.All(w => w.View.Index != RenderSlots.LiveSlot);
 
     public event Action<TileKey>? TileReady;
 
@@ -113,7 +113,7 @@ public sealed unsafe class RenderPool : IDisposable
 
     private void ManageWorkers()
     {
-        var wanted = Slots.Take(Math.Clamp(MaxViews, 1, Slots.Length)).Where(s => !(liveReserved && s == Slots[0])).ToList();
+        var wanted = RenderSlots.Select(MaxViews, liveReserved);
 
         // Hand slot 7 to the live preview once its worker finished the current tile.
         foreach (var worker in workers.Where(w => !wanted.Contains(w.View.Index) && !w.Busy).ToList())
@@ -186,33 +186,29 @@ public sealed unsafe class RenderPool : IDisposable
                     return;
                 }
                 view.ApplyVisibility(showWeapons: true);
-                worker.Frames = 0;
-                worker.VisibilityRetries = 0;
+                worker.Gate = new SettleGate(SettleFrames, TimeoutFrames, MaxVisibilityRetries);
                 worker.Phase = Phase.Settle;
                 break;
 
             case Phase.Settle:
-                worker.Frames++;
-                if (worker.Frames > TimeoutFrames)
+                // ApplyVisibility may start another short load, and a weapon that finished loading late
+                // comes back hidden; the gate re-applies a bounded number of times.
+                switch (worker.Gate!.Step(view.IsIdle, view.WeaponsShown()))
                 {
-                    Fail(worker, "Zeitüberschreitung beim Laden");
-                    return;
+                    case SettleAction.Wait:
+                        return;
+                    case SettleAction.Reapply:
+                        view.ApplyVisibility(showWeapons: true);
+                        return;
+                    case SettleAction.Timeout:
+                        Fail(worker, "Zeitüberschreitung beim Laden");
+                        return;
+                    case SettleAction.CopyWithoutWeapons:
+                        Plugin.Log.Warning($"Tile {worker.Key!.Value.ItemId}: weapons still hidden after {worker.Gate.Retries} retries, copying anyway");
+                        break;
                 }
-                // ApplyVisibility may start another short load; wait until idle again.
-                if (!view.IsIdle)
-                    return;
-                // A weapon that finished loading late comes back hidden: apply again and wait one more frame.
-                if (!view.WeaponsShown())
-                {
-                    view.ApplyVisibility(showWeapons: true);
-                    worker.VisibilityRetries++;
-                    worker.Frames = 0;
-                    return;
-                }
-                if (worker.Frames < SettleFrames)
-                    return;
-                if (worker.VisibilityRetries > 0)
-                    Plugin.Log.Verbose($"Tile {worker.Key!.Value.ItemId}: weapon visibility re-applied {worker.VisibilityRetries}x");
+                if (worker.Gate.Retries > 0)
+                    Plugin.Log.Verbose($"Tile {worker.Key!.Value.ItemId}: weapon visibility re-applied {worker.Gate.Retries}x");
                 var texture = view.GetTexture();
                 if (texture == null || texture->D3D11ShaderResourceView == null)
                 {
