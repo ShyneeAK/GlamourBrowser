@@ -27,4 +27,12 @@ public class TileInfoTests
         Assert.Equal(0, TileInfo.FitIcons(6, 16, 2, 10));
         Assert.Equal(2, TileInfo.FitIcons(2, 16, 2, 200));
     }
+
+    [Theory]
+    [InlineData(200f, 16f, 3)]
+    [InlineData(80f, 16f, 2)]
+    [InlineData(40f, 16f, 1)]
+    [InlineData(20f, 16f, 0)]
+    public void InfoRows_DropIconsThenLineTwoOnShortTiles(float tileHeight, float lineHeight, int expected)
+        => Assert.Equal(expected, TileInfo.InfoRows(tileHeight, lineHeight));
 }

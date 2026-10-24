@@ -15,6 +15,7 @@ public sealed class JobCatalog
     private const uint JobIconBase = 62100;
 
     private readonly Dictionary<uint, JobInfo> byId;
+    private readonly Dictionary<uint, uint> parents;
 
     public JobCatalog(IDataManager data)
     {
@@ -27,11 +28,15 @@ public sealed class JobCatalog
             .Select(x => x.Info)
             .ToList();
         byId = All.ToDictionary(j => j.Id);
+        parents = data.GetExcelSheet<ClassJob>().ToDictionary(j => j.RowId, j => j.ClassJobParent.RowId);
     }
 
     public IReadOnlyList<JobInfo> All { get; }
 
     public JobInfo? Find(uint id) => byId.GetValueOrDefault(id);
+
+    /// <summary>ClassJob.ClassJobParent: a job's base class (WHM → CNJ); a class is its own parent.</summary>
+    public uint ParentOf(uint id) => parents.GetValueOrDefault(id, id);
 
     public JobGroup GroupOf(uint id) => byId.TryGetValue(id, out var job) ? job.Group : JobGroup.Melee;
 

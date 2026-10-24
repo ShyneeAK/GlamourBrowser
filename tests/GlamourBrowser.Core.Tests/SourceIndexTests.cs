@@ -73,4 +73,15 @@ public class SourceIndexTests
         b.Add(1, Src(SourceCategory.PvP));
         Assert.Single(index.SourcesOf(1));
     }
+
+    [Fact]
+    public void KnownCategoriesOf_EmptyWithoutSources()
+    {
+        var b = new SourceIndex.Builder();
+        b.Add(1, Src(SourceCategory.RaidSavage));
+        var index = b.Build();
+        Assert.Empty(index.KnownCategoriesOf(5));
+        Assert.Equal(new HashSet<SourceCategory> { SourceCategory.Other }, index.CategoriesOf(5));
+        Assert.Equal(new HashSet<SourceCategory> { SourceCategory.RaidSavage }, index.KnownCategoriesOf(1));
+    }
 }

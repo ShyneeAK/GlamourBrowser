@@ -37,6 +37,8 @@ public sealed unsafe class RenderPool : IDisposable
         public Task<IDalamudTextureWrap>? CopyTask { get; set; }
         public SettleGate? Gate { get; set; }
         public PoseGate? PoseGate { get; set; }
+        public byte? LastPose { get; set; }
+        public bool PoseChanged { get; set; }
         public (TileMode Mode, ulong Hash, EquipSlot Slot)? DressedAs { get; set; }
         public bool Busy => Key != null;
     }
@@ -197,6 +199,8 @@ public sealed unsafe class RenderPool : IDisposable
                 view.SetItem(item.Slot, key.ItemId, key.Stain0, key.Stain1);
                 // Tiles keep the weapon sheathed: drawing it plays an animation that would have to finish first.
                 view.ApplyCamera(cameraFor(item.Slot));
+                worker.PoseChanged = worker.LastPose != key.Pose;
+                worker.LastPose = key.Pose;
                 if (!view.ApplyIdlePose(key.Pose) && !poseWarned)
                 {
                     // The tile then renders in the standard pose.
@@ -240,7 +244,7 @@ public sealed unsafe class RenderPool : IDisposable
                 }
                 if (worker.Gate.Retries > 0)
                     Plugin.Log.Verbose($"Tile {worker.Key!.Value.ItemId}: weapon visibility re-applied {worker.Gate.Retries}x");
-                worker.PoseGate = new PoseGate(PoseTimelines.For(worker.Key!.Value.Pose), PoseBlendFrames, PoseTimeoutFrames);
+                worker.PoseGate = new PoseGate(PoseTimelines.For(worker.Key!.Value.Pose), PoseBlendFrames, PoseTimeoutFrames, worker.PoseChanged);
                 worker.Phase = Phase.Pose;
                 break;
 

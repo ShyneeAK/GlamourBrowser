@@ -25,4 +25,13 @@ public class PoseGateTests
         Assert.Equal(PoseGateState.Wait, gate.Step(3));
         Assert.Equal(PoseGateState.Timeout, gate.Step(3));
     }
+
+    [Fact]
+    public void BackToStandard_WaitsForTheBlend()
+    {
+        var gate = new PoseGate(0, blendFrames: 2, timeoutFrames: 100, overrideChanged: true);
+        Assert.Equal(PoseGateState.Wait, gate.Step(1055));
+        Assert.Equal(PoseGateState.Wait, gate.Step(3));
+        Assert.Equal(PoseGateState.Ready, gate.Step(3));
+    }
 }

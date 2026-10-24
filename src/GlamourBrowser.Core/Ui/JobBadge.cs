@@ -12,6 +12,15 @@ public readonly record struct JobBadge(JobBadgeKind Kind, uint JobId, JobGroup G
 
 public static class JobBadges
 {
+    /// <summary>
+    /// Drops base classes whose job is in the set too (ClassJobCategory lists e.g. CNJ and WHM together),
+    /// so a WHM-only item counts as one job. <paramref name="parentOf"/> is ClassJob.ClassJobParent.
+    /// </summary>
+    public static IReadOnlySet<uint> CollapseClasses(IReadOnlySet<uint> jobs, Func<uint, uint> parentOf)
+    {
+        return jobs.Where(id => !jobs.Any(job => job != id && parentOf(job) == id)).ToHashSet();
+    }
+
     /// <summary>One job → its icon; all jobs in one role → the role icon; mixed, none or every job → no badge.</summary>
     public static JobBadge For(IReadOnlySet<uint> jobs, Func<uint, JobGroup> groupOf, int allJobsCount)
     {

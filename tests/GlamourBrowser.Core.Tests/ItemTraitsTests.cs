@@ -55,4 +55,13 @@ public class ItemTraitsTests
 
     [Fact]
     public void Top_SavageBeatsVendor() => Assert.Equal(RaidSavage, SourceRanking.Top(new HashSet<SourceCategory> { GilVendor, RaidSavage }));
+
+    [Fact]
+    public void JobBadge_ClassAndItsJob_IsTheJob()
+    {
+        // Conjurer 6 is the base class of White Mage 24 (ClassJobParent of 24 is 6).
+        static uint ParentOf(uint job) => job == 24 ? 6u : job;
+        var jobs = JobBadges.CollapseClasses(new HashSet<uint> { 6, 24 }, ParentOf);
+        Assert.Equal(new JobBadge(JobBadgeKind.Job, 24, JobGroup.Healer), JobBadges.For(jobs, GroupOf, AllJobs));
+    }
 }

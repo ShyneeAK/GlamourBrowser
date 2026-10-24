@@ -16,6 +16,16 @@ public static class TileInfo
         _ => $"Lv. {level} · {places[0]} +{places.Count - 1}",
     };
 
+    /// <summary>Info rows under the name that fit a tile: icons are dropped first, then line 2, then the name.</summary>
+    public static int InfoRows(float tileHeight, float lineHeight)
+    {
+        if (tileHeight >= lineHeight * 6)
+            return 3;
+        if (tileHeight >= lineHeight * 4)
+            return 2;
+        return tileHeight >= lineHeight * 2 ? 1 : 0;
+    }
+
     /// <summary>How many icons of <paramref name="iconWidth"/> fit into <paramref name="available"/>; the rest is cut off on the right.</summary>
     public static int FitIcons(int count, float iconWidth, float spacing, float available)
     {

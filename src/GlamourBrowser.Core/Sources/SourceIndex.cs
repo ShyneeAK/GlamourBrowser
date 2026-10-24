@@ -28,6 +28,11 @@ public sealed class SourceIndex
     /// <summary>Items without any known source count as <see cref="SourceCategory.Other"/>.</summary>
     public IReadOnlySet<SourceCategory> CategoriesOf(uint itemId) => categories.TryGetValue(itemId, out var set) ? set : OtherOnly;
 
+    /// <summary>Like <see cref="CategoriesOf"/>, but empty for items without any known source (for display, not filtering).</summary>
+    public IReadOnlySet<SourceCategory> KnownCategoriesOf(uint itemId) => categories.TryGetValue(itemId, out var set) ? set : NoCategories;
+
+    private static readonly IReadOnlySet<SourceCategory> NoCategories = new HashSet<SourceCategory>();
+
     /// <summary>Patch the item was added in, 0 when unknown.</summary>
     public float PatchOf(uint itemId) => patches.GetValueOrDefault(itemId);
 

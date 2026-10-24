@@ -121,25 +121,37 @@ public sealed class TileGrid
 
         // Name, level/source line and trait icons on a dark strip along the bottom edge.
         // A rounded strip (a gradient cannot be rounded and would stick out at the corners).
+        // Short tiles drop the icon row first, then line 2; everything is clipped to the tile.
         var lineHeight = ImGui.GetTextLineHeight();
-        var shadeTop = pos + new Vector2(0, size.Y - lineHeight * 3.4f - 8);
-        drawList.AddRectFilled(shadeTop, pos + size, 0xB0000000, rounding, ImDrawFlags.RoundCornersBottom);
-        var textX = 6f;
-        var categories = sources.IsReady ? sources.Index.CategoriesOf(item.Id) : null;
-        drawList.AddText(shadeTop + new Vector2(textX, 4), colors.Text, Truncate(item.Name, size.X - 12));
-        // Owned: where it is; missing: where to get it.
-        var places = owned ? ownership.Current?.LocationsOf(item.Id).Select(l => l.DisplayName).ToList() ?? [] : [];
-        var line = places.Count > 0
-            ? TileInfo.OwnedLine(item.LevelEquip, places)
-            : TileInfo.Line(item.LevelEquip, categories != null ? SourceRanking.Top(categories) : null);
-        drawList.AddText(shadeTop + new Vector2(textX, 4 + lineHeight), colors.TextMuted, Truncate(line, size.X - 12));
-        DrawTraitIcons(drawList, item, categories, shadeTop + new Vector2(textX, 6 + lineHeight * 2), size.X - 12, lineHeight);
+        var rows = TileInfo.InfoRows(size.Y, lineHeight);
+        drawList.PushClipRect(pos, pos + size, true);
+        if (rows > 0)
+        {
+            var stripHeight = rows == 3 ? lineHeight * 3.4f + 8 : lineHeight * (rows + 0.2f) + 4 + rows;
+            var shadeTop = pos + new Vector2(0, size.Y - stripHeight);
+            drawList.AddRectFilled(shadeTop, pos + size, 0xB0000000, rounding, ImDrawFlags.RoundCornersBottom);
+            var textX = 6f;
+            var categories = sources.IsReady ? sources.Index.KnownCategoriesOf(item.Id) : null;
+            drawList.AddText(shadeTop + new Vector2(textX, 4), colors.Text, Truncate(item.Name, size.X - 12));
+            if (rows >= 2)
+            {
+                // Owned: where it is; missing: where to get it.
+                var places = owned ? ownership.Current?.LocationsOf(item.Id).Select(l => l.DisplayName).ToList() ?? [] : [];
+                var line = places.Count > 0
+                    ? TileInfo.OwnedLine(item.LevelEquip, places)
+                    : TileInfo.Line(item.LevelEquip, categories != null ? SourceRanking.Top(categories) : null);
+                drawList.AddText(shadeTop + new Vector2(textX, 4 + lineHeight), colors.TextMuted, Truncate(line, size.X - 12));
+            }
+            if (rows >= 3)
+                DrawTraitIcons(drawList, item, categories, shadeTop + new Vector2(textX, 6 + lineHeight * 2), size.X - 12, lineHeight);
+        }
 
         if (pool.Failures.ContainsKey(key))
         {
             drawList.AddText(pos + new Vector2(6, 4), ErrorColor, "!");
             drawList.AddText(pos + new Vector2(6, 4 + lineHeight), ErrorColor, Truncate("Renderfehler", size.X - 12));
         }
+        drawList.PopClipRect();
 
         var frame = TileStyle.FrameFor(owned, selected, colors.Accent);
         drawList.AddRect(pos, pos + size, frame.Color, rounding, ImDrawFlags.None, frame.Thickness);
@@ -167,7 +179,7 @@ public sealed class TileGrid
             var glyph = item.Trade == Tradability.Marketable ? FontAwesomeIcon.Store : FontAwesomeIcon.ExchangeAlt;
             icons.Add(at => GameIcon.DrawAt(drawList, 0, at, new Vector2(iconSize), glyph, colors.TextMuted));
         }
-        var badge = JobBadges.For(item.ClassJobIds, jobs.GroupOf, jobs.All.Count);
+        var badge = JobBadges.For(JobBadges.CollapseClasses(item.ClassJobIds, jobs.ParentOf), jobs.GroupOf, jobs.All.Count);
         if (badge.Kind != JobBadgeKind.None)
         {
             var icon = badge.Kind == JobBadgeKind.Job ? jobs.Find(badge.JobId)?.IconId ?? 0 : JobCatalog.RoleIcon(badge.Group);
