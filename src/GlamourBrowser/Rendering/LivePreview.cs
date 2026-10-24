@@ -90,6 +90,7 @@ public sealed unsafe class LivePreview : IDisposable
         {
             view.ApplyOutfit(appearance.Outfit, config.TileMode, item.Slot);
             view.SetItem(item.Slot, item.Id, 0, 0);
+            view.SetWeaponDrawn(item.Slot is EquipSlot.MainHand or EquipSlot.OffHand);
             view.ApplyCamera(camera);
             applied = wanted;
         }

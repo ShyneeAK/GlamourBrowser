@@ -162,6 +162,7 @@ public sealed unsafe class RenderPool : IDisposable
                     worker.DressedAs = (key.Mode, key.AppearanceHash);
                 }
                 view.SetItem(item.Slot, key.ItemId, key.Stain0, key.Stain1);
+                view.SetWeaponDrawn(item.Slot is EquipSlot.MainHand or EquipSlot.OffHand);
                 view.ApplyCamera(cameraFor(item.Slot));
                 worker.Frames = 0;
                 worker.Phase = Phase.Loading;

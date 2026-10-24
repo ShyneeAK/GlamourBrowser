@@ -61,6 +61,9 @@ public sealed unsafe class CharaViewHandle : IDisposable
 
         view->Initialize(null, Index, 0);
         view->ModelData.CopyFromCharacter(source);
+        // CopyFromCharacter takes over the player's "hide weapon/headgear" settings; tiles must show both.
+        view->ModelData.WeaponHidden = false;
+        view->ModelData.HeadgearHidden = false;
         // Used by the game for EquipRestriction checks.
         view->Race = race;
         view->Sex = sex;
@@ -77,6 +80,13 @@ public sealed unsafe class CharaViewHandle : IDisposable
     {
         if (view != null && view->State == StateReady)
             view->SetItemSlotData((byte)slot, itemId, stain0, stain1, 0, false);
+    }
+
+    /// <summary>Draws the weapon (in hand) for weapon tiles, sheathes it otherwise.</summary>
+    public void SetWeaponDrawn(bool drawn)
+    {
+        if (view != null && view->State == StateReady)
+            view->ToggleDrawWeapon(drawn);
     }
 
     /// <summary>Dresses every slot except <paramref name="except"/>: from the snapshot, or empty for underwear.</summary>
