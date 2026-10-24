@@ -12,11 +12,12 @@ namespace GlamourBrowser.UI.Widgets;
 /// <summary>Row of slot icons: click selects only that slot (again clears), Ctrl+click adds or removes.</summary>
 public static class SlotBar
 {
-    public static bool Draw(string id, ref IReadOnlySet<EquipSlot> selected, Theme.Theme theme)
+    /// <param name="reserveRight">Width kept free on the right of the row (for controls drawn after the bar).</param>
+    public static bool Draw(string id, ref IReadOnlySet<EquipSlot> selected, Theme.Theme theme, float reserveRight = 0)
     {
         var slots = SlotNames.All;
         var spacing = ImGui.GetStyle().ItemSpacing.X;
-        var edge = Math.Clamp((ImGui.GetContentRegionAvail().X - spacing * (slots.Length - 1)) / slots.Length, 21f * UiScale.Global, 38f * UiScale.Global);
+        var edge = Math.Clamp((ImGui.GetContentRegionAvail().X - reserveRight - spacing * (slots.Length - 1)) / slots.Length, 21f * UiScale.Global, 38f * UiScale.Global);
 
         var changed = false;
         for (var i = 0; i < slots.Length; i++)

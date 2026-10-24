@@ -74,9 +74,6 @@ public sealed class SettingsWindow : Window
         if (ImGui.Combo("Pose", ref pose, ["Standard", "Meine Idle-Pose"], 2))
             state.SetUseIdlePose(pose == 1);
 
-        var weapons = config.DrawWeaponsOnTiles ? 0 : 1;
-        if (ImGui.Combo("Waffen-Kacheln", ref weapons, ["Waffe gezogen", "Waffe weggesteckt"], 2))
-            state.SetDrawWeaponsOnTiles(weapons == 0);
 
         // The value being dragged is kept across frames; fonts are rebuilt only once the slider is released.
         var percent = scaleDraft ?? (int)MathF.Round(config.UiScale * 100);

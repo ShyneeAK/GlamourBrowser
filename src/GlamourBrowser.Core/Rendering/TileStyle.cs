@@ -10,10 +10,10 @@ public static class TileStyle
     public const uint OwnedColor = 0xFF40C040;
     public const uint MissingColor = 0xFF808080;
 
-    /// <summary>65 % brightness for missing items; owned and selected tiles are drawn untinted.</summary>
+    /// <summary>65 % brightness for missing items when dimming is on; owned and selected tiles are drawn untinted.</summary>
     public const uint MissingTint = 0xFFA6A6A6;
 
-    public static uint ImageTint(bool owned, bool selected) => owned || selected ? 0xFFFFFFFF : MissingTint;
+    public static uint ImageTint(bool owned, bool selected, bool dim) => owned || selected || !dim ? 0xFFFFFFFF : MissingTint;
 
     /// <param name="selectedColor">The theme's accent colour, used for the selection frame.</param>
     public static TileFrame FrameFor(bool owned, bool selected, uint selectedColor)

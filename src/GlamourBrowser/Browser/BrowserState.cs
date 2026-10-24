@@ -91,9 +91,9 @@ public sealed class BrowserState
         RequestTiles();
     }
 
-    public void SetDrawWeaponsOnTiles(bool drawn)
+    public void SetTileWeaponsDrawn(bool drawn)
     {
-        config.DrawWeaponsOnTiles = drawn;
+        config.TileWeaponsDrawn = drawn;
         config.Save();
         RequestTiles();
     }
@@ -120,7 +120,7 @@ public sealed class BrowserState
 
     /// <summary>How the character stands on the item's tile: weapons drawn (when enabled), otherwise the idle pose.</summary>
     public Stance StanceFor(GlamourItem item)
-        => config.DrawWeaponsOnTiles && item.Slot is EquipSlot.MainHand or EquipSlot.OffHand
+        => config.TileWeaponsDrawn && item.Slot is EquipSlot.MainHand or EquipSlot.OffHand
             ? WeaponDrawnStance
             : IdleStance;
 

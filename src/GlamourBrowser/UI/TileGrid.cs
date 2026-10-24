@@ -53,10 +53,11 @@ public sealed class TileGrid
 
     public void Draw()
     {
-        // Slot selection sits above the tiles it filters.
+        // Slot selection sits above the tiles it filters, the tile display options right-aligned next to it.
         var slots = state.Filter.Slots;
-        if (SlotBar.Draw("slotbar", ref slots, theme))
+        if (SlotBar.Draw("slotbar", ref slots, theme, DisplayOptionsWidth()))
             state.Filter = state.Filter with { Slots = slots };
+        DrawDisplayOptions();
         ImGui.Spacing();
 
         if (pool.IsPaused)
@@ -97,6 +98,43 @@ public sealed class TileGrid
         }
     }
 
+    private const string WeaponsLabel = "Waffen gezogen";
+    private const string DimLabel = "Abdunkeln";
+
+    private static float CheckboxWidth(string label) => ImGui.GetFrameHeight() + ImGui.GetStyle().ItemInnerSpacing.X + ImGui.CalcTextSize(label).X;
+
+    private static float DisplayOptionsWidth()
+    {
+        var spacing = ImGui.GetStyle().ItemSpacing.X;
+        return CheckboxWidth(WeaponsLabel) + ImGui.GetFrameHeight() + CheckboxWidth(DimLabel) + spacing * 4;
+    }
+
+    /// <summary>Checkboxes right of the slot bar: drawn weapons (slower, with a warning) and dimming of missing items.</summary>
+    private void DrawDisplayOptions()
+    {
+        var spacing = ImGui.GetStyle().ItemSpacing.X;
+        ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - DisplayOptionsWidth() + spacing);
+        var frameOffset = (ImGui.GetItemRectSize().Y - ImGui.GetFrameHeight()) / 2;
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + MathF.Max(0, frameOffset));
+
+        var drawn = config.TileWeaponsDrawn;
+        if (ImGui.Checkbox(WeaponsLabel, ref drawn))
+            state.SetTileWeaponsDrawn(drawn);
+        ImGui.SameLine(0, 2);
+        using (UiScale.PushIcons())
+            ImGui.TextColored(new Vector4(1f, 0.8f, 0.3f, 1f), FontAwesomeIcon.ExclamationTriangle.ToIconString());
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip("Waffen-Kacheln mit gezogener Waffe: jede Kachel spielt das Ziehen ab, das Rendern dauert deutlich länger.");
+
+        ImGui.SameLine();
+        var dim = config.DimMissingTiles;
+        if (ImGui.Checkbox(DimLabel, ref dim))
+        {
+            config.DimMissingTiles = dim;
+            config.Save();
+        }
+    }
+
     private void DrawTile(GlamourItem item, Vector2 size)
     {
         const float rounding = 8f;
@@ -117,7 +155,7 @@ public sealed class TileGrid
         var selected = state.Selected?.Id == item.Id;
         if (cache.TryGet(key, out var texture) && texture != null)
         {
-            drawList.AddImageRounded(texture.Handle, pos, pos + size, Vector2.Zero, Vector2.One, TileStyle.ImageTint(owned, selected), rounding);
+            drawList.AddImageRounded(texture.Handle, pos, pos + size, Vector2.Zero, Vector2.One, TileStyle.ImageTint(owned, selected, config.DimMissingTiles), rounding);
         }
         else
         {

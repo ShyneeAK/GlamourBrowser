@@ -22,7 +22,9 @@ public sealed class Configuration : IPluginConfiguration
     public AccentColor Accent { get; set; } = AccentColor.Blue;
     public SortOrder Sort { get; set; } = SortOrder.Level;
     public bool UseIdlePose { get; set; } = true;
-    public bool DrawWeaponsOnTiles { get; set; } = true;
+    /// <summary>Weapon tiles with the weapon drawn (slower: every tile plays the draw); off = on the back.</summary>
+    public bool TileWeaponsDrawn { get; set; }
+    public bool DimMissingTiles { get; set; } = true;
     /// <summary>The plugin's own UI scale on top of Dalamud's, 0.5–3.</summary>
     public float UiScale { get; set; } = 1f;
     public bool FilterColumnVisible { get; set; } = true;

@@ -34,8 +34,12 @@ public class TileStyleTests
     [Fact]
     public void ImageTint_DimsMissingOnly()
     {
-        Assert.Equal(0xFFA6A6A6u, TileStyle.ImageTint(owned: false, selected: false));
-        Assert.Equal(0xFFFFFFFFu, TileStyle.ImageTint(owned: true, selected: false));
-        Assert.Equal(0xFFFFFFFFu, TileStyle.ImageTint(owned: false, selected: true));
+        Assert.Equal(0xFFA6A6A6u, TileStyle.ImageTint(owned: false, selected: false, dim: true));
+        Assert.Equal(0xFFFFFFFFu, TileStyle.ImageTint(owned: true, selected: false, dim: true));
+        Assert.Equal(0xFFFFFFFFu, TileStyle.ImageTint(owned: false, selected: true, dim: true));
     }
+
+    [Fact]
+    public void ImageTint_DimmingOff_NeverTints()
+        => Assert.Equal(0xFFFFFFFFu, TileStyle.ImageTint(owned: false, selected: false, dim: false));
 }
