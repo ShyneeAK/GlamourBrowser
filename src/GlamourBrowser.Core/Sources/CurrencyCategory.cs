@@ -13,10 +13,9 @@ public static class CurrencyCategory
     /// <param name="tomestoneItemIds">Item ids from the TomestonesItem sheet.</param>
     public static SourceCategory From(uint currencyItemId, IReadOnlySet<uint> tomestoneItemIds)
     {
+        // Fixed lists first: they are certain, the tomestone set comes from data.
         if (currencyItemId == Gil)
             return SourceCategory.GilVendor;
-        if (tomestoneItemIds.Contains(currencyItemId))
-            return SourceCategory.Tomestones;
         if (Scrips.Contains(currencyItemId))
             return SourceCategory.Scrips;
         if (PvP.Contains(currencyItemId))
@@ -25,6 +24,8 @@ public static class CurrencyCategory
             return SourceCategory.GoldSaucer;
         if (GrandCompanySeals.Contains(currencyItemId))
             return SourceCategory.GrandCompany;
+        if (tomestoneItemIds.Contains(currencyItemId))
+            return SourceCategory.Tomestones;
         return SourceCategory.Tokens;
     }
 }

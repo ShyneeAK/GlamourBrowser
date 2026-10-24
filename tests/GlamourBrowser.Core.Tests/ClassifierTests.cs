@@ -5,7 +5,8 @@ namespace GlamourBrowser.Core.Tests;
 
 public class ClassifierTests
 {
-    private static readonly IReadOnlySet<uint> Tomestones = Enumerable.Range(23, 27).Select(i => (uint)i).ToHashSet();
+    // TomestonesItem item ids from the game data: 23, 24, 26, 28, 30–49 (25 Wolf Mark, 27 Allied Seal, 29 MGP are not tomestones).
+    private static readonly IReadOnlySet<uint> TomestoneIds = new uint[] { 23, 24, 26, 28 }.Concat(Enumerable.Range(30, 20).Select(i => (uint)i)).ToHashSet();
 
     [Theory]
     [InlineData(2u, Dungeon)]
@@ -26,7 +27,7 @@ public class ClassifierTests
     [InlineData(20u, GrandCompany)]
     [InlineData(1u, GilVendor)]
     [InlineData(26807u, Tokens)]
-    public void Currency(uint item, SourceCategory expected) => Assert.Equal(expected, CurrencyCategory.From(item, Tomestones));
+    public void Currency(uint item, SourceCategory expected) => Assert.Equal(expected, CurrencyCategory.From(item, TomestoneIds));
 
     [Theory]
     [InlineData(97u, SeasonalEvent)]
@@ -45,7 +46,7 @@ public class ClassifierTests
     public void SpecialShopCost_Type16ScripsAreScrips()
     {
         foreach (var id in new uint[] { 2, 4, 6, 7 })
-            Assert.Equal(Scrips, CurrencyCategory.From(SpecialShopCost.ResolveItemId(id, 16, OrderedTomestones), Tomestones));
+            Assert.Equal(Scrips, CurrencyCategory.From(SpecialShopCost.ResolveItemId(id, 16, OrderedTomestones), TomestoneIds));
     }
 
     [Fact]
