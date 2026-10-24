@@ -23,8 +23,8 @@ public class SourceIndexTests
     public void DuplicateSourcesAreIgnored()
     {
         var b = new SourceIndex.Builder();
-        b.Add(1, Src(SourceCategory.Raid, "Raid", "Boss 1"));
-        b.Add(1, Src(SourceCategory.Raid, "Raid", "Boss 1"));
+        b.Add(1, Src(SourceCategory.RaidSavage, "Raid", "Boss 1"));
+        b.Add(1, Src(SourceCategory.RaidSavage, "Raid", "Boss 1"));
         Assert.Single(b.Build().SourcesOf(1));
     }
 
@@ -55,20 +55,20 @@ public class SourceIndexTests
     public void Builder_MarkFailure_KeepsOtherSources()
     {
         var b = new SourceIndex.Builder();
-        b.Add(1, Src(SourceCategory.Raid));
+        b.Add(1, Src(SourceCategory.RaidSavage));
         b.MarkFailure("Quests");
         var index = b.Build();
 
         Assert.True(index.HasFailures);
         Assert.Equal(["Quests"], index.Failures);
-        Assert.Equal(new HashSet<SourceCategory> { SourceCategory.Raid }, index.CategoriesOf(1));
+        Assert.Equal(new HashSet<SourceCategory> { SourceCategory.RaidSavage }, index.CategoriesOf(1));
     }
 
     [Fact]
     public void Build_ReturnsSnapshot()
     {
         var b = new SourceIndex.Builder();
-        b.Add(1, Src(SourceCategory.Raid));
+        b.Add(1, Src(SourceCategory.RaidSavage));
         var index = b.Build();
         b.Add(1, Src(SourceCategory.PvP));
         Assert.Single(index.SourcesOf(1));

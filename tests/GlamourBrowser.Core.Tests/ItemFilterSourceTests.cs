@@ -10,7 +10,7 @@ public class ItemFilterSourceTests
 
     private static readonly Dictionary<uint, IReadOnlySet<SourceCategory>> Categories = new()
     {
-        [1] = new HashSet<SourceCategory> { SourceCategory.Raid, SourceCategory.GilVendor },
+        [1] = new HashSet<SourceCategory> { SourceCategory.RaidSavage, SourceCategory.GilVendor },
         [2] = new HashSet<SourceCategory> { SourceCategory.Crafting },
     };
 
@@ -21,14 +21,14 @@ public class ItemFilterSourceTests
     [Fact]
     public void Categories_AnyOverlapMatches()
     {
-        var filter = new FilterState { Categories = new HashSet<SourceCategory> { SourceCategory.Raid } };
+        var filter = new FilterState { Categories = new HashSet<SourceCategory> { SourceCategory.RaidSavage } };
         Assert.Equal([1u], Apply([Item(1), Item(2)], filter, id => Categories[id], null));
     }
 
     [Fact]
     public void Categories_IgnoredWhenIndexNotReady()
     {
-        var filter = new FilterState { Categories = new HashSet<SourceCategory> { SourceCategory.Raid } };
+        var filter = new FilterState { Categories = new HashSet<SourceCategory> { SourceCategory.RaidSavage } };
         Assert.Equal(2, Apply([Item(1), Item(2)], filter, null, null).Length);
     }
 

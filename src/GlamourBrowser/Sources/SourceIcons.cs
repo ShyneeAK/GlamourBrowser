@@ -19,7 +19,9 @@ public static class SourceIcons
         {
             SourceCategory.Dungeon => ContentTypeIcon(2),
             SourceCategory.Trial => ContentTypeIcon(4),
-            SourceCategory.Raid => ContentTypeIcon(5),
+            SourceCategory.RaidNormal or SourceCategory.RaidSavage => ContentTypeIcon(5),
+            SourceCategory.RaidUltimate => ContentTypeIcon(28),
+            SourceCategory.RaidAlliance => ContentTypeIcon(37),
             SourceCategory.OtherContent => ContentTypeIcon(21),
             SourceCategory.Tomestones => ItemIcon(28),
             SourceCategory.Scrips => ItemIcon(25199),
@@ -34,6 +36,9 @@ public static class SourceIcons
         };
         return Cache[category] = icon;
     }
+
+    /// <summary>The game has no own savage icon: savage uses the raid icon with a red corner the UI draws on top.</summary>
+    public static bool HasSavageMark(SourceCategory category) => category == SourceCategory.RaidSavage;
 
     public static FontAwesomeIcon Fallback(SourceCategory category) => category switch
     {

@@ -58,12 +58,12 @@ public class FilterChipsTests
     {
         var state = new FilterState
         {
-            Categories = new HashSet<SourceCategory> { SourceCategory.Raid },
+            Categories = new HashSet<SourceCategory> { SourceCategory.RaidSavage },
             Expansions = new HashSet<Expansion> { Expansion.Dawntrail },
         };
         var chips = Chips(state);
 
-        Assert.Equal(["Raid", "DT"], chips.Select(c => c.Label));
+        Assert.Equal(["Raid (Episch)", "DT"], chips.Select(c => c.Label));
         var without = chips[0].WithoutThis;
         Assert.Empty(without.Categories);
         Assert.Equal(new HashSet<Expansion> { Expansion.Dawntrail }, without.Expansions);

@@ -9,13 +9,17 @@ public class ClassifierTests
     private static readonly IReadOnlySet<uint> TomestoneIds = new uint[] { 23, 24, 26, 28 }.Concat(Enumerable.Range(30, 20).Select(i => (uint)i)).ToHashSet();
 
     [Theory]
-    [InlineData(2u, Dungeon)]
-    [InlineData(4u, Trial)]
-    [InlineData(5u, Raid)]
-    [InlineData(28u, Raid)]
-    [InlineData(37u, Raid)]
-    [InlineData(21u, OtherContent)]
-    public void Duty(uint contentType, SourceCategory expected) => Assert.Equal(expected, DutyCategory.From(contentType));
+    [InlineData(2u, 3u, "", "", Dungeon)]
+    [InlineData(4u, 3u, "", "", Trial)]
+    [InlineData(28u, 3u, "Futures Rewritten (Ultimate)", "", RaidUltimate)]
+    [InlineData(37u, 33u, "the Cloud of Darkness (Chaotic)", "", RaidAlliance)]
+    [InlineData(5u, 4u, "Jeuno: The First Walk", "", RaidAlliance)]
+    [InlineData(5u, 3u, "AAC Light-heavyweight M4 (Savage)", "", RaidSavage)]
+    [InlineData(5u, 3u, "", "Arkadion - Halbschwergewicht R4 (episch)", RaidSavage)]
+    [InlineData(5u, 3u, "AAC Light-heavyweight M4", "", RaidNormal)]
+    [InlineData(21u, 3u, "", "", OtherContent)]
+    public void Duty(uint type, uint member, string en, string de, SourceCategory expected)
+        => Assert.Equal(expected, DutyCategory.From(type, member, en, de));
 
     [Theory]
     [InlineData(28u, Tomestones)]
