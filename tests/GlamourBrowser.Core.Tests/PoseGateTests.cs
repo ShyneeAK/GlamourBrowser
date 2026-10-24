@@ -34,4 +34,8 @@ public class PoseGateTests
         Assert.Equal(PoseGateState.Wait, gate.Step(3));
         Assert.Equal(PoseGateState.Ready, gate.Step(3));
     }
+
+    [Fact]
+    public void PoseAlreadyPlaying_NoBlend_ReadyAtOnce()
+        => Assert.Equal(PoseGateState.Ready, new PoseGate(1055, blendFrames: 0, timeoutFrames: 100).Step(1055));
 }

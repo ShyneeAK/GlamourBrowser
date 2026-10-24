@@ -42,6 +42,8 @@ public sealed unsafe class RenderPool : IDisposable
         public byte? LastPose { get; set; }
         public bool PoseChanged { get; set; }
         public bool WeaponDrawn { get; set; }
+        /// <summary>The moment the view's animation is frozen at; null while it runs.</summary>
+        public ushort? FrozenAt { get; set; }
         public StanceGate? StanceGate { get; set; }
         public (TileMode Mode, ulong Hash, EquipSlot Slot)? DressedAs { get; set; }
         public bool Busy => Key != null;
@@ -196,7 +198,8 @@ public sealed unsafe class RenderPool : IDisposable
                 worker.Stopwatch.Restart();
                 // Re-dress when the slot changes too, otherwise the previous tile's item (e.g. a hat)
                 // stays on the character.
-                if (worker.DressedAs != (key.Mode, key.AppearanceHash, item.Slot))
+                var redressed = worker.DressedAs != (key.Mode, key.AppearanceHash, item.Slot);
+                if (redressed)
                 {
                     view.ApplyOutfit(appearance.Outfit, key.Mode, item.Slot);
                     worker.DressedAs = (key.Mode, key.AppearanceHash, item.Slot);
@@ -204,10 +207,16 @@ public sealed unsafe class RenderPool : IDisposable
                 view.SetItem(item.Slot, key.ItemId, key.Stain0, key.Stain1);
                 // Weapon tiles may draw the weapon: the draw animation has to finish first (StanceGate in the Pose phase).
                 view.ApplyCamera(cameraFor(item.Slot));
-                // The previous tile left the animation frozen.
-                view.SetAnimationPaused(false);
-                worker.PoseChanged = worker.LastPose != key.Pose;
+                // A view keeps its pose and frozen moment from tile to tile; only a change (or a re-dress, which may
+                // rebuild the character) lets the animation run again and waits for it in the Pose phase.
+                var weaponChanged = worker.WeaponDrawn != key.WeaponDrawn;
+                worker.PoseChanged = redressed || weaponChanged || worker.LastPose != key.Pose;
                 worker.LastPose = key.Pose;
+                if (worker.PoseChanged)
+                {
+                    view.SetAnimationPaused(false);
+                    worker.FrozenAt = null;
+                }
                 if (!view.ApplyIdlePose(key.Pose) && !poseWarned)
                 {
                     // The tile then renders in the standard pose.
@@ -217,14 +226,13 @@ public sealed unsafe class RenderPool : IDisposable
                 worker.StanceGate = null;
                 if (key.WeaponDrawn || worker.WeaponDrawn)
                 {
-                    var changed = worker.WeaponDrawn != key.WeaponDrawn;
-                    if (changed)
+                    if (weaponChanged)
                         view.SetWeaponDrawn(key.WeaponDrawn);
                     worker.WeaponDrawn = key.WeaponDrawn;
                     if (key.WeaponDrawn)
                     {
                         // The timeline playing before the draw is the reference the gate waits to see replaced.
-                        worker.StanceGate = new StanceGate(PoseBlendFrames, PoseTimeoutFrames, expectChange: changed);
+                        worker.StanceGate = new StanceGate(worker.PoseChanged ? PoseBlendFrames : 0, PoseTimeoutFrames, expectChange: weaponChanged);
                         worker.StanceGate.Step(view.BaseTimeline().Playing);
                     }
                 }
@@ -265,7 +273,7 @@ public sealed unsafe class RenderPool : IDisposable
                 }
                 if (worker.Gate.Retries > 0)
                     Plugin.Log.Verbose($"Tile {worker.Key!.Value.ItemId}: weapon visibility re-applied {worker.Gate.Retries}x");
-                worker.PoseGate = new PoseGate(PoseTimelines.For(worker.Key!.Value.Pose), PoseBlendFrames, PoseTimeoutFrames, worker.PoseChanged);
+                worker.PoseGate = new PoseGate(PoseTimelines.For(worker.Key!.Value.Pose), worker.PoseChanged ? PoseBlendFrames : 0, PoseTimeoutFrames, worker.PoseChanged);
                 worker.Phase = Phase.Pose;
                 break;
 
@@ -289,14 +297,19 @@ public sealed unsafe class RenderPool : IDisposable
                 break;
 
             case Phase.Freeze:
-                // Re-applied every frame: the game may still move the animation while the copy is prepared.
-                if (!view.FreezeAt(worker.Key!.Value.MomentMs / 1000f) && !freezeWarned)
+                // Already frozen at this moment by the previous tile: copy right away.
+                if (worker.FrozenAt != worker.Key!.Value.MomentMs)
                 {
-                    freezeWarned = true;
-                    Plugin.Log.Warning("Freezing the pose moment failed; tiles show a running animation");
+                    // Re-applied every frame: the game may still move the animation while the copy is prepared.
+                    if (!view.FreezeAt(worker.Key.Value.MomentMs / 1000f) && !freezeWarned)
+                    {
+                        freezeWarned = true;
+                        Plugin.Log.Warning("Freezing the pose moment failed; tiles show a running animation");
+                    }
+                    if (++worker.Frames < FreezeFrames)
+                        return;
+                    worker.FrozenAt = worker.Key.Value.MomentMs;
                 }
-                if (++worker.Frames < FreezeFrames)
-                    return;
                 var texture = view.GetTexture();
                 if (texture == null || texture->D3D11ShaderResourceView == null)
                 {

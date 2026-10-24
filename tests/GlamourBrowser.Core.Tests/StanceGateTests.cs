@@ -41,4 +41,8 @@ public class StanceGateTests
         Assert.False(a.WeaponDrawn);
         Assert.NotEqual(a, a with { WeaponDrawn = true });
     }
+
+    [Fact]
+    public void AlreadyDrawn_NoStability_ReadyAtOnce()
+        => Assert.Equal(PoseGateState.Ready, new StanceGate(stableFrames: 0, timeoutFrames: 100, expectChange: false).Step(901));
 }
