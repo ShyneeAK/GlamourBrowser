@@ -35,6 +35,7 @@ public sealed class Plugin : IDalamudPlugin
 
     private readonly WindowSystem windowSystem = new("GlamourBrowser");
     private readonly MainWindow mainWindow;
+    private readonly SettingsWindow settingsWindow;
     private readonly OwnershipService ownership;
     private readonly InventoryReader inventoryReader;
     private readonly RetainerReader retainerReader;
@@ -63,8 +64,13 @@ public sealed class Plugin : IDalamudPlugin
         live = new LivePreview(pool, appearance, config, CameraFor);
         browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config);
         Framework.Update += OnFrameworkUpdate;
-        mainWindow = new MainWindow(catalog, ownership, appearance, queue, cache);
+        mainWindow = new MainWindow(
+            new FilterPanel(browser, ownership),
+            new TileGrid(browser, cache, pool, ownership, live, config),
+            new DetailPanel(browser, ownership, live));
+        settingsWindow = new SettingsWindow(config, browser, pool);
         windowSystem.AddWindow(mainWindow);
+        windowSystem.AddWindow(settingsWindow);
 
         CommandManager.AddHandler(CommandName, new CommandInfo((_, _) => mainWindow.Toggle())
         {
@@ -73,7 +79,7 @@ public sealed class Plugin : IDalamudPlugin
 
         PluginInterface.UiBuilder.Draw += windowSystem.Draw;
         PluginInterface.UiBuilder.OpenMainUi += mainWindow.Toggle;
-        PluginInterface.UiBuilder.OpenConfigUi += mainWindow.Toggle;
+        PluginInterface.UiBuilder.OpenConfigUi += settingsWindow.Toggle;
     }
 
     private CameraPreset CameraFor(EquipSlot slot) => CameraPresets.Resolve(slot, config.CameraOverrides);
@@ -89,6 +95,13 @@ public sealed class Plugin : IDalamudPlugin
 
     public void Dispose()
     {
+        // Stop drawing first: the UI reads the tile textures that are released below.
+        PluginInterface.UiBuilder.Draw -= windowSystem.Draw;
+        PluginInterface.UiBuilder.OpenMainUi -= mainWindow.Toggle;
+        PluginInterface.UiBuilder.OpenConfigUi -= settingsWindow.Toggle;
+        windowSystem.RemoveAllWindows();
+        CommandManager.RemoveHandler(CommandName);
+
         Framework.Update -= OnFrameworkUpdate;
         // CharaViews must be released on the framework thread.
         Framework.RunOnFrameworkThread(() =>
@@ -98,12 +111,6 @@ public sealed class Plugin : IDalamudPlugin
             cache.Dispose();
         }).Wait();
         appearance.Dispose();
-
-        PluginInterface.UiBuilder.Draw -= windowSystem.Draw;
-        PluginInterface.UiBuilder.OpenMainUi -= mainWindow.Toggle;
-        PluginInterface.UiBuilder.OpenConfigUi -= mainWindow.Toggle;
-        windowSystem.RemoveAllWindows();
-        CommandManager.RemoveHandler(CommandName);
 
         armoireReader.Dispose();
         dresserReader.Dispose();

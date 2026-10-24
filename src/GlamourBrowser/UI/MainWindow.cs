@@ -1,77 +1,54 @@
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface.Textures;
-using Dalamud.Interface.Textures.TextureWraps;
+using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
-using GlamourBrowser.Core.Items;
-using GlamourBrowser.Core.Rendering;
-using GlamourBrowser.Ownership;
 using GlamourBrowser.Rendering;
 
 namespace GlamourBrowser.UI;
 
+/// <summary>Filters left, tile grid in the middle, details with the live preview on the right.</summary>
 public sealed class MainWindow : Window
 {
-    private readonly IReadOnlyList<GlamourItem> catalog;
-    private readonly OwnershipService ownership;
-    private readonly AppearanceTracker appearance;
-    private readonly TileQueue queue;
-    private readonly TileCache<IDalamudTextureWrap> cache;
-    private List<TileKey> testKeys = new();
+    private readonly FilterPanel filters;
+    private readonly TileGrid grid;
+    private readonly DetailPanel details;
 
-    public MainWindow(IReadOnlyList<GlamourItem> catalog, OwnershipService ownership, AppearanceTracker appearance,
-                      TileQueue queue, TileCache<IDalamudTextureWrap> cache)
+    public MainWindow(FilterPanel filters, TileGrid grid, DetailPanel details)
         : base("GlamourBrowser##GlamourBrowser")
     {
-        this.catalog = catalog;
-        this.ownership = ownership;
-        this.appearance = appearance;
-        this.queue = queue;
-        this.cache = cache;
-        SizeConstraints = new WindowSizeConstraints { MinimumSize = new Vector2(900, 600) };
+        this.filters = filters;
+        this.grid = grid;
+        this.details = details;
+        SizeConstraints = new WindowSizeConstraints { MinimumSize = new Vector2(1000, 600) };
     }
 
     public override void Draw()
     {
-        // Temporary diagnostics until the real UI (plan task 10).
-        ImGui.Text($"Katalog: {catalog.Count} Items | " + string.Join(", ", catalog.GroupBy(i => i.Slot).OrderBy(g => g.Key).Select(g => $"{g.Key} {g.Count()}")));
-
-        if (ownership.Current is { } store)
+        lock (RenderSync.Lock)
         {
-            foreach (var c in store.Containers.OrderBy(c => c.Id.Kind).ThenBy(c => c.DisplayName))
-                ImGui.Text($"{c.DisplayName}: {c.ItemIds.Count} Items, Stand {c.Seen:dd.MM. HH:mm}");
-        }
-        else
-        {
-            ImGui.Text("Nicht eingeloggt");
-        }
+            var scale = ImGuiHelpers.GlobalScale;
+            using (var child = ImRaii.Child("##filters", new Vector2(220 * scale, 0), true))
+            {
+                if (child.Success)
+                    filters.Draw();
+            }
 
-        ImGui.Separator();
-        if (ImGui.Button("Test-Raster"))
-            Plugin.Framework.RunOnFrameworkThread(StartTestGrid);
-        ImGui.SameLine();
-        ImGui.Text($"Warteschlange: {queue.Count} | Cache: {cache.Count}");
+            ImGui.SameLine();
+            var detailWidth = 340 * scale;
+            var gridWidth = ImGui.GetContentRegionAvail().X - detailWidth - ImGui.GetStyle().ItemSpacing.X;
+            using (var child = ImRaii.Child("##grid", new Vector2(gridWidth, 0), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
+            {
+                if (child.Success)
+                    grid.Draw();
+            }
 
-        for (var i = 0; i < testKeys.Count; i++)
-        {
-            if (i % 9 != 0)
-                ImGui.SameLine();
-            var size = new Vector2(96, 160);
-            if (cache.TryGet(testKeys[i], out var texture) && texture != null)
-                ImGui.Image(texture.Handle, size);
-            else
-                ImGui.Image(Plugin.TextureProvider.GetFromGameIcon(new GameIconLookup(catalog.First(c => c.Id == testKeys[i].ItemId).IconId)).GetWrapOrEmpty().Handle, new Vector2(96, 96));
+            ImGui.SameLine();
+            using (var child = ImRaii.Child("##details", new Vector2(detailWidth, 0), true))
+            {
+                if (child.Success)
+                    details.Draw();
+            }
         }
-    }
-
-    private void StartTestGrid()
-    {
-        testKeys = catalog.Where(i => i.Slot == EquipSlot.Body).Take(18)
-            .Select(i => new TileKey(i.Id, 0, 0, TileMode.CurrentOutfit, appearance.Hash, 192))
-            .ToList();
-        cache.Retain(testKeys.ToHashSet());
-        queue.SetRequests(testKeys.Where(k => !cache.TryGet(k, out _)), []);
     }
 }
