@@ -34,53 +34,9 @@ public sealed class TopBar
     public void Draw()
     {
         var scale = ImGuiHelpers.GlobalScale;
+        var spacing = ImGui.GetStyle().ItemSpacing.X;
 
-        // Follow external changes (e.g. a removed search chip) unless the user is typing.
-        if (!searchActive)
-            search = state.Filter.SearchText;
-        ImGui.SetNextItemWidth(180 * scale);
-        if (ImGui.InputTextWithHint("##search", "Suchen …", ref search, 100))
-            state.Filter = state.Filter with { SearchText = search };
-        searchActive = ImGui.IsItemActive();
-
-        ImGui.SameLine();
-        var jobLabel = state.Filter.ClassJobId is { } id ? jobs.Find(id)?.Abbreviation ?? "Job" : "Job";
-        PopupButton.Draw("jobpicker", jobLabel, () =>
-        {
-            var selected = state.Filter.ClassJobId;
-            if (JobPicker.Draw("jobs", jobs, ref selected, theme))
-                state.Filter = state.Filter with { ClassJobId = selected };
-        });
-
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(130 * scale);
-        var mode = (int)config.TileMode;
-        if (ImGui.Combo("##mode", ref mode, ["Aktuelles Outfit", "Unterwäsche"], 2))
-            state.SetTileMode((TileMode)mode);
-
-        ImGui.SameLine();
-        var columns = config.Columns;
-        var rows = config.Rows;
-        ImGui.SetNextItemWidth(80 * scale);
-        var gridChanged = ImGui.SliderInt("##columns", ref columns, 2, 10, "%d Spalten", ImGuiSliderFlags.AlwaysClamp);
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(80 * scale);
-        gridChanged |= ImGui.SliderInt("##rows", ref rows, 1, 6, "%d Zeilen", ImGuiSliderFlags.AlwaysClamp);
-        if (gridChanged)
-            state.SetGrid(columns, rows);
-
-        ImGui.SameLine();
-        if (ImGui.ArrowButton("##prev", ImGuiDir.Left))
-            state.PreviousPage();
-        ImGui.SameLine();
-        ImGui.TextUnformatted($"{state.PageIndex + 1} / {state.PageCount}");
-        ImGui.SameLine();
-        if (ImGui.ArrowButton("##next", ImGuiDir.Right))
-            state.NextPage();
-        ImGui.SameLine();
-        ImGui.TextDisabled($"{state.Results.Count} Treffer");
-
-        ImGui.SameLine();
+        // The filter-column toggle comes first so it can never be pushed out of a narrow window.
         if (ImGuiComponents.IconButton("##filtercolumn", FontAwesomeIcon.Filter))
         {
             config.FilterColumnVisible = !config.FilterColumnVisible;
@@ -89,7 +45,65 @@ public sealed class TopBar
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(config.FilterColumnVisible ? "Filterspalte ausblenden" : "Filterspalte einblenden");
 
+        // Follow external changes (e.g. a removed search chip) unless the user is typing.
+        if (!searchActive)
+            search = state.Filter.SearchText;
+        NextOnLine(180 * scale);
+        ImGui.SetNextItemWidth(180 * scale);
+        if (ImGui.InputTextWithHint("##search", "Suchen …", ref search, 100))
+            state.Filter = state.Filter with { SearchText = search };
+        searchActive = ImGui.IsItemActive();
+
+        var jobLabel = state.Filter.ClassJobId is { } id ? jobs.Find(id)?.Abbreviation ?? "Job" : "Job";
+        NextOnLine(ImGui.CalcTextSize(jobLabel).X + ImGui.GetStyle().FramePadding.X * 2);
+        PopupButton.Draw("jobpicker", jobLabel, () =>
+        {
+            var selected = state.Filter.ClassJobId;
+            if (JobPicker.Draw("jobs", jobs, ref selected, theme))
+                state.Filter = state.Filter with { ClassJobId = selected };
+        });
+
+        NextOnLine(130 * scale);
+        ImGui.SetNextItemWidth(130 * scale);
+        var mode = (int)config.TileMode;
+        if (ImGui.Combo("##mode", ref mode, ["Aktuelles Outfit", "Unterwäsche"], 2))
+            state.SetTileMode((TileMode)mode);
+
+        var columns = config.Columns;
+        var rows = config.Rows;
+        NextOnLine(160 * scale + spacing);
+        ImGui.SetNextItemWidth(80 * scale);
+        var gridChanged = ImGui.SliderInt("##columns", ref columns, 2, 10, "%d Spalten", ImGuiSliderFlags.AlwaysClamp);
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(80 * scale);
+        gridChanged |= ImGui.SliderInt("##rows", ref rows, 1, 6, "%d Zeilen", ImGuiSliderFlags.AlwaysClamp);
+        if (gridChanged)
+            state.SetGrid(columns, rows);
+
+        // Paging and hits stay together as one unit.
+        var pageText = $"Seite {state.PageIndex + 1} / {state.PageCount}";
+        var hitsText = $"{state.Results.Count} Treffer";
+        var arrow = ImGui.GetFrameHeight();
+        NextOnLine(arrow * 2 + ImGui.CalcTextSize(pageText).X + ImGui.CalcTextSize(hitsText).X + spacing * 3);
+        if (ImGui.ArrowButton("##prev", ImGuiDir.Left))
+            state.PreviousPage();
+        ImGui.SameLine();
+        ImGui.TextUnformatted(pageText);
+        ImGui.SameLine();
+        if (ImGui.ArrowButton("##next", ImGuiDir.Right))
+            state.NextPage();
+        ImGui.SameLine();
+        ImGui.TextDisabled(hitsText);
+
         DrawChips();
+    }
+
+    /// <summary>Continues on the current line when <paramref name="width"/> still fits, otherwise starts a new one.</summary>
+    private static void NextOnLine(float width)
+    {
+        ImGui.SameLine();
+        if (ImGui.GetContentRegionAvail().X < width)
+            ImGui.NewLine();
     }
 
     private void DrawChips()
@@ -113,7 +127,7 @@ public sealed class TopBar
                 state.Filter = chips[i].WithoutThis;
         }
 
-        ImGui.SameLine();
+        NextOnLine(ImGui.CalcTextSize("Alle zurücksetzen").X + ImGui.GetStyle().FramePadding.X * 2);
         if (ImGui.SmallButton("Alle zurücksetzen"))
             state.Filter = new FilterState();
     }
