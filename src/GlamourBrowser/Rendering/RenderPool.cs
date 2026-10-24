@@ -28,12 +28,12 @@ public sealed unsafe class RenderPool : IDisposable
     // Upper bound for waiting until only one body animation carries weight (the blend has finished).
     private const int BlendTimeoutFrames = 90;
     // Drawing a weapon: wait at least this long if no timeline change is seen, until the timelines are stable, at most the timeout.
-    private const int DrawMinFrames = 30;
-    private const int DrawStableFrames = 10;
+    private const int DrawMinFrames = 8;
+    private const int DrawStableFrames = 6;
     private const int DrawTimeoutFrames = 120;
     // When the weapon is still not in hand, sheathe and draw again every this many frames, at most MaxDrawRetries times.
-    private const int DrawRetryFrames = 12;
-    private const int MaxDrawRetries = 3;
+    private const int DrawRetryFrames = 20;
+    private const int MaxDrawRetries = 2;
     private static readonly TimeSpan IdleRelease = TimeSpan.FromSeconds(5);
 
     private enum Phase { WaitReady, Apply, Loading, Settle, Pose, Blend, Freeze, Copy }
@@ -74,7 +74,7 @@ public sealed unsafe class RenderPool : IDisposable
     private bool freezeWarned;
     private int weaponDiagnosticsBudget = 12;
     private int blendDiagnosticsBudget = 6;
-    private int weaponStateBudget = 4;
+    private int weaponStateBudget = 9;
 
     public RenderPool(TileQueue queue, TileCache<IDalamudTextureWrap> cache, Func<uint, GlamourItem?> lookup,
                       AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor)
@@ -209,14 +209,17 @@ public sealed unsafe class RenderPool : IDisposable
 
                 worker.Key = key;
                 worker.Stopwatch.Restart();
-                // Sheathe while the view is still idle: once SetItem has started loading, the game ignores the toggle,
-                // its own state stays "drawn" and drawing again after the load would change nothing.
-                var sheathed = key.WeaponDrawn || worker.WeaponDrawn;
-                if (sheathed)
+                // The game keeps a drawn weapon drawn across item loads (the new weapon comes into the hand by itself),
+                // so weapon tiles never sheathe; only leaving weapon tiles sheathes. Weapon tiles always let the
+                // animation run, the weapon is attached to the hand by the animation.
+                var sheathed = !key.WeaponDrawn && worker.WeaponDrawn;
+                if (sheathed || key.WeaponDrawn)
                 {
-                    // The previous tile may have left the animation frozen; unfreeze before sheathing.
                     view.SetAnimationPaused(false);
                     worker.Frozen = false;
+                }
+                if (sheathed)
+                {
                     view.SetWeaponDrawn(false);
                     worker.WeaponDrawn = false;
                 }
@@ -269,7 +272,8 @@ public sealed unsafe class RenderPool : IDisposable
                 {
                     if (weaponStateBudget > 0)
                         Plugin.Log.Information($"[wstate] tile {worker.Key.Value.ItemId} before draw: {view.DescribeState()}");
-                    view.SetWeaponDrawn(true);
+                    if (!view.IsWeaponInHand())
+                        view.SetWeaponDrawn(true);
                     worker.WeaponDrawn = true;
                     worker.DrawRetries = 0;
                     worker.DrawGate = new DrawGate(DrawMinFrames, DrawStableFrames, DrawTimeoutFrames);
@@ -304,7 +308,7 @@ public sealed unsafe class RenderPool : IDisposable
 
             case Phase.Pose:
                 var (playing, overridden) = view.BaseTimeline();
-                if (worker.DrawGate != null && !view.IsWeaponDrawn() && worker.DrawRetries < MaxDrawRetries)
+                if (worker.DrawGate != null && !view.IsWeaponInHand() && worker.DrawRetries < MaxDrawRetries)
                 {
                     // The draw did not take: sheathe on one frame, draw again on the next.
                     var phase = (worker.DrawGate.Frames + 1) % DrawRetryFrames;
@@ -316,7 +320,7 @@ public sealed unsafe class RenderPool : IDisposable
                         worker.DrawRetries++;
                     }
                 }
-                var poseState = worker.DrawGate?.Step(view.TimelineSignature(), view.BodyBlend().Active, view.IsWeaponDrawn()) ?? worker.PoseGate!.Step(playing);
+                var poseState = worker.DrawGate?.Step(view.TimelineSignature(), view.BodyBlend().Active, view.IsWeaponInHand()) ?? worker.PoseGate!.Step(playing);
                 if (worker.DrawGate is { Frames: 1 or 15 } && weaponStateBudget > 0)
                     Plugin.Log.Information($"[wstate] tile {worker.Key!.Value.ItemId} draw +{worker.DrawGate.Frames}: {view.DescribeState()}");
                 if (worker.DrawGate != null && poseState != PoseGateState.Wait && weaponStateBudget > 0)

@@ -37,6 +37,7 @@ public sealed unsafe class CharaViewHandle : IDisposable
     /// Found by comparing both views with /gbrowser diag.
     /// </summary>
     private const byte WeaponHiddenStateBit = 0x08;
+    private const byte WeaponInHandBit = 0x04;
     private const ushort ClientObjectBase = 240;
 
     private CharaView* view;
@@ -201,11 +202,14 @@ public sealed unsafe class CharaViewHandle : IDisposable
 
     public (int Active, string Weights) BodyBlend() => view != null ? AnimationFreeze.BodyBlend(view->GetCharacter()) : (0, "");
 
-    /// <summary>Whether the weapon is really in hand (DrawData.Flags2 bit 0x04, as the game's try-on window shows it).</summary>
-    public bool IsWeaponDrawn()
+    /// <summary>
+    /// Whether the weapon is really in hand: DrawData.Flags2 bit 0x04 (set in the game's try-on window with a drawn
+    /// weapon). Character.IsWeaponDrawn turns true earlier, while the weapon still hangs on the back.
+    /// </summary>
+    public bool IsWeaponInHand()
     {
         var character = view != null ? view->GetCharacter() : null;
-        return character != null && character->IsWeaponDrawn;
+        return character != null && (character->DrawData.Flags2 & WeaponInHandBit) != 0;
     }
 
     /// <summary>A hash over all timeline slots of the character, to see when its animations stop changing.</summary>
