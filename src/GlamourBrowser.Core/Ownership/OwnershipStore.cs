@@ -12,13 +12,24 @@ public sealed class OwnershipStore(ulong contentId)
 
     public event Action? Changed;
 
-    /// <summary>Replaces everything previously known about this container.</summary>
-    public void ReplaceContainer(ContainerSnapshot snapshot)
+    /// <summary>
+    /// Replaces everything previously known about this container. Returns false (and stays quiet) when
+    /// only the read time moved: same name and the same items, in any order.
+    /// </summary>
+    public bool ReplaceContainer(ContainerSnapshot snapshot)
     {
+        var changed = !containers.TryGetValue(snapshot.Id, out var old) || !SameContent(old, snapshot);
         containers[snapshot.Id] = snapshot;
+        if (!changed)
+            return false;
+
         RebuildIndex();
         Changed?.Invoke();
+        return true;
     }
+
+    private static bool SameContent(ContainerSnapshot a, ContainerSnapshot b)
+        => a.DisplayName == b.DisplayName && a.ItemIds.Order().SequenceEqual(b.ItemIds.Order());
 
     public bool IsOwned(uint itemId) => index.ContainsKey(itemId);
 

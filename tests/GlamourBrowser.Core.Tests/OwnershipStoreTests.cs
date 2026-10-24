@@ -46,6 +46,36 @@ public class OwnershipStoreTests
     }
 
     [Fact]
+    public void ReplaceContainer_SameItemsInOtherOrder_IsUnchangedAndQuiet()
+    {
+        var store = new OwnershipStore(1);
+        Assert.True(store.ReplaceContainer(Snap(ContainerKind.Inventory, "", "Inventar", 1, 2, 2)));
+        var raised = 0;
+        store.Changed += () => raised++;
+
+        var later = new ContainerSnapshot(new ContainerId(ContainerKind.Inventory, ""), "Inventar", Now.AddHours(1), [2, 1, 2]);
+        Assert.False(store.ReplaceContainer(later));
+        Assert.Equal(0, raised);
+        Assert.Equal(Now.AddHours(1), store.Containers.Single().Seen);
+    }
+
+    [Fact]
+    public void ReplaceContainer_DifferentItems_IsChanged()
+    {
+        var store = new OwnershipStore(1);
+        store.ReplaceContainer(Snap(ContainerKind.Inventory, "", "Inventar", 1, 2));
+        Assert.True(store.ReplaceContainer(Snap(ContainerKind.Inventory, "", "Inventar", 1, 3)));
+    }
+
+    [Fact]
+    public void ReplaceContainer_RenamedRetainer_IsChanged()
+    {
+        var store = new OwnershipStore(1);
+        store.ReplaceContainer(Snap(ContainerKind.Retainer, "11", "Gehilfe Mira", 7));
+        Assert.True(store.ReplaceContainer(Snap(ContainerKind.Retainer, "11", "Gehilfe Kai", 7)));
+    }
+
+    [Fact]
     public void Changed_RaisedOnReplace()
     {
         var store = new OwnershipStore(1);
