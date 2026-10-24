@@ -33,6 +33,9 @@ public sealed unsafe class LivePane
     private readonly SourceService sources;
     private readonly HashSet<(uint Item, SourceCategory Category)> expanded = new();
     private const int SourcesPerCategory = 3;
+    private const uint MapIcon = 60561;        // map flag
+    private const uint DutyFinderIcon = 46;    // main menu: duty finder
+    private const uint RecipeIcon = 22;        // main menu: crafting log
 
     public LivePane(BrowserState state, OwnershipService ownership, LivePreview live, CalibrationService calibration, JobCatalog jobs, Theme.Theme theme,
                     SourceService sources)
@@ -147,30 +150,31 @@ public sealed unsafe class LivePane
         ImGui.BeginGroup();
         ImGui.TextWrapped(item.Name);
         var patch = sources.IsReady ? sources.Index.PatchOf(item.Id) : 0;
-        ImGui.TextDisabled($"Level {item.LevelEquip} · {DyeText(item.DyeCount)}" + (patch > 0 ? $" · Patch {patch:0.0#}" : ""));
+        ImGui.TextDisabled($"Level {item.LevelEquip}" + (patch > 0 ? $" · Patch {patch:0.0#}" : ""));
         ImGui.EndGroup();
+
+        DrawTraits(item);
 
         DrawJobs(item);
         DrawLocations(ownership, item);
 
         ImGui.Separator();
-        if (ImGui.Button("Anprobe"))
+        if (IconButton.Draw("##tryon", 0, FontAwesomeIcon.Tshirt, "Anprobe", theme))
             Plugin.Framework.RunOnFrameworkThread(() => AgentTryon.TryOn(0, item.Id));
         ImGui.SameLine();
-        if (ImGui.Button("Chat-Link"))
+        if (IconButton.Draw("##chatlink", 0, FontAwesomeIcon.CommentDots, "Chat-Link: schreibt einen Item-Link in deinen eigenen Chat und kopiert den Namen.", theme))
         {
             Plugin.ChatGui.Print(new SeStringBuilder().AddText("GlamourBrowser: ").AddItemLink(item.Id, false).Build());
             ImGui.SetClipboardText(item.Name);
         }
-        if (ImGui.IsItemHovered())
-            ImGui.SetTooltip("Schreibt einen Item-Link in deinen eigenen Chat und kopiert den Namen.");
-
-        if (ImGui.Button(live.WeaponDrawn ? "Waffe wegstecken" : "Waffe ziehen"))
+        ImGui.SameLine();
+        if (IconButton.Draw("##draw", 0, FontAwesomeIcon.FistRaised, live.WeaponDrawn ? "Waffe wegstecken" : "Waffe ziehen", theme))
             live.WeaponDrawn = !live.WeaponDrawn;
         ImGui.SameLine();
-        if (ImGui.Button(live.WeaponVisible ? "Waffe ausblenden" : "Waffe anzeigen"))
+        if (IconButton.Draw("##weaponvisible", 0, live.WeaponVisible ? FontAwesomeIcon.EyeSlash : FontAwesomeIcon.Eye,
+                live.WeaponVisible ? "Waffe ausblenden" : "Waffe anzeigen", theme))
             live.WeaponVisible = !live.WeaponVisible;
-
+        ImGui.SameLine();
         DrawCalibration(item);
 
         ImGui.Separator();
@@ -193,7 +197,9 @@ public sealed unsafe class LivePane
         var iconSize = new Vector2(ImGui.GetTextLineHeight());
         foreach (var group in all.GroupBy(s => s.Category).OrderBy(g => g.Key))
         {
-            GameIcon.Draw(SourceIcons.IconFor(group.Key), iconSize, SourceIcons.Fallback(group.Key), theme.Colors.TextMuted);
+            var iconMin = ImGui.GetCursorScreenPos();
+            ImGui.Dummy(iconSize);
+            TileGrid.DrawSourceIcon(ImGui.GetWindowDrawList(), group.Key, iconMin, iconSize.X, theme.Colors.TextMuted);
             ImGui.SameLine();
             ImGui.TextUnformatted(SourceCategories.DisplayName(group.Key));
 
@@ -211,11 +217,15 @@ public sealed unsafe class LivePane
         }
 
         ImGui.Spacing();
-        if (ImGui.SmallButton("Garland Tools"))
+        if (IconButton.Draw("##garland", 0, FontAwesomeIcon.ExternalLinkAlt, "Garland Tools", theme))
             Util.OpenLink($"https://www.garlandtools.org/db/#item/{item.Id}");
         ImGui.SameLine();
-        if (ImGui.SmallButton("Teamcraft"))
+        ImGui.TextDisabled("Garland");
+        ImGui.SameLine();
+        if (IconButton.Draw("##teamcraft", 0, FontAwesomeIcon.ExternalLinkAlt, "Teamcraft", theme))
             Util.OpenLink($"https://ffxivteamcraft.com/db/de/item/{item.Id}");
+        ImGui.SameLine();
+        ImGui.TextDisabled("Teamcraft");
     }
 
     private void DrawSource(ItemSource source, string id)
@@ -233,17 +243,18 @@ public sealed unsafe class LivePane
             ImGui.TextUnformatted(source.CostAmount.ToString("N0"));
         }
 
-        var label = source.Action switch
+        (uint Icon, FontAwesomeIcon Fallback, string Tooltip)? button = source.Action switch
         {
-            MapFlag => "Karte",
-            DutyFinder => "Inhaltssuche",
-            OpenRecipe => "Rezept",
+            MapFlag => (MapIcon, FontAwesomeIcon.MapMarkerAlt, "Karte"),
+            DutyFinder => (DutyFinderIcon, FontAwesomeIcon.Search, "Inhaltssuche"),
+            OpenRecipe => (RecipeIcon, FontAwesomeIcon.Book, "Rezept"),
+            OpenStore => (0u, FontAwesomeIcon.ShoppingCart, "Mogstation"),
             _ => null,
         };
-        if (label == null)
+        if (button is not { } b)
             return;
         ImGui.SameLine();
-        if (ImGui.SmallButton($"{label}##{id}"))
+        if (IconButton.Draw($"##action{id}", b.Icon, b.Fallback, b.Tooltip, theme, ImGui.GetTextLineHeight() + 4))
             Run(source.Action!);
     }
 
@@ -260,6 +271,9 @@ public sealed unsafe class LivePane
                         break;
                     case DutyFinder duty:
                         AgentContentsFinder.Instance()->OpenRegularDuty(duty.ContentFinderConditionId);
+                        break;
+                    case OpenStore store:
+                        Util.OpenLink(StoreLinks.ProductUrl(store.StoreId));
                         break;
                     case OpenRecipe recipe:
                         AgentRecipeNote.Instance()->OpenRecipeByRecipeId(recipe.RecipeId);
@@ -299,22 +313,24 @@ public sealed unsafe class LivePane
         var contentId = Plugin.PlayerState.ContentId;
         var slotName = SlotNames.All.FirstOrDefault(s => s.Slot == item.Slot).Name ?? item.Slot.ToString();
 
-        if (ImGui.Button($"Kamera-Position festlegen für ({slotName})") && live.CaptureCamera() is { } preset)
+        if (IconButton.Draw("##calibrate", 0, FontAwesomeIcon.Camera, $"Kamera-Position festlegen für ({slotName})", theme)
+            && live.CaptureCamera() is { } preset)
         {
             calibration.Set(contentId, item.Slot, preset);
             state.InvalidateTiles();
         }
 
-        if (calibration.Get(contentId, item.Slot) == null)
+        var calibrated = calibration.Get(contentId, item.Slot) != null;
+        if (calibrated)
         {
-            ImGui.TextDisabled($"{slotName}: Standardansicht");
-            return;
+            ImGui.SameLine();
+            if (IconButton.Draw("##calibration-reset", 0, FontAwesomeIcon.Undo, $"Kamera-Position für ({slotName}) zurücksetzen", theme)
+                && calibration.Remove(contentId, item.Slot))
+                state.InvalidateTiles();
         }
-
         ImGui.SameLine();
-        if (ImGui.Button("Zurücksetzen##calibration") && calibration.Remove(contentId, item.Slot))
-            state.InvalidateTiles();
-        ImGui.TextDisabled($"{slotName}: kalibriert");
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextDisabled(calibrated ? $"{slotName}: kalibriert" : $"{slotName}: Standardansicht");
     }
 
     public static void DrawLocations(OwnershipService ownership, GlamourItem item)
@@ -327,6 +343,26 @@ public sealed unsafe class LivePane
         }
         foreach (var l in locations)
             ImGui.TextUnformatted($"Fundort: {l.DisplayName} (Stand {l.Seen:dd.MM. HH:mm})");
+    }
+
+    /// <summary>Dye channels and tradability with icons, matching the tile's trait icons.</summary>
+    private void DrawTraits(GlamourItem item)
+    {
+        var colors = theme.Colors;
+        var size = new Vector2(ImGui.GetTextLineHeight());
+        GameIcon.Draw(0, size, FontAwesomeIcon.PaintBrush, item.DyeCount > 0 ? colors.Text : colors.TextMuted);
+        ImGui.SameLine();
+        ImGui.TextUnformatted(item.DyeCount > 0 ? $"Färbbar ({DyeText(item.DyeCount)})" : "Nicht färbbar");
+        ImGui.SameLine();
+        var (glyph, text) = item.Trade switch
+        {
+            Tradability.Marketable => (FontAwesomeIcon.Store, "Marktbrett"),
+            Tradability.Tradable => (FontAwesomeIcon.ExchangeAlt, "Handelbar"),
+            _ => (FontAwesomeIcon.Lock, "Gebunden"),
+        };
+        GameIcon.Draw(0, size, glyph, colors.TextMuted);
+        ImGui.SameLine();
+        ImGui.TextUnformatted(text);
     }
 
     private static string DyeText(int count) => count switch
