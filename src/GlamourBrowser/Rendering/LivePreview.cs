@@ -42,6 +42,25 @@ public sealed unsafe class LivePreview : IDisposable
 
     public void Select(GlamourItem? item) => Selected = item;
 
+    /// <summary>Moment and length of the live view's animation, read every frame; null while there is none.</summary>
+    public (float Time, float Duration)? Animation { get; private set; }
+
+    /// <summary>The moment the live view is frozen at, or null while it plays.</summary>
+    public float? PausedAt { get; private set; }
+
+    private bool resume;
+
+    public void Pause() => PausedAt = Animation?.Time ?? 0;
+
+    public void Play()
+    {
+        PausedAt = null;
+        resume = true;
+    }
+
+    /// <summary>Freezes the live view at <paramref name="seconds"/>.</summary>
+    public void Seek(float seconds) => PausedAt = seconds;
+
     public void QueueRotate(float dx, float dy)
     {
         rotateX += dx;
@@ -132,6 +151,16 @@ public sealed unsafe class LivePreview : IDisposable
             view.SetWeaponDrawn(WeaponDrawn);
             appliedWeaponDrawn = WeaponDrawn;
             appliedWeaponVisible = null;
+        }
+
+        if (view.State == CharaViewHandle.StateReady)
+        {
+            if (PausedAt is { } moment)
+                view.FreezeAt(moment);
+            else if (resume)
+                view.SetAnimationPaused(false);
+            resume = false;
+            Animation = view.ReadAnimation();
         }
 
         ApplyCameraInput(view);
