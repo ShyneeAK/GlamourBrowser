@@ -20,6 +20,14 @@ public sealed class SourceIndexBuilder(GameData data, IReadOnlySet<uint> relevan
             Run(builder, "Staatliche Gesellschaft", () => ShopSources.AddGrandCompany(builder, data, npcs, relevantItems));
             Run(builder, "Spezialshops", () => ShopSources.AddSpecialShops(builder, data, npcs, relevantItems));
         }
+        Run(builder, "Inhalte", () => ContentSources.AddDuties(builder, data, relevantItems, log));
+        Run(builder, "Quests", () => QuestSources.AddQuests(builder, data, relevantItems));
+        Run(builder, "Errungenschaften", () => QuestSources.AddAchievements(builder, data, relevantItems));
+        Run(builder, "Relikte", () => QuestSources.AddRelics(builder, data, relevantItems, log));
+        Run(builder, "Handwerk", () => MiscSources.AddRecipes(builder, data, relevantItems));
+        Run(builder, "Mogstation", () => MiscSources.AddMogStation(builder, data, relevantItems, log));
+        Run(builder, "Sonstiges", () => MiscSources.AddMisc(builder, data, relevantItems, log));
+        Run(builder, "Patches", () => MiscSources.AddPatches(builder, data, relevantItems, log));
         return builder.Build();
     }
 
