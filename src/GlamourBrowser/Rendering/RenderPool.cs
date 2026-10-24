@@ -25,9 +25,11 @@ public sealed unsafe class RenderPool : IDisposable
     private const int PoseTimeoutFrames = 180;
     // Frames the frozen moment is held (and re-applied) before the copy.
     private const int FreezeFrames = 3;
+    // Upper bound for waiting until only one body animation carries weight (the blend has finished).
+    private const int BlendTimeoutFrames = 90;
     private static readonly TimeSpan IdleRelease = TimeSpan.FromSeconds(5);
 
-    private enum Phase { WaitReady, Apply, Loading, Settle, Pose, Freeze, Copy }
+    private enum Phase { WaitReady, Apply, Loading, Settle, Pose, Blend, Freeze, Copy }
 
     private sealed class Worker(CharaViewHandle view)
     {
@@ -63,6 +65,7 @@ public sealed unsafe class RenderPool : IDisposable
     private int poseDiagnosticsBudget = 6;
     private bool freezeWarned;
     private int weaponDiagnosticsBudget = 12;
+    private int blendDiagnosticsBudget = 6;
 
     public RenderPool(TileQueue queue, TileCache<IDalamudTextureWrap> cache, Func<uint, GlamourItem?> lookup,
                       AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor)
@@ -321,6 +324,21 @@ public sealed unsafe class RenderPool : IDisposable
                 {
                     poseWarned = true;
                     Plugin.Log.Warning($"Idle pose {worker.Key!.Value.Pose} did not start playing; tiles may show the standard pose");
+                }
+                worker.Frames = 0;
+                // After a change the blend from the previous animation has to finish before freezing.
+                worker.Phase = worker.PoseChanged ? Phase.Blend : Phase.Freeze;
+                break;
+
+            case Phase.Blend:
+                var blend = view.BodyBlend();
+                worker.Frames++;
+                if (blend.Active > 1 && worker.Frames <= BlendTimeoutFrames)
+                    return;
+                if (blendDiagnosticsBudget > 0)
+                {
+                    blendDiagnosticsBudget--;
+                    Plugin.Log.Information($"[blend] tile {worker.Key!.Value.ItemId}: {blend.Active} active ({blend.Weights}) after {worker.Frames} frames{(worker.Frames > BlendTimeoutFrames ? ", timeout" : "")}");
                 }
                 worker.Frames = 0;
                 worker.Phase = Phase.Freeze;

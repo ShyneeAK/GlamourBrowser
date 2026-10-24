@@ -199,6 +199,8 @@ public sealed unsafe class CharaViewHandle : IDisposable
 
     public bool SetAnimationPaused(bool paused) => view != null && AnimationFreeze.SetPaused(view->GetCharacter(), paused);
 
+    public (int Active, string Weights) BodyBlend() => view != null ? AnimationFreeze.BodyBlend(view->GetCharacter()) : (0, "");
+
     /// <summary>Whether the view's character has its weapon drawn right now.</summary>
     public bool IsWeaponDrawn()
     {

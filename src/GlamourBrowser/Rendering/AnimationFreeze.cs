@@ -25,6 +25,24 @@ public static unsafe class AnimationFreeze
     public static bool SetPaused(Character* character, bool paused)
         => ForEachControl(character, control => control->PlaybackSpeed = paused ? 0f : 1f);
 
+    /// <summary>
+    /// Body animations (first partial skeleton) that still carry weight: more than one means a blend from the
+    /// previous animation is still running. Also returns the weights for diagnostics.
+    /// </summary>
+    public static (int Active, string Weights) BodyBlend(Character* character)
+    {
+        var active = 0;
+        var weights = new System.Collections.Generic.List<string>();
+        ForEachControl(character, control =>
+        {
+            var weight = control->hkaAnimationControl.Weight;
+            weights.Add(weight.ToString("0.00"));
+            if (weight > 0.01f)
+                active++;
+        }, bodyOnly: true);
+        return (active, string.Join("/", weights));
+    }
+
     private static float Duration(hkaDefaultAnimationControl* control)
     {
         var binding = control->hkaAnimationControl.Binding.ptr;
@@ -33,7 +51,7 @@ public static unsafe class AnimationFreeze
         return binding->Animation.ptr->Duration;
     }
 
-    private static bool ForEachControl(Character* character, ControlAction action)
+    private static bool ForEachControl(Character* character, ControlAction action, bool bodyOnly = false)
     {
         if (character == null)
             return false;
@@ -44,7 +62,8 @@ public static unsafe class AnimationFreeze
                 return false;
             var skeleton = drawObject->Skeleton;
             var any = false;
-            for (var i = 0; i < skeleton->PartialSkeletonCount; i++)
+            var partials = bodyOnly ? Math.Min(1, (int)skeleton->PartialSkeletonCount) : skeleton->PartialSkeletonCount;
+            for (var i = 0; i < partials; i++)
             {
                 var animated = skeleton->PartialSkeletons[i].GetHavokAnimatedSkeleton(0);
                 if (animated == null)
