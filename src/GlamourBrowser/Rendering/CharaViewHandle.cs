@@ -262,14 +262,25 @@ public sealed unsafe class CharaViewHandle : IDisposable
     }
 
     /// <summary>
-    /// Forgets the view without releasing it: the game has taken over the slot, and Release
-    /// would delete the game's object. Leaks one CharaView allocation.
+    /// Cleans up a view that was set aside while the game's party portraits were active. If our object is
+    /// still in the slot, the game never took it and a normal release is right. If the slot is empty, the
+    /// game used it and already deleted the object; then only our CharaView memory is freed (its camera
+    /// objects leak, Release would touch the slot again).
     /// </summary>
-    public void Abandon()
+    public void ReleaseAfterConflict()
     {
         if (view == null)
             return;
-        Plugin.Log.Warning($"CharaView on slot {Index} abandoned (slot taken by the game)");
+
+        if (!IsSlotFree(Index))
+        {
+            Dispose();
+            return;
+        }
+
+        Plugin.Log.Warning($"CharaView on slot {Index} was taken over by the game; freeing without release");
+        view->Dtor(0);
+        IMemorySpace.Free(view);
         view = null;
     }
 

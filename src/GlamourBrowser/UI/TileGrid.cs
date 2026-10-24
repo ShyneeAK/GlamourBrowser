@@ -48,6 +48,9 @@ public sealed class TileGrid
             return;
         }
 
+        if (pool.Status is { } status)
+            ImGui.TextColored(new Vector4(1f, 0.8f, 0.3f, 1f), status);
+
         var avail = ImGui.GetContentRegionAvail();
         var spacing = ImGui.GetStyle().ItemSpacing.X;
         var label = ImGui.GetTextLineHeightWithSpacing();

@@ -43,6 +43,7 @@ public sealed unsafe class RenderPool : IDisposable
     private readonly AppearanceTracker appearance;
     private readonly Func<EquipSlot, CameraPreset?> cameraFor;
     private readonly List<Worker> workers = new();
+    private readonly List<CharaViewHandle> suspended = new();
     private readonly Dictionary<TileKey, string> failures = new();
     private DateTime lastWork = DateTime.UtcNow;
     private bool liveReserved;
@@ -65,6 +66,9 @@ public sealed unsafe class RenderPool : IDisposable
     public bool LiveSlotFree => liveReserved && workers.All(w => w.View.Index != RenderSlots.LiveSlot);
 
     public event Action<TileKey>? TileReady;
+
+    /// <summary>Why tiles are not rendering right now, for a hint in the grid; null when all is well.</summary>
+    public string? Status { get; private set; }
 
     /// <summary>Raised when in-flight tiles were dropped (pause, slot conflict); requesters should re-request.</summary>
     public event Action? Disrupted;
@@ -93,14 +97,22 @@ public sealed unsafe class RenderPool : IDisposable
 
         if (SlotGuard.ConflictActive())
         {
+            Status = "Render-Plätze werden gerade vom Spiel genutzt (Gruppen-Portraits).";
             if (workers.Count > 0)
             {
-                foreach (var worker in workers)
-                    worker.View.Abandon();
+                // Set aside, not released: the game may own these slots now.
+                suspended.AddRange(workers.Select(w => w.View));
                 workers.Clear();
                 Disrupted?.Invoke();
             }
             return;
+        }
+
+        if (suspended.Count > 0)
+        {
+            foreach (var view in suspended)
+                view.ReleaseAfterConflict();
+            suspended.Clear();
         }
 
         ManageWorkers();
@@ -126,18 +138,25 @@ public sealed unsafe class RenderPool : IDisposable
             if (character == null || !appearance.IsValid)
                 return;
 
+            var blocked = 0;
             foreach (var slot in wanted.Where(s => workers.All(w => w.View.Index != s)))
             {
                 if (!CharaViewHandle.IsSlotFree(slot))
+                {
+                    blocked++;
                     continue;
+                }
                 var view = new CharaViewHandle(slot);
                 view.Create(character, appearance.Race, appearance.Sex);
                 workers.Add(new Worker(view));
             }
+            Status = workers.Count == 0 && blocked > 0 ? "Kein Render-Platz frei (Plätze 5–7 belegt)." : null;
         }
-        else if (workers.Count > 0 && DateTime.UtcNow - lastWork > IdleRelease)
+        else
         {
-            ReleaseAll();
+            Status = null;
+            if (workers.Count > 0 && DateTime.UtcNow - lastWork > IdleRelease)
+                ReleaseAll();
         }
     }
 
@@ -282,5 +301,11 @@ public sealed unsafe class RenderPool : IDisposable
             Disrupted?.Invoke();
     }
 
-    public void Dispose() => ReleaseAll();
+    public void Dispose()
+    {
+        ReleaseAll();
+        foreach (var view in suspended)
+            view.ReleaseAfterConflict();
+        suspended.Clear();
+    }
 }

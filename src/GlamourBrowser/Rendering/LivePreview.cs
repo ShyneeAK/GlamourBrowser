@@ -15,6 +15,7 @@ public sealed unsafe class LivePreview : IDisposable
     private readonly Configuration config;
     private readonly Func<EquipSlot, CameraPreset?> cameraFor;
     private CharaViewHandle? view;
+    private CharaViewHandle? suspended;
     private (uint ItemId, TileMode Mode, ulong Hash, CameraPreset? Camera)? applied;
     private float rotateX, rotateY, panX, panY, zoom;
     private bool reset;
@@ -67,10 +68,20 @@ public sealed unsafe class LivePreview : IDisposable
     {
         if (SlotGuard.ConflictActive())
         {
-            view?.Abandon();
-            view = null;
-            applied = null;
+            // Set aside, not released: the game may own the slot now.
+            if (view != null)
+            {
+                suspended = view;
+                view = null;
+                applied = null;
+            }
             return;
+        }
+
+        if (suspended != null)
+        {
+            suspended.ReleaseAfterConflict();
+            suspended = null;
         }
 
         if (Selected is not { } item)
@@ -151,5 +162,10 @@ public sealed unsafe class LivePreview : IDisposable
         pool.ReserveLiveSlot(false);
     }
 
-    public void Dispose() => ReleaseView();
+    public void Dispose()
+    {
+        ReleaseView();
+        suspended?.ReleaseAfterConflict();
+        suspended = null;
+    }
 }

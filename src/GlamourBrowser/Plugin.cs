@@ -124,7 +124,8 @@ public sealed class Plugin : IDalamudPlugin
     {
         lock (RenderSync.Lock)
         {
-            var pause = ShouldPause();
+            // Closed window: release everything like a zone change, so nothing renders in the background.
+            var pause = ShouldPause() || !mainWindow.IsOpen;
             if (pause && !paused)
             {
                 paused = true;
