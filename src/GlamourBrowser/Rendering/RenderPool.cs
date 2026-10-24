@@ -212,7 +212,7 @@ public sealed unsafe class RenderPool : IDisposable
                 if (worker.Frames < SettleFrames)
                     return;
                 if (worker.VisibilityRetries > 0)
-                    Plugin.Log.Information($"Tile {worker.Key!.Value.ItemId}: weapon visibility re-applied {worker.VisibilityRetries}x");
+                    Plugin.Log.Verbose($"Tile {worker.Key!.Value.ItemId}: weapon visibility re-applied {worker.VisibilityRetries}x");
                 var texture = view.GetTexture();
                 if (texture == null || texture->D3D11ShaderResourceView == null)
                 {
