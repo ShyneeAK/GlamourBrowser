@@ -253,6 +253,16 @@ public sealed unsafe class CharaViewHandle : IDisposable
     }
 
     /// <summary>Diagnostics: weapon visibility state of this view's character.</summary>
+    /// <summary>Weapon-related state of the view's character plus its timeline slots (pose/weapon spike).</summary>
+    public string DescribeState()
+    {
+        var character = view != null ? view->GetCharacter() : null;
+        if (character == null)
+            return "no character";
+        var timelines = string.Join(",", character->Timeline.TimelineSequencer.TimelineIds.ToArray());
+        return $"timeline drawn {character->Timeline.IsWeaponDrawn}, ids [{timelines}] | " + DescribeCharacter(character);
+    }
+
     public string DescribeWeapons()
     {
         if (view == null)

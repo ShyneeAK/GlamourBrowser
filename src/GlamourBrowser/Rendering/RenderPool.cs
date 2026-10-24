@@ -70,6 +70,7 @@ public sealed unsafe class RenderPool : IDisposable
     private bool freezeWarned;
     private int weaponDiagnosticsBudget = 12;
     private int blendDiagnosticsBudget = 6;
+    private int weaponStateBudget = 4;
 
     public RenderPool(TileQueue queue, TileCache<IDalamudTextureWrap> cache, Func<uint, GlamourItem?> lookup,
                       AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor)
@@ -262,6 +263,8 @@ public sealed unsafe class RenderPool : IDisposable
                 // The weapon is loaded (sheathed): draw it now, the DrawGate waits for the stance to settle.
                 if (worker.Key!.Value.WeaponDrawn)
                 {
+                    if (weaponStateBudget > 0)
+                        Plugin.Log.Information($"[wstate] tile {worker.Key.Value.ItemId} before draw: {view.DescribeState()}");
                     view.SetWeaponDrawn(true);
                     worker.WeaponDrawn = true;
                     worker.DrawGate = new DrawGate(DrawMinFrames, DrawStableFrames, DrawTimeoutFrames);
@@ -297,6 +300,13 @@ public sealed unsafe class RenderPool : IDisposable
             case Phase.Pose:
                 var (playing, overridden) = view.BaseTimeline();
                 var poseState = worker.DrawGate?.Step(view.TimelineSignature(), view.BodyBlend().Active) ?? worker.PoseGate!.Step(playing);
+                if (worker.DrawGate is { Frames: 1 or 15 } && weaponStateBudget > 0)
+                    Plugin.Log.Information($"[wstate] tile {worker.Key!.Value.ItemId} draw +{worker.DrawGate.Frames}: {view.DescribeState()}");
+                if (worker.DrawGate != null && poseState != PoseGateState.Wait && weaponStateBudget > 0)
+                {
+                    weaponStateBudget--;
+                    Plugin.Log.Information($"[wstate] tile {worker.Key!.Value.ItemId} end ({poseState}): {view.DescribeState()}");
+                }
                 if (poseState == PoseGateState.Wait)
                     return;
                 if (worker.DrawGate != null && weaponDiagnosticsBudget > 0)

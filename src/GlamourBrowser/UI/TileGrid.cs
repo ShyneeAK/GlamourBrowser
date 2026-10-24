@@ -117,16 +117,20 @@ public sealed class TileGrid
         var frameOffset = (ImGui.GetItemRectSize().Y - ImGui.GetFrameHeight()) / 2;
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + MathF.Max(0, frameOffset));
 
+        // All three items share the checkbox row's top; the (taller) warning glyph would otherwise push the second checkbox up.
+        var rowY = ImGui.GetCursorPosY();
         var drawn = config.TileWeaponsDrawn;
         if (ImGui.Checkbox(WeaponsLabel, ref drawn))
             state.SetTileWeaponsDrawn(drawn);
         ImGui.SameLine(0, 2);
+        ImGui.SetCursorPosY(rowY + ImGui.GetStyle().FramePadding.Y);
         using (UiScale.PushIcons())
             ImGui.TextColored(new Vector4(1f, 0.8f, 0.3f, 1f), FontAwesomeIcon.ExclamationTriangle.ToIconString());
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip("Waffen-Kacheln mit gezogener Waffe: jede Kachel spielt das Ziehen ab, das Rendern dauert deutlich länger.");
 
         ImGui.SameLine();
+        ImGui.SetCursorPosY(rowY);
         var dim = config.DimMissingTiles;
         if (ImGui.Checkbox(DimLabel, ref dim))
         {
