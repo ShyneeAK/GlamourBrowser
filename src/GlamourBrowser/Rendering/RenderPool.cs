@@ -70,11 +70,7 @@ public sealed unsafe class RenderPool : IDisposable
     private DateTime lastWork = DateTime.UtcNow;
     private bool liveReserved;
     private bool poseWarned;
-    private int poseDiagnosticsBudget = 6;
     private bool freezeWarned;
-    private int weaponDiagnosticsBudget = 12;
-    private int blendDiagnosticsBudget = 6;
-    private int weaponStateBudget = 9;
 
     public RenderPool(TileQueue queue, TileCache<IDalamudTextureWrap> cache, Func<uint, GlamourItem?> lookup,
                       AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor)
@@ -270,8 +266,6 @@ public sealed unsafe class RenderPool : IDisposable
                 // The weapon is loaded (sheathed): draw it now, the DrawGate waits for the stance to settle.
                 if (worker.Key!.Value.WeaponDrawn)
                 {
-                    if (weaponStateBudget > 0)
-                        Plugin.Log.Information($"[wstate] tile {worker.Key.Value.ItemId} before draw: {view.DescribeState()}");
                     if (!view.IsWeaponInHand())
                         view.SetWeaponDrawn(true);
                     worker.WeaponDrawn = true;
@@ -307,7 +301,7 @@ public sealed unsafe class RenderPool : IDisposable
                 break;
 
             case Phase.Pose:
-                var (playing, overridden) = view.BaseTimeline();
+                var (playing, _) = view.BaseTimeline();
                 if (worker.DrawGate != null && !view.IsWeaponInHand() && worker.DrawRetries < MaxDrawRetries)
                 {
                     // The draw did not take: sheathe on one frame, draw again on the next.
@@ -321,25 +315,8 @@ public sealed unsafe class RenderPool : IDisposable
                     }
                 }
                 var poseState = worker.DrawGate?.Step(view.TimelineSignature(), view.BodyBlend().Active, view.IsWeaponInHand()) ?? worker.PoseGate!.Step(playing);
-                if (worker.DrawGate is { Frames: 1 or 15 } && weaponStateBudget > 0)
-                    Plugin.Log.Information($"[wstate] tile {worker.Key!.Value.ItemId} draw +{worker.DrawGate.Frames}: {view.DescribeState()}");
-                if (worker.DrawGate != null && poseState != PoseGateState.Wait && weaponStateBudget > 0)
-                {
-                    weaponStateBudget--;
-                    Plugin.Log.Information($"[wstate] tile {worker.Key!.Value.ItemId} end ({poseState}, {worker.DrawRetries} retries): {view.DescribeState()}");
-                }
                 if (poseState == PoseGateState.Wait)
                     return;
-                if (worker.DrawGate != null && weaponDiagnosticsBudget > 0)
-                {
-                    weaponDiagnosticsBudget--;
-                    Plugin.Log.Information($"[weapon] tile {worker.Key!.Value.ItemId}: {poseState} after {worker.DrawGate.Frames} frames, {worker.Stopwatch.ElapsedMilliseconds} ms since apply");
-                }
-                if (poseDiagnosticsBudget > 0 && worker.Key!.Value.Pose != TileKey.StandardPose)
-                {
-                    poseDiagnosticsBudget--;
-                    Plugin.Log.Information($"[pose] tile {worker.Key.Value.ItemId}: pose {worker.Key.Value.Pose}, wanted {PoseTimelines.For(worker.Key.Value.Pose)}, playing {playing}, override {overridden}, {worker.PoseGate?.Frames} frames, {poseState}");
-                }
                 if (poseState == PoseGateState.Timeout && !poseWarned)
                 {
                     poseWarned = true;
@@ -355,11 +332,6 @@ public sealed unsafe class RenderPool : IDisposable
                 worker.Frames++;
                 if (blend.Active > 1 && worker.Frames <= BlendTimeoutFrames)
                     return;
-                if (blendDiagnosticsBudget > 0)
-                {
-                    blendDiagnosticsBudget--;
-                    Plugin.Log.Information($"[blend] tile {worker.Key!.Value.ItemId}: {blend.Active} active ({blend.Weights}) after {worker.Frames} frames{(worker.Frames > BlendTimeoutFrames ? ", timeout" : "")}");
-                }
                 worker.Frames = 0;
                 worker.Phase = Phase.Freeze;
                 break;
