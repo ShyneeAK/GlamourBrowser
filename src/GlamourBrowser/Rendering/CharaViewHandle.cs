@@ -156,20 +156,27 @@ public sealed unsafe class CharaViewHandle : IDisposable
     {
         if (view == null)
             return $"slot {Index}: no view";
-        var text = $"slot {Index}: state {view->State}, copied {view->CharacterDataCopied}, loaded {view->CharacterLoaded}, idle {IsIdle}, ModelData.WeaponHidden {view->ModelData.WeaponHidden}, " +
-                   $"ModelData.Weapon0 {view->ModelData.WeaponModelIds[0].Value:X}";
-        var character = view->GetCharacter();
+        return $"slot {Index}: state {view->State}, copied {view->CharacterDataCopied}, loaded {view->CharacterLoaded}, idle {IsIdle}, " +
+               $"ModelData.WeaponHidden {view->ModelData.WeaponHidden} | " + DescribeCharacter(view->GetCharacter());
+    }
+
+    /// <summary>Diagnostics: weapon state, draw flags, scene links and positions of a character's body and weapons.</summary>
+    public static string DescribeCharacter(Character* character)
+    {
         if (character == null)
-            return text + ", no character";
-        text += $", DrawData.IsWeaponHidden {character->DrawData.IsWeaponHidden}, IsWeaponDrawn {character->IsWeaponDrawn}, Flags2 {character->DrawData.Flags2:X2}";
+            return "no character";
+        var text = $"IsWeaponHidden {character->DrawData.IsWeaponHidden}, IsWeaponDrawn {character->IsWeaponDrawn}, Flags1 {character->DrawData.Flags1:X2}, Flags2 {character->DrawData.Flags2:X2}";
         var body = character->GameObject.DrawObject;
-        text += body != null ? $", body flags {body->Flags:X2} visible {body->IsVisible}" : ", no body";
+        if (body == null)
+            return text + ", no body";
+        text += $", body {(nint)body:X} flags {body->Flags:X2} objFlags {body->Object.ObjectFlags:X} pos {body->Object.Position} scale {body->Object.Scale} child {(nint)body->Object.ChildObject:X}";
         for (var i = 0; i < 2; i++)
         {
             ref var w = ref character->DrawData.WeaponData[i];
-            text += $" | weapon{i}: model {w.ModelId.Value:X}, drawObject {(nint)w.DrawData.DrawObject:X}, IsHidden {w.IsHidden}, State {w.State:X2}, Flags1 {w.Flags1:X4}, Flags2 {w.Flags2:X2}";
-            if (w.DrawData.DrawObject != null)
-                text += $", flags {w.DrawData.DrawObject->Flags:X2} visible {w.DrawData.DrawObject->IsVisible}";
+            text += $" || weapon{i}: model {w.ModelId.Value:X}, State {w.State:X2}, Flags1 {w.Flags1:X4}, Flags2 {w.Flags2:X2}";
+            var o = w.DrawData.DrawObject;
+            if (o != null)
+                text += $", obj {(nint)o:X} flags {o->Flags:X2} objFlags {o->Object.ObjectFlags:X} parent {(nint)o->Object.ParentObject:X} pos {o->Object.Position} scale {o->Object.Scale}";
         }
         return text;
     }

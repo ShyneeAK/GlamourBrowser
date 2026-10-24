@@ -98,6 +98,15 @@ public sealed class Plugin : IDalamudPlugin
             lock (RenderSync.Lock)
             {
                 Log.Information($"[diag] live: {live.DescribeWeapons()}");
+                unsafe
+                {
+                    // Reference: the game's own try-on window, which shows weapons correctly.
+                    var tryon = FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentTryon.Instance();
+                    var tryonView = tryon != null ? (FFXIVClientStructs.FFXIV.Client.UI.Misc.CharaView*)&tryon->CharaView : null;
+                    Log.Information(tryonView != null && tryonView->State == 6
+                        ? $"[diag] tryon: draw {tryon->CharaView.DrawWeapon}, hidden {tryon->CharaView.WeaponHidden} | {CharaViewHandle.DescribeCharacter(tryonView->GetCharacter())}"
+                        : "[diag] tryon: not open");
+                }
                 pool.WeaponDiagnosticsBudget = 6;
                 foreach (var line in pool.DescribeWeapons())
                     Log.Information($"[diag] pool: {line}");
