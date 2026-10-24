@@ -69,14 +69,15 @@ public sealed class TopBar
         if (ImGui.Combo("##mode", ref mode, ["Aktuelles Outfit", "Unterwäsche"], 2))
             state.SetTileMode((TileMode)mode);
 
+        // Drag fields instead of sliders: no grab knob covering the label.
         var columns = config.Columns;
         var rows = config.Rows;
         NextOnLine(160 * scale + spacing);
         ImGui.SetNextItemWidth(80 * scale);
-        var gridChanged = ImGui.SliderInt("##columns", ref columns, 2, 10, "%d Spalten", ImGuiSliderFlags.AlwaysClamp);
+        var gridChanged = ImGui.DragInt("##columns", ref columns, 0.05f, 2, 10, "%d Spalten", ImGuiSliderFlags.AlwaysClamp);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(80 * scale);
-        gridChanged |= ImGui.SliderInt("##rows", ref rows, 1, 6, "%d Zeilen", ImGuiSliderFlags.AlwaysClamp);
+        gridChanged |= ImGui.DragInt("##rows", ref rows, 0.05f, 1, 6, "%d Zeilen", ImGuiSliderFlags.AlwaysClamp);
         if (gridChanged)
             state.SetGrid(columns, rows);
 
