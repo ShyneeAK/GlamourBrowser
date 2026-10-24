@@ -72,8 +72,23 @@ public sealed unsafe class CharaViewHandle : IDisposable
     /// <summary>Call once per framework tick.</summary>
     public void Tick()
     {
-        if (view != null)
-            view->Render(FrameworkStruct.Instance()->FrameCounter);
+        if (view == null)
+            return;
+        view->Render(FrameworkStruct.Instance()->FrameCounter);
+        KeepSheathedWeaponsVisible();
+    }
+
+    /// <summary>
+    /// The player's "hide weapon when sheathed" option reaches our character as DrawData.IsWeaponHidden
+    /// (ModelData.WeaponHidden alone is not enough). Undo it the way /displayarms does.
+    /// </summary>
+    private void KeepSheathedWeaponsVisible()
+    {
+        if (view->State != StateReady)
+            return;
+        var character = view->GetCharacter();
+        if (character != null && character->DrawData.IsWeaponHidden)
+            character->DrawData.HideWeapons(false);
     }
 
     public void SetItem(EquipSlot slot, uint itemId, byte stain0, byte stain1)
