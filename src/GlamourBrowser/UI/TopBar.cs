@@ -7,6 +7,7 @@ using Dalamud.Interface.Utility;
 using GlamourBrowser.Browser;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Rendering;
+using GlamourBrowser.Core.Sources;
 using GlamourBrowser.Core.Ui;
 using GlamourBrowser.Data;
 using GlamourBrowser.UI.Widgets;
@@ -70,6 +71,12 @@ public sealed class TopBar
             state.SetTileMode((TileMode)mode);
 
         // Drag fields instead of sliders: no grab knob covering the label.
+        NextOnLine(130 * scale);
+        ImGui.SetNextItemWidth(130 * scale);
+        var sort = (int)config.Sort;
+        if (ImGui.Combo("##sort", ref sort, ["Nach Level", "Neueste zuerst"], 2))
+            state.SetSort((SortOrder)sort);
+
         var columns = config.Columns;
         var rows = config.Rows;
         NextOnLine(160 * scale + spacing);

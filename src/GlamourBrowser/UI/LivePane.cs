@@ -10,6 +10,10 @@ using Dalamud.Interface.Utility.Raii;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using GlamourBrowser.Browser;
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Sources;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Utility;
+using GlamourBrowser.Sources;
 using GlamourBrowser.Data;
 using GlamourBrowser.Ownership;
 using GlamourBrowser.Rendering;
@@ -26,9 +30,14 @@ public sealed unsafe class LivePane
     private readonly CalibrationService calibration;
     private readonly JobCatalog jobs;
     private readonly Theme.Theme theme;
+    private readonly SourceService sources;
+    private readonly HashSet<(uint Item, SourceCategory Category)> expanded = new();
+    private const int SourcesPerCategory = 3;
 
-    public LivePane(BrowserState state, OwnershipService ownership, LivePreview live, CalibrationService calibration, JobCatalog jobs, Theme.Theme theme)
+    public LivePane(BrowserState state, OwnershipService ownership, LivePreview live, CalibrationService calibration, JobCatalog jobs, Theme.Theme theme,
+                    SourceService sources)
     {
+        this.sources = sources;
         this.state = state;
         this.ownership = ownership;
         this.live = live;
@@ -137,7 +146,8 @@ public sealed unsafe class LivePane
         ImGui.SameLine();
         ImGui.BeginGroup();
         ImGui.TextWrapped(item.Name);
-        ImGui.TextDisabled($"Level {item.LevelEquip} · {DyeText(item.DyeCount)}");
+        var patch = sources.IsReady ? sources.Index.PatchOf(item.Id) : 0;
+        ImGui.TextDisabled($"Level {item.LevelEquip} · {DyeText(item.DyeCount)}" + (patch > 0 ? $" · Patch {patch:0.0#}" : ""));
         ImGui.EndGroup();
 
         DrawJobs(item);
@@ -162,6 +172,104 @@ public sealed unsafe class LivePane
             live.WeaponVisible = !live.WeaponVisible;
 
         DrawCalibration(item);
+
+        ImGui.Separator();
+        DrawSources(item);
+    }
+
+    private void DrawSources(GlamourItem item)
+    {
+        ImGui.TextUnformatted("Quellen");
+        if (!sources.IsReady)
+        {
+            ImGui.TextDisabled("Quellen werden geladen …");
+            return;
+        }
+
+        var all = sources.Index.SourcesOf(item.Id);
+        if (all.Count == 0)
+            ImGui.TextDisabled("Keine Quelle bekannt");
+
+        var iconSize = new Vector2(ImGui.GetTextLineHeight());
+        foreach (var group in all.GroupBy(s => s.Category).OrderBy(g => g.Key))
+        {
+            GameIcon.Draw(SourceIcons.IconFor(group.Key), iconSize, SourceIcons.Fallback(group.Key), theme.Colors.TextMuted);
+            ImGui.SameLine();
+            ImGui.TextUnformatted(SourceCategories.DisplayName(group.Key));
+
+            var key = (item.Id, group.Key);
+            var list = group.ToList();
+            var shown = expanded.Contains(key) ? list : list.Take(SourcesPerCategory).ToList();
+            using (ImRaii.PushIndent(iconSize.X + ImGui.GetStyle().ItemSpacing.X))
+            {
+                for (var i = 0; i < shown.Count; i++)
+                    DrawSource(shown[i], $"{group.Key}-{i}");
+
+                if (list.Count > SourcesPerCategory && !expanded.Contains(key) && ImGui.SmallButton($"weitere ({list.Count - SourcesPerCategory}) …##more{group.Key}"))
+                    expanded.Add(key);
+            }
+        }
+
+        ImGui.Spacing();
+        if (ImGui.SmallButton("Garland Tools"))
+            Util.OpenLink($"https://www.garlandtools.org/db/#item/{item.Id}");
+        ImGui.SameLine();
+        if (ImGui.SmallButton("Teamcraft"))
+            Util.OpenLink($"https://ffxivteamcraft.com/db/de/item/{item.Id}");
+    }
+
+    private void DrawSource(ItemSource source, string id)
+    {
+        ImGui.TextUnformatted(source.Title);
+        ImGui.SameLine();
+        ImGui.TextDisabled(source.Detail);
+
+        if (source.CostItemId != 0 && source.CostAmount > 0)
+        {
+            ImGui.SameLine();
+            GameIcon.Draw(SourceIcons.ItemIcon(source.CostItemId), new Vector2(ImGui.GetTextLineHeight()), FontAwesomeIcon.Coins, theme.Colors.TextMuted);
+            ImGui.SameLine(0, 2);
+            ImGui.TextUnformatted(source.CostAmount.ToString("N0"));
+        }
+
+        var label = source.Action switch
+        {
+            MapFlag => "Karte",
+            DutyFinder => "Inhaltssuche",
+            OpenRecipe => "Rezept",
+            _ => null,
+        };
+        if (label == null)
+            return;
+        ImGui.SameLine();
+        if (ImGui.SmallButton($"{label}##{id}"))
+            Run(source.Action!);
+    }
+
+    private static void Run(SourceAction action)
+    {
+        Plugin.Framework.RunOnFrameworkThread(() =>
+        {
+            try
+            {
+                switch (action)
+                {
+                    case MapFlag flag:
+                        Plugin.GameGui.OpenMapWithMapLink(new MapLinkPayload(flag.TerritoryId, flag.MapId, flag.X, flag.Y, 0.05f));
+                        break;
+                    case DutyFinder duty:
+                        AgentContentsFinder.Instance()->OpenRegularDuty(duty.ContentFinderConditionId);
+                        break;
+                    case OpenRecipe recipe:
+                        AgentRecipeNote.Instance()->OpenRecipeByRecipeId(recipe.RecipeId);
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.Warning(e, $"Source action {action} failed");
+            }
+        });
     }
 
     private void DrawJobs(GlamourItem item)

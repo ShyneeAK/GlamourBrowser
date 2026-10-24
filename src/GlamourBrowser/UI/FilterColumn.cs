@@ -1,12 +1,17 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
+using System;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
+using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using GlamourBrowser.Browser;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Ownership;
+using GlamourBrowser.Core.Sources;
 using GlamourBrowser.Ownership;
+using GlamourBrowser.Sources;
 using GlamourBrowser.UI.Widgets;
 
 namespace GlamourBrowser.UI;
@@ -17,12 +22,16 @@ public sealed class FilterColumn
     private readonly BrowserState state;
     private readonly OwnershipService ownership;
     private readonly Configuration config;
+    private readonly SourceService sources;
+    private readonly Theme.Theme theme;
 
-    public FilterColumn(BrowserState state, OwnershipService ownership, Configuration config)
+    public FilterColumn(BrowserState state, OwnershipService ownership, Configuration config, SourceService sources, Theme.Theme theme)
     {
         this.state = state;
         this.ownership = ownership;
         this.config = config;
+        this.sources = sources;
+        this.theme = theme;
     }
 
     public void Draw()
@@ -60,6 +69,23 @@ public sealed class FilterColumn
             var wearable = f.WearableOnly;
             if (ImGui.Checkbox("Nur für mich tragbar", ref wearable))
                 state.Filter = f with { WearableOnly = wearable };
+            Section.End();
+        }
+
+        if (Section.Begin("sources", "Quelle", config))
+        {
+            DrawSources(f);
+            Section.End();
+        }
+
+        if (Section.Begin("expansions", "Erweiterung", config))
+        {
+            foreach (var expansion in Enum.GetValues<Expansion>())
+            {
+                var on = f.Expansions.Contains(expansion);
+                if (ImGui.Checkbox(Expansions.LongName(expansion), ref on))
+                    state.Filter = f with { Expansions = Toggle(f.Expansions, expansion, on) };
+            }
             Section.End();
         }
 
@@ -104,6 +130,29 @@ public sealed class FilterColumn
             }
         }
         return result;
+    }
+
+    private void DrawSources(FilterState f)
+    {
+        if (!sources.IsReady)
+            ImGui.TextDisabled("Quellen werden geladen …");
+        else if (sources.Index.HasFailures)
+            ImGui.TextColored(new Vector4(1f, 0.8f, 0.3f, 1f), "Einige Quellen konnten nicht geladen werden");
+
+        using var disabled = ImRaii.Disabled(!sources.IsReady);
+        var counts = state.CountsWithoutCategories;
+        var iconSize = new Vector2(ImGui.GetTextLineHeight());
+        foreach (var category in Enum.GetValues<SourceCategory>())
+        {
+            var on = f.Categories.Contains(category);
+            var changed = ImGui.Checkbox($"##cat{category}", ref on);
+            ImGui.SameLine();
+            GameIcon.Draw(SourceIcons.IconFor(category), iconSize, SourceIcons.Fallback(category), theme.Colors.TextMuted);
+            ImGui.SameLine();
+            ImGui.TextUnformatted($"{SourceCategories.DisplayName(category)} ({counts.GetValueOrDefault(category)})");
+            if (changed)
+                state.Filter = f with { Categories = Toggle(f.Categories, category, on) };
+        }
     }
 
     private static IReadOnlySet<T> Toggle<T>(IReadOnlySet<T> set, T value, bool on)

@@ -34,6 +34,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static ICondition Condition { get; private set; } = null!;
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
     [PluginService] internal static IChatGui ChatGui { get; private set; } = null!;
+    [PluginService] internal static IGameGui GameGui { get; private set; } = null!;
 
     private const string CommandName = "/gbrowser";
 
@@ -77,9 +78,9 @@ public sealed class Plugin : IDalamudPlugin
         var theme = new UI.Theme.Theme(config);
         var jobs = new JobCatalog(DataManager);
         mainWindow = new MainWindow(
-            new LivePane(browser, ownership, live, calibration, jobs, theme),
+            new LivePane(browser, ownership, live, calibration, jobs, theme, sources),
             new TopBar(browser, jobs, config, theme),
-            new FilterColumn(browser, ownership, config),
+            new FilterColumn(browser, ownership, config, sources, theme),
             new TileGrid(browser, cache, pool, ownership, live, config, theme),
             theme,
             config);

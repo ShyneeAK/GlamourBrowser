@@ -61,6 +61,9 @@ public sealed class BrowserState
     public PageLayoutResult Layout { get; private set; }
     public GlamourItem? Selected { get; set; }
 
+    /// <summary>Items per source category under all other filters (the numbers behind the category checkboxes).</summary>
+    public IReadOnlyDictionary<SourceCategory, int> CountsWithoutCategories { get; private set; } = new Dictionary<SourceCategory, int>();
+
     public void UpdateLayout(float width, float height, float spacing, float labelHeight)
     {
         var layout = PageLayout.Compute(config.Columns, config.Rows, width, height, spacing, labelHeight);
@@ -109,6 +112,12 @@ public sealed class BrowserState
             Results = ItemFilter.Apply(catalog, filter with { Sort = config.Sort }, id => store?.IsOwned(id) ?? false, appearance.Race, appearance.Sex,
                 index == null ? null : index.CategoriesOf, index == null ? null : index.PatchOf);
             PageIndex = ItemFilter.ClampPage(PageIndex, Results.Count, PageSize);
+            if (index != null)
+            {
+                var withoutCategories = ItemFilter.Apply(catalog, filter with { Categories = new HashSet<SourceCategory>() }, id => store?.IsOwned(id) ?? false,
+                    appearance.Race, appearance.Sex, index.CategoriesOf, index.PatchOf);
+                CountsWithoutCategories = index.Counts(withoutCategories.Select(i => i.Id));
+            }
             RequestTiles();
         }
     }
