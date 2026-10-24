@@ -15,7 +15,6 @@ public sealed class Configuration : IPluginConfiguration
     public int Rows { get; set; } = 3;
     public TileMode TileMode { get; set; } = TileMode.CurrentOutfit;
     public int ParallelViews { get; set; } = 3;
-    public bool DimMissing { get; set; } = true;
 
     public float RotateSensitivity { get; set; } = 0.5f;
     public float PanSensitivity { get; set; } = 0.5f;

@@ -5,18 +5,29 @@ namespace GlamourBrowser.Core.Tests;
 public class TileStyleTests
 {
     [Fact]
-    public void Owned_IsNotTinted() => Assert.Equal(TileStyle.NoTint, TileStyle.TintFor(owned: true, dimMissing: true));
-
-    [Fact]
-    public void Missing_IsTintedWhenDimmingIsOn() => Assert.Equal(TileStyle.MissingTint, TileStyle.TintFor(owned: false, dimMissing: true));
-
-    [Fact]
-    public void Missing_IsNotTintedWhenDimmingIsOff() => Assert.Equal(TileStyle.NoTint, TileStyle.TintFor(owned: false, dimMissing: false));
-
-    [Fact]
-    public void MissingTint_IsOpaqueAndDarker()
+    public void Owned_GreenFrameWithBadge()
     {
-        Assert.Equal(0xFFu, TileStyle.MissingTint >> 24);
-        Assert.True((TileStyle.MissingTint & 0xFF) < 0xFF);
+        var frame = TileStyle.FrameFor(owned: true, selected: false);
+        Assert.Equal(TileStyle.OwnedColor, frame.Color);
+        Assert.Equal(2f, frame.Thickness);
+        Assert.True(frame.OwnedBadge);
+    }
+
+    [Fact]
+    public void Missing_ThinGrayFrameWithoutBadge()
+    {
+        var frame = TileStyle.FrameFor(owned: false, selected: false);
+        Assert.Equal(TileStyle.MissingColor, frame.Color);
+        Assert.Equal(1f, frame.Thickness);
+        Assert.False(frame.OwnedBadge);
+    }
+
+    [Fact]
+    public void Selected_WhiteFrameKeepsBadge()
+    {
+        var frame = TileStyle.FrameFor(owned: true, selected: true);
+        Assert.Equal(TileStyle.SelectedColor, frame.Color);
+        Assert.Equal(3f, frame.Thickness);
+        Assert.True(frame.OwnedBadge);
     }
 }

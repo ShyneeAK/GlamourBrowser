@@ -1,12 +1,19 @@
 namespace GlamourBrowser.Core.Rendering;
 
-/// <summary>Tint applied when drawing a tile (ImGui ABGR colour).</summary>
+/// <param name="Color">ImGui ABGR colour.</param>
+public readonly record struct TileFrame(uint Color, float Thickness, bool OwnedBadge);
+
+/// <summary>How a tile's frame shows ownership and selection; the rendered character is never tinted.</summary>
 public static class TileStyle
 {
-    public const uint NoTint = 0xFFFFFFFF;
+    public const uint OwnedColor = 0xFF40C040;
+    public const uint MissingColor = 0xFF505050;
+    public const uint SelectedColor = 0xFFFFFFFF;
 
-    /// <summary>Darker and slightly blue (R 0x70, G 0x78, B 0x90) for items the character does not own.</summary>
-    public const uint MissingTint = 0xFF907870;
-
-    public static uint TintFor(bool owned, bool dimMissing) => owned || !dimMissing ? NoTint : MissingTint;
+    public static TileFrame FrameFor(bool owned, bool selected)
+    {
+        if (selected)
+            return new TileFrame(SelectedColor, 3f, owned);
+        return owned ? new TileFrame(OwnedColor, 2f, true) : new TileFrame(MissingColor, 1f, false);
+    }
 }

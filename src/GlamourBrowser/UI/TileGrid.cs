@@ -16,9 +16,6 @@ namespace GlamourBrowser.UI;
 /// <summary>Middle column: paging header and the tile grid.</summary>
 public sealed class TileGrid
 {
-    private const uint OwnedColor = 0xFF40C040;
-    private const uint MissingColor = 0xFF606060;
-    private const uint SelectedColor = 0xFFFFFFFF;
     private const uint TileBackground = 0xFF201A18;
     private const uint ErrorColor = 0xFF4040E0;
 
@@ -118,30 +115,36 @@ public sealed class TileGrid
         }
         var hovered = ImGui.IsItemHovered();
 
-        var owned = ownership.Current?.IsOwned(item.Id) ?? false;
-        var tint = TileStyle.TintFor(owned, config.DimMissing);
         var drawList = ImGui.GetWindowDrawList();
         drawList.AddRectFilled(pos, pos + size, TileBackground);
 
         var key = state.KeyFor(item);
         if (cache.TryGet(key, out var texture) && texture != null)
         {
-            drawList.AddImage(texture.Handle, pos, pos + size, Vector2.Zero, Vector2.One, tint);
+            drawList.AddImage(texture.Handle, pos, pos + size);
         }
         else
         {
             var icon = Plugin.TextureProvider.GetFromGameIcon(new GameIconLookup(item.IconId)).GetWrapOrEmpty();
             var iconSize = new Vector2(MathF.Min(size.X * 0.5f, 64 * ImGuiHelpers.GlobalScale));
             var iconPos = pos + (size - iconSize) / 2;
-            drawList.AddImage(icon.Handle, iconPos, iconPos + iconSize, Vector2.Zero, Vector2.One, tint);
+            drawList.AddImage(icon.Handle, iconPos, iconPos + iconSize);
         }
 
         var failed = pool.Failures.TryGetValue(key, out var error);
         if (failed)
             drawList.AddText(pos + new Vector2(4, 2), ErrorColor, "!");
 
-        var selected = state.Selected?.Id == item.Id;
-        drawList.AddRect(pos, pos + size, selected ? SelectedColor : owned ? OwnedColor : MissingColor, 0, ImDrawFlags.None, selected ? 3 : owned ? 2 : 1);
+        var owned = ownership.Current?.IsOwned(item.Id) ?? false;
+        var frame = TileStyle.FrameFor(owned, state.Selected?.Id == item.Id);
+        drawList.AddRect(pos, pos + size, frame.Color, 0, ImDrawFlags.None, frame.Thickness);
+        if (frame.OwnedBadge)
+        {
+            // Green corner triangle, top right.
+            var badge = MathF.Max(10f, size.X * 0.12f);
+            var corner = pos + new Vector2(size.X, 0);
+            drawList.AddTriangleFilled(corner, corner - new Vector2(badge, 0), corner + new Vector2(0, badge), TileStyle.OwnedColor);
+        }
 
         ImGui.TextUnformatted(Truncate(item.Name, size.X));
         ImGui.EndGroup();
