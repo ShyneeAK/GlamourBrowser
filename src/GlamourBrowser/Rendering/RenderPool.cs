@@ -32,6 +32,7 @@ public sealed unsafe class RenderPool : IDisposable
         public int Frames { get; set; }
         public Stopwatch Stopwatch { get; } = new();
         public Task<IDalamudTextureWrap>? CopyTask { get; set; }
+        public int VisibilityRetries { get; set; }
         public (TileMode Mode, ulong Hash, EquipSlot Slot)? DressedAs { get; set; }
         public bool Busy => Key != null;
     }
@@ -186,17 +187,32 @@ public sealed unsafe class RenderPool : IDisposable
                 }
                 view.ApplyVisibility(showWeapons: true);
                 worker.Frames = 0;
+                worker.VisibilityRetries = 0;
                 worker.Phase = Phase.Settle;
                 break;
 
             case Phase.Settle:
-                // ApplyVisibility may start another short load; wait until idle again.
-                if (++worker.Frames < SettleFrames || !view.IsIdle)
+                worker.Frames++;
+                if (worker.Frames > TimeoutFrames)
                 {
-                    if (worker.Frames > TimeoutFrames)
-                        Fail(worker, "Zeitüberschreitung beim Laden");
+                    Fail(worker, "Zeitüberschreitung beim Laden");
                     return;
                 }
+                // ApplyVisibility may start another short load; wait until idle again.
+                if (!view.IsIdle)
+                    return;
+                // A weapon that finished loading late comes back hidden: apply again and wait one more frame.
+                if (!view.WeaponsShown())
+                {
+                    view.ApplyVisibility(showWeapons: true);
+                    worker.VisibilityRetries++;
+                    worker.Frames = 0;
+                    return;
+                }
+                if (worker.Frames < SettleFrames)
+                    return;
+                if (worker.VisibilityRetries > 0)
+                    Plugin.Log.Information($"Tile {worker.Key!.Value.ItemId}: weapon visibility re-applied {worker.VisibilityRetries}x");
                 var texture = view.GetTexture();
                 if (texture == null || texture->D3D11ShaderResourceView == null)
                 {

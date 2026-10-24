@@ -113,6 +113,28 @@ public sealed unsafe class CharaViewHandle : IDisposable
         }
     }
 
+    /// <summary>
+    /// True when every weapon with a model has a draw object that is actually drawn: hidden bit clear and
+    /// DrawObject.Flags bit 0x01 set. Weapons can finish loading after the view reports idle.
+    /// </summary>
+    public bool WeaponsShown()
+    {
+        var character = view != null && view->State == StateReady ? view->GetCharacter() : null;
+        if (character == null)
+            return true;
+
+        for (var i = 0; i < 2; i++)
+        {
+            ref var weapon = ref character->DrawData.WeaponData[i];
+            if (weapon.ModelId.Value == 0)
+                continue;
+            var drawObject = weapon.DrawData.DrawObject;
+            if (drawObject == null || (weapon.State & WeaponHiddenStateBit) != 0 || (drawObject->Flags & 0x01) == 0)
+                return false;
+        }
+        return true;
+    }
+
     /// <summary>Draws the weapon (in hand) for weapon tiles, sheathes it otherwise.</summary>
     public void SetWeaponDrawn(bool drawn)
     {
