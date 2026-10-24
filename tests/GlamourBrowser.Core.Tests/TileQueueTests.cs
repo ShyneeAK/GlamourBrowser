@@ -21,6 +21,24 @@ public class TileQueueTests
     }
 
     [Fact]
+    public void Dequeue_LookaheadKeepsPageOrder()
+    {
+        var queue = new TileQueue();
+        queue.SetRequests([Key(1)], [Key(2), Key(3), Key(4), Key(5)]);
+
+        var order = new List<uint>();
+        var priorities = new List<TilePriority>();
+        while (queue.TryDequeue(out var key, out var priority))
+        {
+            order.Add(key.ItemId);
+            priorities.Add(priority);
+        }
+        Assert.Equal([1u, 2u, 3u, 4u, 5u], order);
+        Assert.Equal(TilePriority.CurrentPage, priorities[0]);
+        Assert.All(priorities.Skip(1), p => Assert.Equal(TilePriority.NextPage, p));
+    }
+
+    [Fact]
     public void SetRequests_DropsPreviousPending()
     {
         var queue = new TileQueue();

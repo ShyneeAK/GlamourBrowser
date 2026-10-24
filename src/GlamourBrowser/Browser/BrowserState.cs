@@ -154,13 +154,17 @@ public sealed class BrowserState
             }
 
             var current = CurrentPage.Select(KeyFor).ToList();
-            var next = PageIndex + 1 < PageCount ? ItemFilter.Page(Results, PageIndex + 1, PageSize).Select(KeyFor).ToList() : [];
-            var previous = PageIndex > 0 ? ItemFilter.Page(Results, PageIndex - 1, PageSize).Select(KeyFor).ToList() : [];
+            // Two pages of lookahead, the next one first; the previous page stays cached for paging back.
+            var lookahead = PageKeys(PageIndex + 1).Concat(PageKeys(PageIndex + 2)).ToList();
+            var previous = PageKeys(PageIndex - 1);
 
-            cache.Retain(current.Concat(next).Concat(previous).ToHashSet());
-            queue.SetRequests(current.Where(k => !cache.TryGet(k, out _)), next.Where(k => !cache.TryGet(k, out _)));
+            cache.Retain(current.Concat(lookahead).Concat(previous).ToHashSet());
+            queue.SetRequests(current.Where(k => !cache.TryGet(k, out _)), lookahead.Where(k => !cache.TryGet(k, out _)));
         }
     }
+
+    private List<TileKey> PageKeys(int page)
+        => page >= 0 && page < PageCount ? ItemFilter.Page(Results, page, PageSize).Select(KeyFor).ToList() : [];
 
     private void OnOwnershipChanged()
     {

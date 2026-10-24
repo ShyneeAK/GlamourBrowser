@@ -81,7 +81,7 @@ public sealed class Plugin : IDalamudPlugin
             new LivePane(browser, ownership, live, calibration, jobs, theme, sources),
             new TopBar(browser, jobs, config, theme),
             new FilterColumn(browser, ownership, config, sources, theme),
-            new TileGrid(browser, cache, pool, ownership, live, config, theme),
+            new TileGrid(browser, cache, pool, ownership, live, config, theme, sources, jobs),
             theme,
             config);
         settingsWindow = new SettingsWindow(config, browser, pool, calibration, theme);

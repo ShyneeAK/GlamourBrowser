@@ -32,4 +32,18 @@ public sealed class JobCatalog
     public IReadOnlyList<JobInfo> All { get; }
 
     public JobInfo? Find(uint id) => byId.GetValueOrDefault(id);
+
+    public JobGroup GroupOf(uint id) => byId.TryGetValue(id, out var job) ? job.Group : JobGroup.Melee;
+
+    /// <summary>Role icons as shown in the party list.</summary>
+    public static uint RoleIcon(JobGroup group) => group switch
+    {
+        JobGroup.Tank => 62581,
+        JobGroup.Healer => 62582,
+        JobGroup.Melee => 62584,
+        JobGroup.Ranged => 62586,
+        JobGroup.Magic => 62587,
+        JobGroup.Crafter => 62588,
+        _ => 62589,
+    };
 }
