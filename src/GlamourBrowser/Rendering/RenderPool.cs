@@ -27,6 +27,10 @@ public sealed unsafe class RenderPool : IDisposable
     private const int FreezeFrames = 3;
     // Upper bound for waiting until only one body animation carries weight (the blend has finished).
     private const int BlendTimeoutFrames = 90;
+    // Drawing a weapon: wait at least this long if no timeline change is seen, until the timelines are stable, at most the timeout.
+    private const int DrawMinFrames = 30;
+    private const int DrawStableFrames = 10;
+    private const int DrawTimeoutFrames = 120;
     private static readonly TimeSpan IdleRelease = TimeSpan.FromSeconds(5);
 
     private enum Phase { WaitReady, Apply, Loading, Settle, Pose, Blend, Freeze, Copy }
@@ -46,7 +50,7 @@ public sealed unsafe class RenderPool : IDisposable
         public bool WeaponDrawn { get; set; }
         /// <summary>The view's animation is frozen at its last frame.</summary>
         public bool Frozen { get; set; }
-        public StanceGate? StanceGate { get; set; }
+        public DrawGate? DrawGate { get; set; }
         public (TileMode Mode, ulong Hash, EquipSlot Slot)? DressedAs { get; set; }
         public bool Busy => Key != null;
     }
@@ -209,12 +213,13 @@ public sealed unsafe class RenderPool : IDisposable
                     worker.DressedAs = (key.Mode, key.AppearanceHash, item.Slot);
                 }
                 view.SetItem(item.Slot, key.ItemId, key.Stain0, key.Stain1);
-                // Weapon tiles may draw the weapon: the draw animation has to finish first (StanceGate in the Pose phase).
+                // Weapon tiles draw the weapon after loading; the draw has to finish first (DrawGate in the Pose phase).
                 view.ApplyCamera(cameraFor(item.Slot));
                 // A view keeps its pose and frozen moment from tile to tile; only a change (or a re-dress, which may
                 // rebuild the character) lets the animation run again and waits for it in the Pose phase.
-                var weaponChanged = worker.WeaponDrawn != key.WeaponDrawn;
-                worker.PoseChanged = redressed || weaponChanged || worker.LastPose != key.Pose;
+                // Every weapon tile draws anew: a freshly loaded weapon comes back sheathed while the view still
+                // reports it as drawn, and drawing again without sheathing first does nothing.
+                worker.PoseChanged = redressed || key.WeaponDrawn || worker.WeaponDrawn || worker.LastPose != key.Pose;
                 worker.LastPose = key.Pose;
                 if (worker.PoseChanged)
                 {
@@ -227,18 +232,11 @@ public sealed unsafe class RenderPool : IDisposable
                     poseWarned = true;
                     Plugin.Log.Warning($"Idle pose {key.Pose} could not be applied; tiles use the standard pose");
                 }
-                worker.StanceGate = null;
+                worker.DrawGate = null;
                 if (key.WeaponDrawn || worker.WeaponDrawn)
                 {
-                    if (weaponChanged)
-                        view.SetWeaponDrawn(key.WeaponDrawn);
-                    worker.WeaponDrawn = key.WeaponDrawn;
-                    if (key.WeaponDrawn)
-                    {
-                        // The timeline playing before the draw is the reference the gate waits to see replaced.
-                        worker.StanceGate = new StanceGate(worker.PoseChanged ? PoseBlendFrames : 0, PoseTimeoutFrames, expectChange: weaponChanged);
-                        worker.StanceGate.Step(view.BaseTimeline().Playing);
-                    }
+                    view.SetWeaponDrawn(false);
+                    worker.WeaponDrawn = false;
                 }
                 worker.Frames = 0;
                 worker.Phase = Phase.Loading;
@@ -255,27 +253,12 @@ public sealed unsafe class RenderPool : IDisposable
                 }
                 // A freshly loaded weapon can come back sheathed even though the view had it drawn: check the
                 // character itself, not what this worker did last time, and draw (or sheathe) again if needed.
-                if (worker.Key!.Value.WeaponDrawn && weaponDiagnosticsBudget > 0)
-                    Plugin.Log.Information($"[weapon] tile {worker.Key.Value.ItemId}: loaded, drawn {view.IsWeaponDrawn()}, worker thinks {worker.WeaponDrawn}, pose changed {worker.PoseChanged}, gate {(worker.StanceGate != null ? "yes" : "no")}");
-                if (view.IsWeaponDrawn() != worker.Key!.Value.WeaponDrawn)
+                // The weapon is loaded (sheathed): draw it now, the DrawGate waits for the stance to settle.
+                if (worker.Key!.Value.WeaponDrawn)
                 {
-                    if (!worker.PoseChanged)
-                    {
-                        worker.PoseChanged = true;
-                        view.SetAnimationPaused(false);
-                        worker.Frozen = false;
-                    }
-                    view.SetWeaponDrawn(worker.Key.Value.WeaponDrawn);
-                    worker.WeaponDrawn = worker.Key.Value.WeaponDrawn;
-                    if (worker.Key.Value.WeaponDrawn)
-                    {
-                        worker.StanceGate = new StanceGate(PoseBlendFrames, PoseTimeoutFrames, expectChange: true);
-                        worker.StanceGate.Step(view.BaseTimeline().Playing);
-                    }
-                    else
-                    {
-                        worker.StanceGate = null;
-                    }
+                    view.SetWeaponDrawn(true);
+                    worker.WeaponDrawn = true;
+                    worker.DrawGate = new DrawGate(DrawMinFrames, DrawStableFrames, DrawTimeoutFrames);
                 }
                 view.ApplyVisibility(showWeapons: true);
                 worker.Gate = new SettleGate(SettleFrames, TimeoutFrames, MaxVisibilityRetries);
@@ -307,13 +290,13 @@ public sealed unsafe class RenderPool : IDisposable
 
             case Phase.Pose:
                 var (playing, overridden) = view.BaseTimeline();
-                var poseState = worker.StanceGate?.Step(playing) ?? worker.PoseGate!.Step(playing);
+                var poseState = worker.DrawGate?.Step(view.TimelineSignature(), view.BodyBlend().Active) ?? worker.PoseGate!.Step(playing);
                 if (poseState == PoseGateState.Wait)
                     return;
-                if (worker.StanceGate != null && weaponDiagnosticsBudget > 0)
+                if (worker.DrawGate != null && weaponDiagnosticsBudget > 0)
                 {
                     weaponDiagnosticsBudget--;
-                    Plugin.Log.Information($"[weapon] tile {worker.Key!.Value.ItemId}: {poseState}, playing {playing}, drawn {view.IsWeaponDrawn()}, {worker.Stopwatch.ElapsedMilliseconds} ms since apply");
+                    Plugin.Log.Information($"[weapon] tile {worker.Key!.Value.ItemId}: {poseState} after {worker.DrawGate.Frames} frames, {worker.Stopwatch.ElapsedMilliseconds} ms since apply");
                 }
                 if (poseDiagnosticsBudget > 0 && worker.Key!.Value.Pose != TileKey.StandardPose)
                 {
@@ -323,7 +306,7 @@ public sealed unsafe class RenderPool : IDisposable
                 if (poseState == PoseGateState.Timeout && !poseWarned)
                 {
                     poseWarned = true;
-                    Plugin.Log.Warning($"Idle pose {worker.Key!.Value.Pose} did not start playing; tiles may show the standard pose");
+                    Plugin.Log.Warning(worker.DrawGate != null ? "Drawing the weapon did not settle in time; copying anyway" : $"Idle pose {worker.Key!.Value.Pose} did not start playing; tiles may show the standard pose");
                 }
                 worker.Frames = 0;
                 // After a change the blend from the previous animation has to finish before freezing.
