@@ -23,6 +23,7 @@ public sealed class SourceIndexBuilder(GameData data, IReadOnlySet<uint> relevan
             Run(builder, "Spezialshops", () => ShopSources.AddSpecialShops(builder, data, npcs, relevantItems));
         }
         Run(builder, "Inhalte", () => ContentSources.AddDuties(builder, data, relevantItems, log));
+        Run(builder, "Inhalts-Ketten", () => ContentSources.AddDutyChains(builder, data, relevantItems, log));
         Run(builder, "Quests", () => QuestSources.AddQuests(builder, data, relevantItems));
         Run(builder, "Errungenschaften", () => QuestSources.AddAchievements(builder, data, relevantItems));
         Run(builder, "Relikte", () => QuestSources.AddRelics(builder, data, relevantItems, log));
