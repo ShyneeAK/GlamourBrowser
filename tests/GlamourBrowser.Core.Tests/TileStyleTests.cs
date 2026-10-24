@@ -30,4 +30,12 @@ public class TileStyleTests
         Assert.Equal(new TileFrame(Accent, 3f, TileStyle.OwnedColor), TileStyle.FrameFor(owned: true, selected: true, Accent));
         Assert.Equal(new TileFrame(0xFFFF70A9, 3f, TileStyle.MissingColor), TileStyle.FrameFor(owned: false, selected: true, 0xFFFF70A9));
     }
+
+    [Fact]
+    public void ImageTint_DimsMissingOnly()
+    {
+        Assert.Equal(0xFFD9D9D9u, TileStyle.ImageTint(owned: false, selected: false));
+        Assert.Equal(0xFFFFFFFFu, TileStyle.ImageTint(owned: true, selected: false));
+        Assert.Equal(0xFFFFFFFFu, TileStyle.ImageTint(owned: false, selected: true));
+    }
 }

@@ -35,7 +35,8 @@ public static class ItemCatalogLoader
                 jobs ?? new HashSet<uint>(),
                 item.LevelEquip,
                 item.DyeCount,
-                RestrictionOf(item.EquipRestriction.RowId, data, restrictions)));
+                RestrictionOf(item.EquipRestriction.RowId, data, restrictions),
+                Tradabilities.From(item.IsUntradable, item.ItemSearchCategory.RowId)));
         }
 
         Plugin.Log.Information($"Item catalog: {result.Count} items");

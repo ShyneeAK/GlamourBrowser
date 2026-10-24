@@ -8,4 +8,5 @@ public sealed record GlamourItem(
     IReadOnlySet<uint> ClassJobIds,
     int LevelEquip,
     int DyeCount,
-    RaceGenderRestriction Restriction);
+    RaceGenderRestriction Restriction,
+    Tradability Trade = Tradability.Bound);
