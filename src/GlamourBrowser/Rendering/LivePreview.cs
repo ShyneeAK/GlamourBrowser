@@ -13,13 +13,13 @@ public sealed unsafe class LivePreview : IDisposable
     private readonly RenderPool pool;
     private readonly AppearanceTracker appearance;
     private readonly Configuration config;
-    private readonly Func<EquipSlot, CameraPreset> cameraFor;
+    private readonly Func<EquipSlot, CameraPreset?> cameraFor;
     private CharaViewHandle? view;
-    private (uint ItemId, TileMode Mode, ulong Hash, CameraPreset Camera)? applied;
+    private (uint ItemId, TileMode Mode, ulong Hash, CameraPreset? Camera)? applied;
     private float rotateX, rotateY, panX, panY, zoom;
     private bool reset;
 
-    public LivePreview(RenderPool pool, AppearanceTracker appearance, Configuration config, Func<EquipSlot, CameraPreset> cameraFor)
+    public LivePreview(RenderPool pool, AppearanceTracker appearance, Configuration config, Func<EquipSlot, CameraPreset?> cameraFor)
     {
         this.pool = pool;
         this.appearance = appearance;
@@ -48,6 +48,9 @@ public sealed unsafe class LivePreview : IDisposable
     public void QueueZoom(float wheel) => zoom += wheel;
 
     public void QueueReset() => reset = true;
+
+    /// <summary>The live view's current camera state, for saving as the selected slot's calibration.</summary>
+    public CameraPreset? CaptureCamera() => view?.ReadCamera();
 
     /// <summary>Call once per framework tick, after the render pool.</summary>
     public void Tick()
@@ -104,7 +107,7 @@ public sealed unsafe class LivePreview : IDisposable
         if (zoom != 0)
             target.Zoom(-zoom * config.ZoomSensitivity);
         if (reset)
-            target.ApplyCamera(applied?.Camera ?? CameraPreset.Zero);
+            target.ApplyCamera(applied?.Camera);
 
         rotateX = rotateY = panX = panY = zoom = 0;
         reset = false;

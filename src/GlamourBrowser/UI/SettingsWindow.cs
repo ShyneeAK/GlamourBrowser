@@ -3,7 +3,6 @@ using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
 using GlamourBrowser.Browser;
-using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Rendering;
 
@@ -14,7 +13,6 @@ public sealed class SettingsWindow : Window
     private readonly Configuration config;
     private readonly BrowserState state;
     private readonly RenderPool pool;
-    private int presetSlot = 2; // index into SlotNames.All, starts at "Kopf"
 
     public SettingsWindow(Configuration config, BrowserState state, RenderPool pool)
         : base("GlamourBrowser – Einstellungen##GlamourBrowserSettings")
@@ -68,36 +66,27 @@ public sealed class SettingsWindow : Window
 
     private void DrawCameraPresets()
     {
-        ImGui.TextDisabled("Kamera-Presets (wirken sofort auf die Live-Ansicht, wenn das gewählte Item zum Slot passt)");
-        ImGui.Combo("Slot", ref presetSlot, SlotNames.All.Select(s => s.Name).ToArray(), SlotNames.All.Length);
-        var slot = SlotNames.All[presetSlot].Slot;
-        var p = CameraPresets.Resolve(slot, config.CameraOverrides);
-        float yaw = p.Yaw, pitch = p.Pitch, distance = p.Distance, panX = p.PanX, panY = p.PanY;
+        ImGui.TextDisabled("Kamera-Kalibrierung dieses Charakters");
+        ImGui.TextWrapped("Kalibriert wird in der Live-Ansicht: Item eines Slots auswählen, Ansicht einstellen, „Kamera-Position festlegen“ klicken.");
 
-        var changed = ImGui.DragFloat("Yaw", ref yaw, 0.01f);
-        var done = ImGui.IsItemDeactivatedAfterEdit();
-        changed |= ImGui.DragFloat("Pitch", ref pitch, 0.01f);
-        done |= ImGui.IsItemDeactivatedAfterEdit();
-        changed |= ImGui.DragFloat("Distance", ref distance, 0.05f);
-        done |= ImGui.IsItemDeactivatedAfterEdit();
-        changed |= ImGui.DragFloat("PanX", ref panX, 0.01f);
-        done |= ImGui.IsItemDeactivatedAfterEdit();
-        changed |= ImGui.DragFloat("PanY", ref panY, 0.01f);
-        done |= ImGui.IsItemDeactivatedAfterEdit();
-
-        // The live view follows every change; tiles are only re-rendered once the drag ends.
-        if (changed)
-            config.CameraOverrides[slot] = new CameraPreset(yaw, pitch, distance, panX, panY);
-        if (done)
+        var contentId = Plugin.PlayerState.ContentId;
+        var calibrations = new CameraCalibrations(config.CameraCalibrations);
+        var calibrated = calibrations.For(contentId);
+        foreach (var (slot, name) in SlotNames.All)
         {
-            config.Save();
-            state.InvalidateTiles();
-        }
+            if (!calibrated.ContainsKey(slot))
+            {
+                ImGui.TextDisabled($"{name}: Standard");
+                continue;
+            }
 
-        if (ImGui.Button("Zurücksetzen") && config.CameraOverrides.Remove(slot))
-        {
-            config.Save();
-            state.InvalidateTiles();
+            ImGui.TextUnformatted($"{name}: kalibriert");
+            ImGui.SameLine();
+            if (ImGui.SmallButton($"Zurücksetzen##{slot}") && calibrations.Remove(contentId, slot))
+            {
+                config.Save();
+                state.InvalidateTiles();
+            }
         }
     }
 }

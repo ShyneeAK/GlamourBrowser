@@ -40,14 +40,14 @@ public sealed unsafe class RenderPool : IDisposable
     private readonly TileCache<IDalamudTextureWrap> cache;
     private readonly Func<uint, GlamourItem?> lookup;
     private readonly AppearanceTracker appearance;
-    private readonly Func<EquipSlot, CameraPreset> cameraFor;
+    private readonly Func<EquipSlot, CameraPreset?> cameraFor;
     private readonly List<Worker> workers = new();
     private readonly Dictionary<TileKey, string> failures = new();
     private DateTime lastWork = DateTime.UtcNow;
     private bool liveReserved;
 
     public RenderPool(TileQueue queue, TileCache<IDalamudTextureWrap> cache, Func<uint, GlamourItem?> lookup,
-                      AppearanceTracker appearance, Func<EquipSlot, CameraPreset> cameraFor)
+                      AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor)
     {
         this.queue = queue;
         this.cache = cache;

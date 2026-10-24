@@ -7,6 +7,7 @@ using Dalamud.Interface.Utility;
 using Dalamud.Utility;
 using GlamourBrowser.Browser;
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Ownership;
 using GlamourBrowser.Rendering;
 using Lumina.Excel.Sheets;
@@ -19,13 +20,15 @@ public sealed unsafe class DetailPanel
     private readonly BrowserState state;
     private readonly OwnershipService ownership;
     private readonly LivePreview live;
+    private readonly Configuration config;
     private readonly Dictionary<uint, string> jobAbbreviations;
 
-    public DetailPanel(BrowserState state, OwnershipService ownership, LivePreview live)
+    public DetailPanel(BrowserState state, OwnershipService ownership, LivePreview live, Configuration config)
     {
         this.state = state;
         this.ownership = ownership;
         this.live = live;
+        this.config = config;
         jobAbbreviations = Plugin.DataManager.GetExcelSheet<ClassJob>().ToDictionary(j => j.RowId, j => j.Abbreviation.ExtractText());
     }
 
@@ -49,6 +52,35 @@ public sealed unsafe class DetailPanel
         DrawLocations(ownership, item);
         ImGui.Separator();
         DrawLive();
+        DrawCalibration(item);
+    }
+
+    private void DrawCalibration(GlamourItem item)
+    {
+        var contentId = Plugin.PlayerState.ContentId;
+        var calibrations = new CameraCalibrations(config.CameraCalibrations);
+        var slotName = SlotNames.All.FirstOrDefault(s => s.Slot == item.Slot).Name ?? item.Slot.ToString();
+
+        if (ImGui.Button($"Kamera-Position festlegen für ({slotName})") && live.CaptureCamera() is { } preset)
+        {
+            calibrations.Set(contentId, item.Slot, preset);
+            config.Save();
+            state.InvalidateTiles();
+        }
+
+        if (calibrations.Get(contentId, item.Slot) == null)
+        {
+            ImGui.TextDisabled($"{slotName}: Standardansicht");
+            return;
+        }
+
+        ImGui.SameLine();
+        if (ImGui.Button("Zurücksetzen##calibration") && calibrations.Remove(contentId, item.Slot))
+        {
+            config.Save();
+            state.InvalidateTiles();
+        }
+        ImGui.TextDisabled($"{slotName}: kalibriert");
     }
 
     public static void DrawLocations(OwnershipService ownership, GlamourItem item)

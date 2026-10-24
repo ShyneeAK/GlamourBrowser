@@ -70,7 +70,7 @@ public sealed class Plugin : IDalamudPlugin
         mainWindow = new MainWindow(
             new FilterPanel(browser, ownership),
             new TileGrid(browser, cache, pool, ownership, live, config),
-            new DetailPanel(browser, ownership, live));
+            new DetailPanel(browser, ownership, live, config));
         settingsWindow = new SettingsWindow(config, browser, pool);
         windowSystem.AddWindow(mainWindow);
         windowSystem.AddWindow(settingsWindow);
@@ -85,7 +85,7 @@ public sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.OpenConfigUi += settingsWindow.Toggle;
     }
 
-    private CameraPreset CameraFor(EquipSlot slot) => CameraPresets.Resolve(slot, config.CameraOverrides);
+    private CameraPreset? CameraFor(EquipSlot slot) => new CameraCalibrations(config.CameraCalibrations).Get(PlayerState.ContentId, slot);
 
     private void OnFrameworkUpdate(IFramework framework)
     {

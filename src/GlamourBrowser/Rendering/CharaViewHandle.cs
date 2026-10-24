@@ -1,6 +1,7 @@
 using System;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using GameObjectStruct = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
@@ -91,15 +92,48 @@ public sealed unsafe class CharaViewHandle : IDisposable
         }
     }
 
-    public void ApplyCamera(CameraPreset preset)
+    /// <summary>
+    /// The view's absolute camera state. "Rotate" and "pan" move the character inside the view's
+    /// scene (GameObject.Rotation / Position); "zoom" is a distance in the render camera.
+    /// </summary>
+    public CameraPreset? ReadCamera()
+    {
+        var character = ViewCharacter();
+        var distance = DistanceField();
+        if (character == null || distance == null)
+            return null;
+        return new CameraPreset(character->Rotation, character->Position.X, character->Position.Y, *distance);
+    }
+
+    /// <summary>Resets the camera to the game's default view, then applies the calibration if any.</summary>
+    public void ApplyCamera(CameraPreset? preset)
     {
         if (view == null || view->State != StateReady)
             return;
 
         view->ResetPositions();
-        view->SetCameraDistance(preset.Distance);
-        view->SetCameraYawAndPitch(preset.Yaw, preset.Pitch);
-        view->SetCameraXAndY(preset.PanX, preset.PanY);
+        if (preset is not { } p)
+            return;
+
+        var character = ViewCharacter();
+        var distance = DistanceField();
+        if (character == null || distance == null)
+            return;
+        character->SetRotation(p.Rotation);
+        character->SetPosition(p.PositionX, p.PositionY, character->Position.Z);
+        *distance = p.Distance;
+    }
+
+    private GameObjectStruct* ViewCharacter()
+        => view != null && view->State == StateReady ? (GameObjectStruct*)view->GetCharacter() : null;
+
+    // SetCameraDistance (vf4) clamps and writes *(Camera + 0xE0) + 0x1FC.
+    private float* DistanceField()
+    {
+        if (view == null || view->Camera == null)
+            return null;
+        var renderCamera = *(byte**)((byte*)view->Camera + 0xE0);
+        return renderCamera == null ? null : (float*)(renderCamera + 0x1FC);
     }
 
     public void Rotate(float yaw, float pitch)
