@@ -3,8 +3,13 @@ using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using System.Collections.Generic;
+using System.Linq;
+using Dalamud.Interface.Textures.TextureWraps;
+using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Data;
 using GlamourBrowser.Ownership;
+using GlamourBrowser.Rendering;
 using GlamourBrowser.UI;
 
 namespace GlamourBrowser;
@@ -33,6 +38,10 @@ public sealed class Plugin : IDalamudPlugin
     private readonly RetainerReader retainerReader;
     private readonly DresserReader dresserReader;
     private readonly ArmoireReader armoireReader;
+    private readonly AppearanceTracker appearance;
+    private readonly TileQueue queue = new();
+    private readonly TileCache<IDalamudTextureWrap> cache = new();
+    private readonly RenderPool pool;
 
     public Plugin()
     {
@@ -42,7 +51,11 @@ public sealed class Plugin : IDalamudPlugin
         retainerReader = new RetainerReader(ownership);
         dresserReader = new DresserReader(ownership);
         armoireReader = new ArmoireReader(ownership);
-        mainWindow = new MainWindow(catalog, ownership);
+        appearance = new AppearanceTracker();
+        var byId = catalog.ToDictionary(i => i.Id);
+        pool = new RenderPool(queue, cache, id => byId.GetValueOrDefault(id), appearance, slot => CameraPresets.Resolve(slot, null));
+        Framework.Update += OnFrameworkUpdate;
+        mainWindow = new MainWindow(catalog, ownership, appearance, queue, cache);
         windowSystem.AddWindow(mainWindow);
 
         CommandManager.AddHandler(CommandName, new CommandInfo((_, _) => mainWindow.Toggle())
@@ -55,8 +68,19 @@ public sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.OpenConfigUi += mainWindow.Toggle;
     }
 
+    private void OnFrameworkUpdate(IFramework framework) => pool.Tick();
+
     public void Dispose()
     {
+        Framework.Update -= OnFrameworkUpdate;
+        // CharaViews must be released on the framework thread.
+        Framework.RunOnFrameworkThread(() =>
+        {
+            pool.Dispose();
+            cache.Dispose();
+        }).Wait();
+        appearance.Dispose();
+
         PluginInterface.UiBuilder.Draw -= windowSystem.Draw;
         PluginInterface.UiBuilder.OpenMainUi -= mainWindow.Toggle;
         PluginInterface.UiBuilder.OpenConfigUi -= mainWindow.Toggle;
