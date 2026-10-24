@@ -1,0 +1,26 @@
+using System;
+using System.Collections.Generic;
+using Dalamud.Configuration;
+using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Rendering;
+
+namespace GlamourBrowser;
+
+[Serializable]
+public sealed class Configuration : IPluginConfiguration
+{
+    public int Version { get; set; } = 1;
+
+    public int Columns { get; set; } = 6;
+    public int Rows { get; set; } = 3;
+    public TileMode TileMode { get; set; } = TileMode.CurrentOutfit;
+    public int ParallelViews { get; set; } = 3;
+
+    public float RotateSensitivity { get; set; } = 0.5f;
+    public float PanSensitivity { get; set; } = 0.5f;
+    public float ZoomSensitivity { get; set; } = 3f;
+
+    public Dictionary<EquipSlot, CameraPreset> CameraOverrides { get; set; } = new();
+
+    public void Save() => Plugin.PluginInterface.SavePluginConfig(this);
+}

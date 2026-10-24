@@ -6,6 +6,8 @@ using Dalamud.Plugin.Services;
 using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Interface.Textures.TextureWraps;
+using GlamourBrowser.Browser;
+using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Data;
 using GlamourBrowser.Ownership;
@@ -42,9 +44,13 @@ public sealed class Plugin : IDalamudPlugin
     private readonly TileQueue queue = new();
     private readonly TileCache<IDalamudTextureWrap> cache = new();
     private readonly RenderPool pool;
+    private readonly LivePreview live;
+    private readonly BrowserState browser;
+    private readonly Configuration config;
 
     public Plugin()
     {
+        config = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         var catalog = ItemCatalogLoader.Load(DataManager);
         ownership = new OwnershipService();
         inventoryReader = new InventoryReader(ownership);
@@ -53,7 +59,9 @@ public sealed class Plugin : IDalamudPlugin
         armoireReader = new ArmoireReader(ownership);
         appearance = new AppearanceTracker();
         var byId = catalog.ToDictionary(i => i.Id);
-        pool = new RenderPool(queue, cache, id => byId.GetValueOrDefault(id), appearance, slot => CameraPresets.Resolve(slot, null));
+        pool = new RenderPool(queue, cache, id => byId.GetValueOrDefault(id), appearance, CameraFor) { MaxViews = config.ParallelViews };
+        live = new LivePreview(pool, appearance, config, CameraFor);
+        browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config);
         Framework.Update += OnFrameworkUpdate;
         mainWindow = new MainWindow(catalog, ownership, appearance, queue, cache);
         windowSystem.AddWindow(mainWindow);
@@ -68,7 +76,16 @@ public sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.OpenConfigUi += mainWindow.Toggle;
     }
 
-    private void OnFrameworkUpdate(IFramework framework) => pool.Tick();
+    private CameraPreset CameraFor(EquipSlot slot) => CameraPresets.Resolve(slot, config.CameraOverrides);
+
+    private void OnFrameworkUpdate(IFramework framework)
+    {
+        lock (RenderSync.Lock)
+        {
+            pool.Tick();
+            live.Tick();
+        }
+    }
 
     public void Dispose()
     {
@@ -76,6 +93,7 @@ public sealed class Plugin : IDalamudPlugin
         // CharaViews must be released on the framework thread.
         Framework.RunOnFrameworkThread(() =>
         {
+            live.Dispose();
             pool.Dispose();
             cache.Dispose();
         }).Wait();
