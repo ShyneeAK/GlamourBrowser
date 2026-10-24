@@ -162,7 +162,7 @@ public sealed unsafe class RenderPool : IDisposable
                     worker.DressedAs = (key.Mode, key.AppearanceHash);
                 }
                 view.SetItem(item.Slot, key.ItemId, key.Stain0, key.Stain1);
-                view.SetWeaponDrawn(item.Slot is EquipSlot.MainHand or EquipSlot.OffHand);
+                // Tiles keep the weapon sheathed: drawing it plays an animation that would have to finish first.
                 view.ApplyCamera(cameraFor(item.Slot));
                 worker.Frames = 0;
                 worker.Phase = Phase.Loading;
