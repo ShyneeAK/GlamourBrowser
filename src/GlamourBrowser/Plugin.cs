@@ -3,6 +3,7 @@ using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using GlamourBrowser.Data;
 using GlamourBrowser.UI;
 
 namespace GlamourBrowser;
@@ -29,7 +30,8 @@ public sealed class Plugin : IDalamudPlugin
 
     public Plugin()
     {
-        mainWindow = new MainWindow();
+        var catalog = ItemCatalogLoader.Load(DataManager);
+        mainWindow = new MainWindow(catalog);
         windowSystem.AddWindow(mainWindow);
 
         CommandManager.AddHandler(CommandName, new CommandInfo((_, _) => mainWindow.Toggle())
