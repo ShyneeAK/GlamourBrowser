@@ -70,11 +70,13 @@ public sealed class Plugin : IDalamudPlugin
         live = new LivePreview(pool, appearance, config, CameraFor);
         browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config);
         Framework.Update += OnFrameworkUpdate;
+        var theme = new UI.Theme.Theme(config);
         mainWindow = new MainWindow(
             new FilterPanel(browser, ownership),
-            new TileGrid(browser, cache, pool, ownership, live, config),
-            new DetailPanel(browser, ownership, live, calibration));
-        settingsWindow = new SettingsWindow(config, browser, pool, calibration);
+            new TileGrid(browser, cache, pool, ownership, live, config, theme),
+            new DetailPanel(browser, ownership, live, calibration),
+            theme);
+        settingsWindow = new SettingsWindow(config, browser, pool, calibration, theme);
         windowSystem.AddWindow(mainWindow);
         windowSystem.AddWindow(settingsWindow);
 

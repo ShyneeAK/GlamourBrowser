@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility;
@@ -13,14 +14,25 @@ public sealed class MainWindow : Window
     private readonly FilterPanel filters;
     private readonly TileGrid grid;
     private readonly DetailPanel details;
+    private readonly Theme.Theme theme;
+    private IDisposable? themeScope;
 
-    public MainWindow(FilterPanel filters, TileGrid grid, DetailPanel details)
+    public MainWindow(FilterPanel filters, TileGrid grid, DetailPanel details, Theme.Theme theme)
         : base("GlamourBrowser##GlamourBrowser")
     {
+        this.theme = theme;
         this.filters = filters;
         this.grid = grid;
         this.details = details;
         SizeConstraints = new WindowSizeConstraints { MinimumSize = new Vector2(1000, 600) };
+    }
+
+    public override void PreDraw() => themeScope = theme.Push();
+
+    public override void PostDraw()
+    {
+        themeScope?.Dispose();
+        themeScope = null;
     }
 
     public override void Draw()

@@ -9,11 +9,11 @@ public static class TileStyle
 {
     public const uint OwnedColor = 0xFF40C040;
     public const uint MissingColor = 0xFF808080;
-    public const uint SelectedColor = 0xFFFFFFFF;
 
-    public static TileFrame FrameFor(bool owned, bool selected)
+    /// <param name="selectedColor">The theme's accent colour, used for the selection frame.</param>
+    public static TileFrame FrameFor(bool owned, bool selected, uint selectedColor)
     {
         var badge = owned ? OwnedColor : MissingColor;
-        return selected ? new TileFrame(SelectedColor, 3f, badge) : new TileFrame(badge, 2f, badge);
+        return selected ? new TileFrame(selectedColor, 3f, badge) : new TileFrame(badge, 2f, badge);
     }
 }

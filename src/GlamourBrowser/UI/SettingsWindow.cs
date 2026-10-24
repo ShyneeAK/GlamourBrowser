@@ -3,7 +3,9 @@ using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
 using GlamourBrowser.Browser;
+using System;
 using GlamourBrowser.Core.Rendering;
+using GlamourBrowser.Core.Ui;
 using GlamourBrowser.Rendering;
 
 namespace GlamourBrowser.UI;
@@ -14,19 +16,40 @@ public sealed class SettingsWindow : Window
     private readonly BrowserState state;
     private readonly RenderPool pool;
     private readonly CalibrationService calibration;
+    private readonly Theme.Theme theme;
+    private IDisposable? themeScope;
 
-    public SettingsWindow(Configuration config, BrowserState state, RenderPool pool, CalibrationService calibration)
+    private static readonly string[] AccentNames = ["Blau", "Violett", "Türkis", "Rosé", "Bernstein"];
+
+    public SettingsWindow(Configuration config, BrowserState state, RenderPool pool, CalibrationService calibration, Theme.Theme theme)
         : base("GlamourBrowser – Einstellungen##GlamourBrowserSettings")
     {
         this.config = config;
         this.state = state;
         this.pool = pool;
         this.calibration = calibration;
+        this.theme = theme;
         SizeConstraints = new WindowSizeConstraints { MinimumSize = new Vector2(420, 380) };
+    }
+
+    public override void PreDraw() => themeScope = theme.Push();
+
+    public override void PostDraw()
+    {
+        themeScope?.Dispose();
+        themeScope = null;
     }
 
     public override void Draw()
     {
+        var accent = (int)config.Accent;
+        if (ImGui.Combo("Akzentfarbe", ref accent, AccentNames, AccentNames.Length))
+        {
+            config.Accent = (AccentColor)accent;
+            config.Save();
+            theme.Refresh();
+        }
+
         var columns = config.Columns;
         var rows = config.Rows;
         var gridChanged = ImGui.SliderInt("Spalten", ref columns, 2, 10);

@@ -25,10 +25,12 @@ public sealed class TileGrid
     private readonly OwnershipService ownership;
     private readonly LivePreview live;
     private readonly Configuration config;
+    private readonly Theme.Theme theme;
 
     public TileGrid(BrowserState state, TileCache<IDalamudTextureWrap> cache, RenderPool pool, OwnershipService ownership,
-                    LivePreview live, Configuration config)
+                    LivePreview live, Configuration config, Theme.Theme theme)
     {
+        this.theme = theme;
         this.state = state;
         this.cache = cache;
         this.pool = pool;
@@ -139,7 +141,7 @@ public sealed class TileGrid
             drawList.AddText(pos + new Vector2(4, 2), ErrorColor, "!");
 
         var owned = ownership.Current?.IsOwned(item.Id) ?? false;
-        var frame = TileStyle.FrameFor(owned, state.Selected?.Id == item.Id);
+        var frame = TileStyle.FrameFor(owned, state.Selected?.Id == item.Id, theme.Colors.Accent);
         drawList.AddRect(pos, pos + size, frame.Color, 0, ImDrawFlags.None, frame.Thickness);
         // Corner triangle, top right: green when owned, gray when missing.
         var badge = MathF.Max(10f, size.X * 0.12f);

@@ -24,8 +24,8 @@ public static class ThemePalette
     private const uint Border = 0xFF3D332E;
     private const uint Text = 0xFFEDE7E3;
     private const uint TextMuted = 0xFFA3998B;
-    private const uint Owned = 0xFF6AAE3F;
-    private const uint Missing = 0xFF808080;
+    private const uint Owned = Rendering.TileStyle.OwnedColor;
+    private const uint Missing = Rendering.TileStyle.MissingColor;
     private const uint Warning = 0xFF4AC0F0;
     private const uint White = 0xFFFFFFFF;
 
