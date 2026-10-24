@@ -204,6 +204,17 @@ public sealed unsafe class RenderPool : IDisposable
 
                 worker.Key = key;
                 worker.Stopwatch.Restart();
+                // Sheathe while the view is still idle: once SetItem has started loading, the game ignores the toggle,
+                // its own state stays "drawn" and drawing again after the load would change nothing.
+                var sheathed = key.WeaponDrawn || worker.WeaponDrawn;
+                if (sheathed)
+                {
+                    // The previous tile may have left the animation frozen; unfreeze before sheathing.
+                    view.SetAnimationPaused(false);
+                    worker.Frozen = false;
+                    view.SetWeaponDrawn(false);
+                    worker.WeaponDrawn = false;
+                }
                 // Re-dress when the slot changes too, otherwise the previous tile's item (e.g. a hat)
                 // stays on the character.
                 var redressed = worker.DressedAs != (key.Mode, key.AppearanceHash, item.Slot);
@@ -219,7 +230,7 @@ public sealed unsafe class RenderPool : IDisposable
                 // rebuild the character) lets the animation run again and waits for it in the Pose phase.
                 // Every weapon tile draws anew: a freshly loaded weapon comes back sheathed while the view still
                 // reports it as drawn, and drawing again without sheathing first does nothing.
-                worker.PoseChanged = redressed || key.WeaponDrawn || worker.WeaponDrawn || worker.LastPose != key.Pose;
+                worker.PoseChanged = redressed || key.WeaponDrawn || sheathed || worker.LastPose != key.Pose;
                 worker.LastPose = key.Pose;
                 if (worker.PoseChanged)
                 {
@@ -233,11 +244,6 @@ public sealed unsafe class RenderPool : IDisposable
                     Plugin.Log.Warning($"Idle pose {key.Pose} could not be applied; tiles use the standard pose");
                 }
                 worker.DrawGate = null;
-                if (key.WeaponDrawn || worker.WeaponDrawn)
-                {
-                    view.SetWeaponDrawn(false);
-                    worker.WeaponDrawn = false;
-                }
                 worker.Frames = 0;
                 worker.Phase = Phase.Loading;
                 break;
