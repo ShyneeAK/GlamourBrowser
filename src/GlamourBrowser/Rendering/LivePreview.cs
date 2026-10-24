@@ -42,6 +42,9 @@ public sealed unsafe class LivePreview : IDisposable
 
     public void Select(GlamourItem? item) => Selected = item;
 
+    /// <summary>Pose spike: applied to the live view every frame while set; a None request is applied once and cleared.</summary>
+    public (PoseMethod Method, byte CPose, ushort Timeline)? TestPose { get; set; }
+
     public void QueueRotate(float dx, float dy)
     {
         rotateX += dx;
@@ -130,6 +133,13 @@ public sealed unsafe class LivePreview : IDisposable
             view.SetWeaponDrawn(WeaponDrawn);
             appliedWeaponDrawn = WeaponDrawn;
             appliedWeaponVisible = null;
+        }
+
+        if (TestPose is { } pose && view.State == CharaViewHandle.StateReady)
+        {
+            view.ApplyPose(pose.Method, pose.CPose, pose.Timeline);
+            if (pose.Method == PoseMethod.None)
+                TestPose = null;
         }
 
         ApplyCameraInput(view);

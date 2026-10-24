@@ -27,6 +27,14 @@ namespace GlamourBrowser.Rendering;
 ///  - The image ends up in RenderTargetManager.GetCharaViewTexture(index); there are 8 slots (0-7).
 ///  - Dtor(1) frees through the game's operator delete; we free through IMemorySpace instead.
 /// </summary>
+/// <summary>How a pose is put on a view's character (pose spike).</summary>
+public enum PoseMethod
+{
+    None,
+    CPose,
+    BaseOverride,
+}
+
 public sealed unsafe class CharaViewHandle : IDisposable
 {
     public const uint StateReady = 6;
@@ -169,6 +177,40 @@ public sealed unsafe class CharaViewHandle : IDisposable
     /// The view's absolute camera state. "Rotate" and "pan" move the character inside the view's
     /// scene (GameObject.Rotation / Position); "zoom" is a distance in the render camera.
     /// </summary>
+    /// <summary>
+    /// Pose spike: sets the idle pose state or overrides the base timeline of the view's character.
+    /// <see cref="PoseMethod.None"/> clears the base override. Returns false when there is no character.
+    /// </summary>
+    public bool ApplyPose(PoseMethod method, byte cpose, ushort timelineId)
+    {
+        if (view == null)
+            return false;
+        try
+        {
+            var character = view->GetCharacter();
+            if (character == null)
+                return false;
+            switch (method)
+            {
+                case PoseMethod.CPose:
+                    character->EmoteController.CPoseState = cpose;
+                    break;
+                case PoseMethod.BaseOverride:
+                    character->Timeline.BaseOverride = timelineId;
+                    break;
+                default:
+                    character->Timeline.BaseOverride = 0;
+                    break;
+            }
+            return true;
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.Warning(e, $"ApplyPose {method} failed");
+            return false;
+        }
+    }
+
     public CameraPreset? ReadCamera()
     {
         var character = ViewCharacter();

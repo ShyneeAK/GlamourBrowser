@@ -101,6 +101,11 @@ public sealed class Plugin : IDalamudPlugin
     private void OnCommand(string command, string args)
     {
         var parts = args.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 1 && parts[0] == "pose")
+        {
+            Framework.RunOnFrameworkThread(() => PoseCommand(parts.Length > 1 ? parts[1] : "list"));
+            return;
+        }
         if (parts.Length == 0 || parts[0] != "diag")
         {
             mainWindow.Toggle();
@@ -126,6 +131,41 @@ public sealed class Plugin : IDalamudPlugin
                     Log.Information($"[diag] pool: {line}");
             }
         });
+    }
+
+    /// <summary>Pose spike: /gbrowser pose list|cpose|base|off, applied to the live preview.</summary>
+    private unsafe void PoseCommand(string mode)
+    {
+        var cpose = FFXIVClientStructs.FFXIV.Client.Game.UI.PlayerState.Instance()->CurrentPose(
+            FFXIVClientStructs.FFXIV.Client.Game.Control.EmoteController.PoseType.Idle);
+        var timelines = DataManager.GetExcelSheet<Lumina.Excel.Sheets.ActionTimeline>()
+            .Where(t => t.Key.ExtractText().Contains("emote/pose"))
+            .Select(t => (t.RowId, Key: t.Key.ExtractText()))
+            .ToList();
+        var wantedKey = $"emote/pose{cpose:D2}_loop";
+        var timeline = timelines.FirstOrDefault(t => t.Key == wantedKey).RowId;
+
+        switch (mode)
+        {
+            case "list":
+                Log.Information($"[pose] idle pose (CurrentPose Idle) = {cpose}, looking for '{wantedKey}' → timeline {timeline}");
+                foreach (var t in timelines.Take(80))
+                    Log.Information($"[pose] timeline {t.RowId}: {t.Key}");
+                ChatGui.Print($"GlamourBrowser: Idle-Pose {cpose}, Timeline {timeline} ('{wantedKey}'); Liste im Log (/xllog).");
+                break;
+            case "cpose":
+                live.TestPose = (PoseMethod.CPose, (byte)cpose, 0);
+                ChatGui.Print($"GlamourBrowser: Live-Vorschau mit CPoseState = {cpose}.");
+                break;
+            case "base":
+                live.TestPose = (PoseMethod.BaseOverride, (byte)cpose, (ushort)timeline);
+                ChatGui.Print($"GlamourBrowser: Live-Vorschau mit BaseOverride = {timeline} ('{wantedKey}').");
+                break;
+            default:
+                live.TestPose = (PoseMethod.None, 0, 0);
+                ChatGui.Print("GlamourBrowser: Pose zurückgesetzt.");
+                break;
+        }
     }
 
     private CameraPreset? CameraFor(EquipSlot slot) => calibration.Get(PlayerState.ContentId, slot);
