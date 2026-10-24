@@ -1,3 +1,4 @@
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Command;
 using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
@@ -48,6 +49,8 @@ public sealed class Plugin : IDalamudPlugin
     private readonly LivePreview live;
     private readonly BrowserState browser;
     private readonly Configuration config;
+    private bool paused;
+    private GlamourItem? selectionBeforePause;
 
     public Plugin()
     {
@@ -88,10 +91,39 @@ public sealed class Plugin : IDalamudPlugin
     {
         lock (RenderSync.Lock)
         {
+            var pause = ShouldPause();
+            if (pause && !paused)
+            {
+                paused = true;
+                selectionBeforePause = live.Selected;
+                live.Select(null);
+                live.Tick();
+                pool.Pause();
+            }
+            else if (!pause && paused)
+            {
+                paused = false;
+                pool.Resume();
+                live.Select(selectionBeforePause);
+                browser.Refresh();
+            }
+
+            if (paused)
+                return;
             pool.Tick();
             live.Tick();
         }
     }
+
+    /// <summary>CharaViews are released during zone changes, cutscenes, GPose and while logged out.</summary>
+    private static bool ShouldPause()
+        => ObjectTable.LocalPlayer == null
+           || ClientState.IsGPosing
+           || Condition[ConditionFlag.BetweenAreas]
+           || Condition[ConditionFlag.BetweenAreas51]
+           || Condition[ConditionFlag.OccupiedInCutSceneEvent]
+           || Condition[ConditionFlag.WatchingCutscene]
+           || Condition[ConditionFlag.WatchingCutscene78];
 
     public void Dispose()
     {
