@@ -96,9 +96,32 @@ public sealed unsafe class LivePane
                 live.QueueZoom(io.MouseWheel);
             if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left))
                 live.QueueReset();
-            ImGui.SetTooltip("Links ziehen: drehen · Rechts ziehen: verschieben · Mausrad: Zoom · Doppelklick: zurücksetzen");
         }
+
+        DrawHelpIcon(drawList, origin + new Vector2(area.X, 0));
         ImGui.SetCursorScreenPos(origin + new Vector2(0, area.Y + ImGui.GetStyle().ItemSpacing.Y));
+    }
+
+    /// <summary>
+    /// Controls help as a small "?" in the top-right corner; the tooltip only shows over the icon,
+    /// not while dragging the preview.
+    /// </summary>
+    private void DrawHelpIcon(ImDrawListPtr drawList, Vector2 topRight)
+    {
+        string glyph;
+        Vector2 glyphSize;
+        using (ImRaii.PushFont(UiBuilder.IconFont))
+        {
+            glyph = FontAwesomeIcon.QuestionCircle.ToIconString();
+            glyphSize = ImGui.CalcTextSize(glyph);
+        }
+
+        var min = topRight + new Vector2(-glyphSize.X - 8, 8);
+        var hovered = ImGui.IsMouseHoveringRect(min, min + glyphSize) && !ImGui.IsMouseDown(ImGuiMouseButton.Left) && !ImGui.IsMouseDown(ImGuiMouseButton.Right);
+        using (ImRaii.PushFont(UiBuilder.IconFont))
+            drawList.AddText(min, hovered ? theme.Colors.Text : theme.Colors.TextMuted, glyph);
+        if (hovered)
+            ImGui.SetTooltip("Links ziehen: drehen\nRechts ziehen: verschieben\nMausrad: Zoom\nDoppelklick: zurücksetzen");
     }
 
     private void DrawItemCard()
