@@ -28,11 +28,29 @@ public sealed class ShopNpcResolver
     public ShopNpcResolver(GameData data, Action<string> log)
     {
         this.data = data;
-        MapNpcData();
-        MapFateShops();
-        MapSupplementalShops(log);
-        LoadLevelPlaces();
-        LoadSupplementalPlaces(log);
+        Step("Händler-NPCs", MapNpcData, log);
+        Step("FATE-Händler", MapFateShops, log);
+        Step("Händler-Zuordnung (Supplemental)", () => MapSupplementalShops(log), log);
+        Step("Händler-Orte", LoadLevelPlaces, log);
+        Step("Händler-Orte (Supplemental)", () => LoadSupplementalPlaces(log), log);
+    }
+
+    /// <summary>Steps that threw; the resolver still works with what the other steps found.</summary>
+    public IReadOnlyList<string> Failures => failures;
+
+    private readonly List<string> failures = new();
+
+    private void Step(string name, System.Action step, Action<string> log)
+    {
+        try
+        {
+            step();
+        }
+        catch (Exception e)
+        {
+            log($"Shop resolver step '{name}' failed: {e}");
+            failures.Add(name);
+        }
     }
 
     public IReadOnlyList<uint> NpcsForShop(uint shopId) => npcsByShop.TryGetValue(shopId, out var list) ? list : [];

@@ -227,7 +227,8 @@ public sealed unsafe class LivePane
         if (source.CostItemId != 0 && source.CostAmount > 0)
         {
             ImGui.SameLine();
-            GameIcon.Draw(SourceIcons.ItemIcon(source.CostItemId), new Vector2(ImGui.GetTextLineHeight()), FontAwesomeIcon.Coins, theme.Colors.TextMuted);
+            var costIcon = SpecialShopCost.IsExactCurrency(source.CostItemId) ? SourceIcons.ItemIcon(source.CostItemId) : SourceIcons.IconFor(SourceCategory.Scrips);
+            GameIcon.Draw(costIcon, new Vector2(ImGui.GetTextLineHeight()), FontAwesomeIcon.Coins, theme.Colors.TextMuted);
             ImGui.SameLine(0, 2);
             ImGui.TextUnformatted(source.CostAmount.ToString("N0"));
         }

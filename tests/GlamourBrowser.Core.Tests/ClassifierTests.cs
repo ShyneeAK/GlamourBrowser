@@ -52,6 +52,20 @@ public class ClassifierTests
     [Fact]
     public void SpecialShopCost_Type4TomestoneIndex() => Assert.Equal(48u, SpecialShopCost.ResolveItemId(2, 4, OrderedTomestones));
 
+    [Theory]
+    [InlineData(1u, 0)]
+    [InlineData(2u, 1)]
+    [InlineData(3u, 2)]
+    public void SpecialShopCost_Type2AllCodesAreTomestones(uint code, int index)
+        => Assert.Equal(OrderedTomestones[index], SpecialShopCost.ResolveItemId(code, 2, OrderedTomestones));
+
+    [Fact]
+    public void SpecialShopCost_AnyScripIsNotAnExactCurrency()
+    {
+        Assert.False(SpecialShopCost.IsExactCurrency(SpecialShopCost.AnyScrip));
+        Assert.True(SpecialShopCost.IsExactCurrency(28));
+    }
+
     [Fact]
     public void SpecialShopCost_Type8IsGil() => Assert.Equal(1u, SpecialShopCost.ResolveItemId(3, 8, OrderedTomestones));
 

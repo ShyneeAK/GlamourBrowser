@@ -26,10 +26,13 @@ public static class SpecialShopCost
             },
             8 => CurrencyCategory.Gil,
             4 => Tomestone(costItemId, orderedTomestoneItemIds),
-            2 when costItemId == 1 => Tomestone(costItemId, orderedTomestoneItemIds),
+            2 => Tomestone(costItemId, orderedTomestoneItemIds),
             _ => costItemId,
         };
     }
+
+    /// <summary>False for <see cref="AnyScrip"/>: it only names the category, not the scrip actually paid.</summary>
+    public static bool IsExactCurrency(uint itemId) => itemId != AnyScrip;
 
     private static uint Tomestone(uint code, IReadOnlyList<uint> ordered)
         => code <= ordered.Count ? ordered[(int)code - 1] : code;
