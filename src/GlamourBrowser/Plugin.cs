@@ -50,12 +50,14 @@ public sealed class Plugin : IDalamudPlugin
     private readonly LivePreview live;
     private readonly BrowserState browser;
     private readonly Configuration config;
+    private readonly CalibrationService calibration;
     private bool paused;
     private GlamourItem? selectionBeforePause;
 
     public Plugin()
     {
         config = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+        calibration = new CalibrationService(config);
         var catalog = ItemCatalogLoader.Load(DataManager);
         ownership = new OwnershipService();
         inventoryReader = new InventoryReader(ownership);
@@ -71,8 +73,8 @@ public sealed class Plugin : IDalamudPlugin
         mainWindow = new MainWindow(
             new FilterPanel(browser, ownership),
             new TileGrid(browser, cache, pool, ownership, live, config),
-            new DetailPanel(browser, ownership, live, config));
-        settingsWindow = new SettingsWindow(config, browser, pool);
+            new DetailPanel(browser, ownership, live, calibration));
+        settingsWindow = new SettingsWindow(config, browser, pool, calibration);
         windowSystem.AddWindow(mainWindow);
         windowSystem.AddWindow(settingsWindow);
 
@@ -116,7 +118,7 @@ public sealed class Plugin : IDalamudPlugin
         });
     }
 
-    private CameraPreset? CameraFor(EquipSlot slot) => new CameraCalibrations(config.CameraCalibrations).Get(PlayerState.ContentId, slot);
+    private CameraPreset? CameraFor(EquipSlot slot) => calibration.Get(PlayerState.ContentId, slot);
 
     private void OnFrameworkUpdate(IFramework framework)
     {

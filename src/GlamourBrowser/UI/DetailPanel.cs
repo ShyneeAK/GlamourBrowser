@@ -20,15 +20,15 @@ public sealed unsafe class DetailPanel
     private readonly BrowserState state;
     private readonly OwnershipService ownership;
     private readonly LivePreview live;
-    private readonly Configuration config;
+    private readonly CalibrationService calibration;
     private readonly Dictionary<uint, string> jobAbbreviations;
 
-    public DetailPanel(BrowserState state, OwnershipService ownership, LivePreview live, Configuration config)
+    public DetailPanel(BrowserState state, OwnershipService ownership, LivePreview live, CalibrationService calibration)
     {
         this.state = state;
         this.ownership = ownership;
         this.live = live;
-        this.config = config;
+        this.calibration = calibration;
         jobAbbreviations = Plugin.DataManager.GetExcelSheet<ClassJob>().ToDictionary(j => j.RowId, j => j.Abbreviation.ExtractText());
     }
 
@@ -58,28 +58,23 @@ public sealed unsafe class DetailPanel
     private void DrawCalibration(GlamourItem item)
     {
         var contentId = Plugin.PlayerState.ContentId;
-        var calibrations = new CameraCalibrations(config.CameraCalibrations);
         var slotName = SlotNames.All.FirstOrDefault(s => s.Slot == item.Slot).Name ?? item.Slot.ToString();
 
         if (ImGui.Button($"Kamera-Position festlegen für ({slotName})") && live.CaptureCamera() is { } preset)
         {
-            calibrations.Set(contentId, item.Slot, preset);
-            config.Save();
+            calibration.Set(contentId, item.Slot, preset);
             state.InvalidateTiles();
         }
 
-        if (calibrations.Get(contentId, item.Slot) == null)
+        if (calibration.Get(contentId, item.Slot) == null)
         {
             ImGui.TextDisabled($"{slotName}: Standardansicht");
             return;
         }
 
         ImGui.SameLine();
-        if (ImGui.Button("Zurücksetzen##calibration") && calibrations.Remove(contentId, item.Slot))
-        {
-            config.Save();
+        if (ImGui.Button("Zurücksetzen##calibration") && calibration.Remove(contentId, item.Slot))
             state.InvalidateTiles();
-        }
         ImGui.TextDisabled($"{slotName}: kalibriert");
     }
 

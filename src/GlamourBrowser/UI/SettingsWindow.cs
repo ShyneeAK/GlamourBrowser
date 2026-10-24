@@ -13,13 +13,15 @@ public sealed class SettingsWindow : Window
     private readonly Configuration config;
     private readonly BrowserState state;
     private readonly RenderPool pool;
+    private readonly CalibrationService calibration;
 
-    public SettingsWindow(Configuration config, BrowserState state, RenderPool pool)
+    public SettingsWindow(Configuration config, BrowserState state, RenderPool pool, CalibrationService calibration)
         : base("GlamourBrowser – Einstellungen##GlamourBrowserSettings")
     {
         this.config = config;
         this.state = state;
         this.pool = pool;
+        this.calibration = calibration;
         SizeConstraints = new WindowSizeConstraints { MinimumSize = new Vector2(420, 380) };
     }
 
@@ -70,8 +72,8 @@ public sealed class SettingsWindow : Window
         ImGui.TextWrapped("Kalibriert wird in der Live-Ansicht: Item eines Slots auswählen, Ansicht einstellen, „Kamera-Position festlegen“ klicken.");
 
         var contentId = Plugin.PlayerState.ContentId;
-        var calibrations = new CameraCalibrations(config.CameraCalibrations);
-        var calibrated = calibrations.For(contentId);
+        calibration.Ensure(contentId);
+        var calibrated = calibration.Calibrations.For(contentId);
         foreach (var (slot, name) in SlotNames.All)
         {
             if (!calibrated.ContainsKey(slot))
@@ -82,11 +84,8 @@ public sealed class SettingsWindow : Window
 
             ImGui.TextUnformatted($"{name}: kalibriert");
             ImGui.SameLine();
-            if (ImGui.SmallButton($"Zurücksetzen##{slot}") && calibrations.Remove(contentId, slot))
-            {
-                config.Save();
+            if (ImGui.SmallButton($"Zurücksetzen##{slot}") && calibration.Remove(contentId, slot))
                 state.InvalidateTiles();
-            }
         }
     }
 }

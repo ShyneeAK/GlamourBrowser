@@ -20,7 +20,7 @@ public sealed class Configuration : IPluginConfiguration
     public float PanSensitivity { get; set; } = 0.5f;
     public float ZoomSensitivity { get; set; } = 3f;
 
-    /// <summary>Camera calibration per character (ContentId) and slot.</summary>
+    /// <summary>Only read once to migrate old data; calibrations now live in per-character files (CalibrationService).</summary>
     public Dictionary<ulong, Dictionary<EquipSlot, CameraPreset>> CameraCalibrations { get; set; } = new();
 
     public void Save() => Plugin.PluginInterface.SavePluginConfig(this);
