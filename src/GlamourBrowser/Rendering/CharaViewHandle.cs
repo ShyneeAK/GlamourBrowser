@@ -146,12 +146,14 @@ public sealed unsafe class CharaViewHandle : IDisposable
         if (character == null)
             return text + ", no character";
         text += $", DrawData.IsWeaponHidden {character->DrawData.IsWeaponHidden}, IsWeaponDrawn {character->IsWeaponDrawn}, Flags2 {character->DrawData.Flags2:X2}";
+        var body = character->GameObject.DrawObject;
+        text += body != null ? $", body flags {body->Flags:X2} visible {body->IsVisible}" : ", no body";
         for (var i = 0; i < 2; i++)
         {
             ref var w = ref character->DrawData.WeaponData[i];
             text += $" | weapon{i}: model {w.ModelId.Value:X}, drawObject {(nint)w.DrawData.DrawObject:X}, IsHidden {w.IsHidden}, State {w.State:X2}, Flags1 {w.Flags1:X4}, Flags2 {w.Flags2:X2}";
             if (w.DrawData.DrawObject != null)
-                text += $", visible {w.DrawData.DrawObject->IsVisible}";
+                text += $", flags {w.DrawData.DrawObject->Flags:X2} visible {w.DrawData.DrawObject->IsVisible}";
         }
         return text;
     }
