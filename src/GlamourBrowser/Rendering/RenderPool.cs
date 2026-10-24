@@ -20,9 +20,12 @@ public sealed unsafe class RenderPool : IDisposable
     private const int SettleFrames = 1;
     private const int TimeoutFrames = 600;
     private const int MaxVisibilityRetries = 30;
+    // Frames the idle-pose timeline has to play before the copy (blend from the previous animation).
+    private const int PoseBlendFrames = 12;
+    private const int PoseTimeoutFrames = 180;
     private static readonly TimeSpan IdleRelease = TimeSpan.FromSeconds(5);
 
-    private enum Phase { WaitReady, Apply, Loading, Settle, Copy }
+    private enum Phase { WaitReady, Apply, Loading, Settle, Pose, Copy }
 
     private sealed class Worker(CharaViewHandle view)
     {
@@ -33,6 +36,7 @@ public sealed unsafe class RenderPool : IDisposable
         public Stopwatch Stopwatch { get; } = new();
         public Task<IDalamudTextureWrap>? CopyTask { get; set; }
         public SettleGate? Gate { get; set; }
+        public PoseGate? PoseGate { get; set; }
         public (TileMode Mode, ulong Hash, EquipSlot Slot)? DressedAs { get; set; }
         public bool Busy => Key != null;
     }
@@ -48,6 +52,7 @@ public sealed unsafe class RenderPool : IDisposable
     private DateTime lastWork = DateTime.UtcNow;
     private bool liveReserved;
     private bool poseWarned;
+    private int poseDiagnosticsBudget = 6;
 
     public RenderPool(TileQueue queue, TileCache<IDalamudTextureWrap> cache, Func<uint, GlamourItem?> lookup,
                       AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor)
@@ -235,6 +240,25 @@ public sealed unsafe class RenderPool : IDisposable
                 }
                 if (worker.Gate.Retries > 0)
                     Plugin.Log.Verbose($"Tile {worker.Key!.Value.ItemId}: weapon visibility re-applied {worker.Gate.Retries}x");
+                worker.PoseGate = new PoseGate(PoseTimelines.For(worker.Key!.Value.Pose), PoseBlendFrames, PoseTimeoutFrames);
+                worker.Phase = Phase.Pose;
+                break;
+
+            case Phase.Pose:
+                var (playing, overridden) = view.BaseTimeline();
+                var poseState = worker.PoseGate!.Step(playing);
+                if (poseState == PoseGateState.Wait)
+                    return;
+                if (poseDiagnosticsBudget > 0 && worker.Key!.Value.Pose != TileKey.StandardPose)
+                {
+                    poseDiagnosticsBudget--;
+                    Plugin.Log.Information($"[pose] tile {worker.Key.Value.ItemId}: pose {worker.Key.Value.Pose}, wanted {PoseTimelines.For(worker.Key.Value.Pose)}, playing {playing}, override {overridden}, {worker.PoseGate.Frames} frames, {poseState}");
+                }
+                if (poseState == PoseGateState.Timeout && !poseWarned)
+                {
+                    poseWarned = true;
+                    Plugin.Log.Warning($"Idle pose {worker.Key!.Value.Pose} did not start playing; tiles may show the standard pose");
+                }
                 var texture = view.GetTexture();
                 if (texture == null || texture->D3D11ShaderResourceView == null)
                 {

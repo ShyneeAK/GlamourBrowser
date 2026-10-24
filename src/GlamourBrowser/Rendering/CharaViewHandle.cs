@@ -194,6 +194,17 @@ public sealed unsafe class CharaViewHandle : IDisposable
         }
     }
 
+    /// <summary>The base (slot 0) timeline the character is playing right now, and its base override.</summary>
+    public (ushort Playing, ushort Override) BaseTimeline()
+    {
+        if (view == null)
+            return (0, 0);
+        var character = view->GetCharacter();
+        if (character == null)
+            return (0, 0);
+        return (character->Timeline.TimelineSequencer.TimelineIds[0], character->Timeline.BaseOverride);
+    }
+
     public CameraPreset? ReadCamera()
     {
         var character = ViewCharacter();
