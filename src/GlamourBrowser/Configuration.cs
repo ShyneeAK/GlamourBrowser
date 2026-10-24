@@ -4,6 +4,7 @@ using Dalamud.Configuration;
 using Newtonsoft.Json;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Rendering;
+using GlamourBrowser.Core.Sources;
 using GlamourBrowser.Core.Ui;
 
 namespace GlamourBrowser;
@@ -19,6 +20,7 @@ public sealed class Configuration : IPluginConfiguration
     public int ParallelViews { get; set; } = 3;
 
     public AccentColor Accent { get; set; } = AccentColor.Blue;
+    public SortOrder Sort { get; set; } = SortOrder.Level;
     public bool FilterColumnVisible { get; set; } = true;
     /// <summary>Replace, not merge, on load: otherwise a closed default section would reopen after a restart.</summary>
     [JsonProperty(ObjectCreationHandling = ObjectCreationHandling.Replace)]

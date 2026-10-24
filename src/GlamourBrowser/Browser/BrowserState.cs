@@ -4,8 +4,10 @@ using Dalamud.Interface.Textures.TextureWraps;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Layout;
 using GlamourBrowser.Core.Rendering;
+using GlamourBrowser.Core.Sources;
 using GlamourBrowser.Ownership;
 using GlamourBrowser.Rendering;
+using GlamourBrowser.Sources;
 
 namespace GlamourBrowser.Browser;
 
@@ -18,11 +20,13 @@ public sealed class BrowserState
     private readonly TileQueue queue;
     private readonly TileCache<IDalamudTextureWrap> cache;
     private readonly Configuration config;
+    private readonly SourceService sources;
     private FilterState filter = new();
 
     public BrowserState(IReadOnlyList<GlamourItem> catalog, OwnershipService ownership, AppearanceTracker appearance,
-                        TileQueue queue, TileCache<IDalamudTextureWrap> cache, RenderPool pool, Configuration config)
+                        TileQueue queue, TileCache<IDalamudTextureWrap> cache, RenderPool pool, Configuration config, SourceService sources)
     {
+        this.sources = sources;
         this.catalog = catalog;
         this.ownership = ownership;
         this.appearance = appearance;
@@ -35,6 +39,7 @@ public sealed class BrowserState
         appearance.Changed += InvalidateTiles;
         ownership.Changed += OnOwnershipChanged;
         pool.Disrupted += RequestTiles;
+        sources.Ready += Refresh;
         Refresh();
     }
 
@@ -83,6 +88,13 @@ public sealed class BrowserState
         RequestTiles();
     }
 
+    public void SetSort(SortOrder sort)
+    {
+        config.Sort = sort;
+        config.Save();
+        Refresh();
+    }
+
     public TileKey KeyFor(GlamourItem item)
         => new(item.Id, 0, 0, config.TileMode, appearance.Hash, Layout.RenderWidth == 0 ? PageLayout.RenderSteps[0] : Layout.RenderWidth);
 
@@ -92,7 +104,10 @@ public sealed class BrowserState
         lock (RenderSync.Lock)
         {
             var store = ownership.Current;
-            Results = ItemFilter.Apply(catalog, filter, id => store?.IsOwned(id) ?? false, appearance.Race, appearance.Sex);
+            // Categories and patches only once the background index is ready; the sort always comes from the config.
+            var index = sources.IsReady ? sources.Index : null;
+            Results = ItemFilter.Apply(catalog, filter with { Sort = config.Sort }, id => store?.IsOwned(id) ?? false, appearance.Race, appearance.Sex,
+                index == null ? null : index.CategoriesOf, index == null ? null : index.PatchOf);
             PageIndex = ItemFilter.ClampPage(PageIndex, Results.Count, PageSize);
             RequestTiles();
         }

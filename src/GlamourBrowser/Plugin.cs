@@ -14,6 +14,7 @@ using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Data;
 using GlamourBrowser.Ownership;
 using GlamourBrowser.Rendering;
+using GlamourBrowser.Sources;
 using GlamourBrowser.UI;
 
 namespace GlamourBrowser;
@@ -52,6 +53,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly BrowserState browser;
     private readonly Configuration config;
     private readonly CalibrationService calibration;
+    private readonly SourceService sources;
     private bool paused;
     private GlamourItem? selectionBeforePause;
 
@@ -69,7 +71,8 @@ public sealed class Plugin : IDalamudPlugin
         var byId = catalog.ToDictionary(i => i.Id);
         pool = new RenderPool(queue, cache, id => byId.GetValueOrDefault(id), appearance, CameraFor) { MaxViews = config.ParallelViews };
         live = new LivePreview(pool, appearance, config, CameraFor);
-        browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config);
+        sources = new SourceService(catalog.Select(i => i.Id).ToHashSet());
+        browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources);
         Framework.Update += OnFrameworkUpdate;
         var theme = new UI.Theme.Theme(config);
         var jobs = new JobCatalog(DataManager);
