@@ -149,6 +149,27 @@ public sealed unsafe class CharaViewHandle : IDisposable
         *distance = p.Distance;
     }
 
+    /// <summary>Diagnostics: weapon visibility state of this view's character.</summary>
+    public string DescribeWeapons()
+    {
+        if (view == null)
+            return $"slot {Index}: no view";
+        var text = $"slot {Index}: state {view->State}, ModelData.WeaponHidden {view->ModelData.WeaponHidden}, " +
+                   $"ModelData.Weapon0 {view->ModelData.WeaponModelIds[0].Value:X}";
+        var character = view->GetCharacter();
+        if (character == null)
+            return text + ", no character";
+        text += $", DrawData.IsWeaponHidden {character->DrawData.IsWeaponHidden}, IsWeaponDrawn {character->IsWeaponDrawn}, Flags2 {character->DrawData.Flags2:X2}";
+        for (var i = 0; i < 2; i++)
+        {
+            ref var w = ref character->DrawData.WeaponData[i];
+            text += $" | weapon{i}: model {w.ModelId.Value:X}, drawObject {(nint)w.DrawData.DrawObject:X}, IsHidden {w.IsHidden}, State {w.State:X2}, Flags1 {w.Flags1:X4}, Flags2 {w.Flags2:X2}";
+            if (w.DrawData.DrawObject != null)
+                text += $", visible {w.DrawData.DrawObject->IsVisible}";
+        }
+        return text;
+    }
+
     private GameObjectStruct* ViewCharacter()
         => view != null && view->State == StateReady ? (GameObjectStruct*)view->GetCharacter() : null;
 

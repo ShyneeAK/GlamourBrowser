@@ -75,14 +75,34 @@ public sealed class Plugin : IDalamudPlugin
         windowSystem.AddWindow(mainWindow);
         windowSystem.AddWindow(settingsWindow);
 
-        CommandManager.AddHandler(CommandName, new CommandInfo((_, _) => mainWindow.Toggle())
+        CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
-            HelpMessage = "Öffnet den GlamourBrowser.",
+            HelpMessage = "Öffnet den GlamourBrowser. /gbrowser diag schreibt den Waffenzustand aller Ansichten ins Log.",
         });
 
         PluginInterface.UiBuilder.Draw += windowSystem.Draw;
         PluginInterface.UiBuilder.OpenMainUi += mainWindow.Toggle;
         PluginInterface.UiBuilder.OpenConfigUi += settingsWindow.Toggle;
+    }
+
+    private void OnCommand(string command, string args)
+    {
+        if (args.Trim() != "diag")
+        {
+            mainWindow.Toggle();
+            return;
+        }
+
+        Framework.RunOnFrameworkThread(() =>
+        {
+            lock (RenderSync.Lock)
+            {
+                Log.Information($"[diag] live: {live.DescribeWeapons()}");
+                pool.WeaponDiagnosticsBudget = 6;
+                foreach (var line in pool.DescribeWeapons())
+                    Log.Information($"[diag] pool: {line}");
+            }
+        });
     }
 
     private CameraPreset? CameraFor(EquipSlot slot) => new CameraCalibrations(config.CameraCalibrations).Get(PlayerState.ContentId, slot);

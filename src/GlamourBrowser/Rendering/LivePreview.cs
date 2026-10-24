@@ -52,6 +52,8 @@ public sealed unsafe class LivePreview : IDisposable
     /// <summary>The live view's current camera state, for saving as the selected slot's calibration.</summary>
     public CameraPreset? CaptureCamera() => view?.ReadCamera();
 
+    public string DescribeWeapons() => view?.DescribeWeapons() ?? "live: no view";
+
     /// <summary>Call once per framework tick, after the render pool.</summary>
     public void Tick()
     {

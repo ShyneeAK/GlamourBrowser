@@ -80,6 +80,11 @@ public sealed unsafe class RenderPool : IDisposable
 
     public void ClearFailures() => failures.Clear();
 
+    public System.Collections.Generic.IEnumerable<string> DescribeWeapons() => workers.Select(w => w.View.DescribeWeapons()).ToList();
+
+    /// <summary>Diagnostics: log the weapon state of the next few finished weapon tiles.</summary>
+    public int WeaponDiagnosticsBudget { get; set; }
+
     public void Tick()
     {
         if (IsPaused)
@@ -212,6 +217,11 @@ public sealed unsafe class RenderPool : IDisposable
                 }
 
                 var done = worker.Key!.Value;
+                if (WeaponDiagnosticsBudget > 0 && lookup(done.ItemId)?.Slot is EquipSlot.MainHand or EquipSlot.OffHand)
+                {
+                    WeaponDiagnosticsBudget--;
+                    Plugin.Log.Information($"[diag] tile {done.ItemId}: {view.DescribeWeapons()}");
+                }
                 cache.Add(done, task.Result);
                 failures.Remove(done);
                 Plugin.Log.Verbose($"Tile {done.ItemId} on slot {view.Index}: {worker.Stopwatch.Elapsed.TotalMilliseconds:F0} ms");
