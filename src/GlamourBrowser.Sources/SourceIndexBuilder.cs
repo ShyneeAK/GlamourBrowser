@@ -18,7 +18,9 @@ public sealed class SourceIndexBuilder(GameData data, IReadOnlySet<uint> relevan
         {
             foreach (var failure in npcs.Failures)
                 builder.MarkFailure(failure);
-            Run(builder, "Gil-Händler", () => ShopSources.AddGilShops(builder, data, npcs, relevantItems));
+            IReadOnlySet<uint> jobGear = new HashSet<uint>();
+            Run(builder, "Job-Ausrüstung", () => jobGear = JobGearItems.Find(data, relevantItems));
+            Run(builder, "Gil-Händler", () => ShopSources.AddGilShops(builder, data, npcs, relevantItems, jobGear));
             Run(builder, "Staatliche Gesellschaft", () => ShopSources.AddGrandCompany(builder, data, npcs, relevantItems));
             Run(builder, "Spezialshops", () => ShopSources.AddSpecialShops(builder, data, npcs, relevantItems));
         }

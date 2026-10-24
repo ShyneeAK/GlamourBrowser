@@ -49,13 +49,13 @@ public static class QuestSources
             foreach (var itemId in new[] { relic.ItemId, relic.OffhandItemId })
             {
                 if (relevant.Contains(itemId))
-                    builder.Add(itemId, new ItemSource(SourceCategory.JobArtifact, "Reliktwaffe", $"Stufe {relic.Stage}"));
+                    builder.Add(itemId, new ItemSource(SourceCategory.JobGear, "Reliktwaffe", $"Stufe {relic.Stage}"));
             }
         }
         foreach (var relic in SupplementalCsv.Load<RelicTool>(data, CsvLoader.RelicToolResourceName, log))
         {
             if (relevant.Contains(relic.ItemId))
-                builder.Add(relic.ItemId, new ItemSource(SourceCategory.JobArtifact, "Reliktwerkzeug", $"Stufe {relic.Stage}"));
+                builder.Add(relic.ItemId, new ItemSource(SourceCategory.JobGear, "Reliktwerkzeug", $"Stufe {relic.Stage}"));
         }
     }
 }

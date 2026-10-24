@@ -15,7 +15,7 @@ public static class SourceRanking
     [
         [SourceCategory.RaidSavage, SourceCategory.RaidUltimate, SourceCategory.RaidNormal, SourceCategory.RaidAlliance,
          SourceCategory.Trial, SourceCategory.Dungeon, SourceCategory.OtherContent],
-        [SourceCategory.Quest, SourceCategory.JobArtifact, SourceCategory.Achievement, SourceCategory.SeasonalEvent, SourceCategory.Crafting],
+        [SourceCategory.Quest, SourceCategory.JobGear, SourceCategory.Achievement, SourceCategory.SeasonalEvent, SourceCategory.Crafting],
         [SourceCategory.Tomestones, SourceCategory.Scrips, SourceCategory.Tokens, SourceCategory.GrandCompany,
          SourceCategory.GoldSaucer, SourceCategory.PvP],
         [SourceCategory.GilVendor, SourceCategory.MogStation, SourceCategory.Other],

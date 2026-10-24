@@ -9,7 +9,8 @@ public static class ShopSources
 {
     private const uint GcSealItem = 20;
 
-    public static void AddGilShops(SourceIndex.Builder builder, GameData data, ShopNpcResolver npcs, IReadOnlySet<uint> relevant)
+    /// <param name="jobGear">Single-job items: their gil vendors count as job gear rather than a plain vendor.</param>
+    public static void AddGilShops(SourceIndex.Builder builder, GameData data, ShopNpcResolver npcs, IReadOnlySet<uint> relevant, IReadOnlySet<uint> jobGear)
     {
         var items = data.GetSubrowExcelSheet<GilShopItem>()!;
         foreach (var shop in data.GetExcelSheet<GilShop>()!)
@@ -21,7 +22,8 @@ public static class ShopSources
                 var itemId = entry.Item.RowId;
                 if (!relevant.Contains(itemId) || !entry.Item.IsValid)
                     continue;
-                AddVendor(builder, npcs, itemId, shop.RowId, shop.Name.ExtractText(), SourceCategory.GilVendor, CurrencyCategory.Gil, entry.Item.Value.PriceMid);
+                var category = jobGear.Contains(itemId) ? SourceCategory.JobGear : SourceCategory.GilVendor;
+                AddVendor(builder, npcs, itemId, shop.RowId, shop.Name.ExtractText(), category, CurrencyCategory.Gil, entry.Item.Value.PriceMid);
             }
         }
     }

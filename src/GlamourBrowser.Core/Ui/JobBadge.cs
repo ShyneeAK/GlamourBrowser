@@ -21,6 +21,9 @@ public static class JobBadges
         return jobs.Where(id => !jobs.Any(job => job != id && parentOf(job) == id)).ToHashSet();
     }
 
+    /// <summary>Gear for exactly one job (its base class may be listed too), e.g. artifact gear.</summary>
+    public static bool IsSingleJob(IReadOnlySet<uint> jobs, Func<uint, uint> parentOf) => CollapseClasses(jobs, parentOf).Count == 1;
+
     /// <summary>One job → its icon; all jobs in one role → the role icon; mixed, none or every job → no badge.</summary>
     public static JobBadge For(IReadOnlySet<uint> jobs, Func<uint, JobGroup> groupOf, int allJobsCount)
     {

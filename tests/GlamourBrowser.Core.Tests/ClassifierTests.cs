@@ -35,9 +35,9 @@ public class ClassifierTests
 
     [Theory]
     [InlineData(97u, SeasonalEvent)]
-    [InlineData(93u, JobArtifact)]
-    [InlineData(94u, JobArtifact)]
-    [InlineData(56u, JobArtifact)]
+    [InlineData(93u, JobGear)]
+    [InlineData(94u, JobGear)]
+    [InlineData(56u, JobGear)]
     [InlineData(3u, Quest)]
     public void QuestJournal(uint category, SourceCategory expected) => Assert.Equal(expected, QuestCategory.From(category));
 

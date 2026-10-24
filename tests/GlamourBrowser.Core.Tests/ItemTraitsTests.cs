@@ -64,4 +64,15 @@ public class ItemTraitsTests
         var jobs = JobBadges.CollapseClasses(new HashSet<uint> { 6, 24 }, ParentOf);
         Assert.Equal(new JobBadge(JobBadgeKind.Job, 24, JobGroup.Healer), JobBadges.For(jobs, GroupOf, AllJobs));
     }
+
+    [Fact]
+    public void IsSingleJob_ClassPlusJobOnly()
+    {
+        // Gladiator 1 is the base class of Paladin 19.
+        static uint ParentOf(uint job) => job == 19 ? 1u : job;
+        Assert.True(JobBadges.IsSingleJob(new HashSet<uint> { 1, 19 }, ParentOf));
+        Assert.True(JobBadges.IsSingleJob(new HashSet<uint> { 19 }, ParentOf));
+        Assert.False(JobBadges.IsSingleJob(new HashSet<uint> { 19, 21 }, ParentOf));
+        Assert.False(JobBadges.IsSingleJob(new HashSet<uint>(), ParentOf));
+    }
 }

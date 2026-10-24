@@ -6,7 +6,7 @@ public static class QuestCategory
     public static SourceCategory From(uint journalCategoryId) => journalCategoryId switch
     {
         97 => SourceCategory.SeasonalEvent,
-        93 or 94 or 56 => SourceCategory.JobArtifact,
+        93 or 94 or 56 => SourceCategory.JobGear,
         _ => SourceCategory.Quest,
     };
 }
