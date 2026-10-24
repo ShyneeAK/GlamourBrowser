@@ -38,4 +38,12 @@ public class PoseGateTests
     [Fact]
     public void PoseAlreadyPlaying_NoBlend_ReadyAtOnce()
         => Assert.Equal(PoseGateState.Ready, new PoseGate(1055, blendFrames: 0, timeoutFrames: 100).Step(1055));
+
+    [Fact]
+    public void LastFrame_IsJustBeforeTheEnd()
+    {
+        Assert.Equal(2f - 1f / 30f, AnimationTiming.LastFrame(2f), 4);
+        Assert.Equal(0f, AnimationTiming.LastFrame(0.01f));
+        Assert.Equal(0f, AnimationTiming.LastFrame(0f));
+    }
 }

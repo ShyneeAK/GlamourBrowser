@@ -42,8 +42,8 @@ public sealed unsafe class RenderPool : IDisposable
         public byte? LastPose { get; set; }
         public bool PoseChanged { get; set; }
         public bool WeaponDrawn { get; set; }
-        /// <summary>The moment the view's animation is frozen at; null while it runs.</summary>
-        public ushort? FrozenAt { get; set; }
+        /// <summary>The view's animation is frozen at its last frame.</summary>
+        public bool Frozen { get; set; }
         public StanceGate? StanceGate { get; set; }
         public (TileMode Mode, ulong Hash, EquipSlot Slot)? DressedAs { get; set; }
         public bool Busy => Key != null;
@@ -215,7 +215,7 @@ public sealed unsafe class RenderPool : IDisposable
                 if (worker.PoseChanged)
                 {
                     view.SetAnimationPaused(false);
-                    worker.FrozenAt = null;
+                    worker.Frozen = false;
                 }
                 if (!view.ApplyIdlePose(key.Pose) && !poseWarned)
                 {
@@ -248,6 +248,28 @@ public sealed unsafe class RenderPool : IDisposable
                     if (worker.Frames > TimeoutFrames)
                         Fail(worker, "Zeitüberschreitung beim Laden");
                     return;
+                }
+                // A freshly loaded weapon can come back sheathed even though the view had it drawn: check the
+                // character itself, not what this worker did last time, and draw (or sheathe) again if needed.
+                if (view.IsWeaponDrawn() != worker.Key!.Value.WeaponDrawn)
+                {
+                    if (!worker.PoseChanged)
+                    {
+                        worker.PoseChanged = true;
+                        view.SetAnimationPaused(false);
+                        worker.Frozen = false;
+                    }
+                    view.SetWeaponDrawn(worker.Key.Value.WeaponDrawn);
+                    worker.WeaponDrawn = worker.Key.Value.WeaponDrawn;
+                    if (worker.Key.Value.WeaponDrawn)
+                    {
+                        worker.StanceGate = new StanceGate(PoseBlendFrames, PoseTimeoutFrames, expectChange: true);
+                        worker.StanceGate.Step(view.BaseTimeline().Playing);
+                    }
+                    else
+                    {
+                        worker.StanceGate = null;
+                    }
                 }
                 view.ApplyVisibility(showWeapons: true);
                 worker.Gate = new SettleGate(SettleFrames, TimeoutFrames, MaxVisibilityRetries);
@@ -297,18 +319,18 @@ public sealed unsafe class RenderPool : IDisposable
                 break;
 
             case Phase.Freeze:
-                // Already frozen at this moment by the previous tile: copy right away.
-                if (worker.FrozenAt != worker.Key!.Value.MomentMs)
+                // Already frozen by the previous tile of this view: copy right away.
+                if (!worker.Frozen)
                 {
                     // Re-applied every frame: the game may still move the animation while the copy is prepared.
-                    if (!view.FreezeAt(worker.Key.Value.MomentMs / 1000f) && !freezeWarned)
+                    if (!view.FreezeAtEnd() && !freezeWarned)
                     {
                         freezeWarned = true;
-                        Plugin.Log.Warning("Freezing the pose moment failed; tiles show a running animation");
+                        Plugin.Log.Warning("Freezing the pose at its last frame failed; tiles show a running animation");
                     }
                     if (++worker.Frames < FreezeFrames)
                         return;
-                    worker.FrozenAt = worker.Key.Value.MomentMs;
+                    worker.Frozen = true;
                 }
                 var texture = view.GetTexture();
                 if (texture == null || texture->D3D11ShaderResourceView == null)

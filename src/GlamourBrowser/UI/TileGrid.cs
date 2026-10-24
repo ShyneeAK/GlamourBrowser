@@ -190,13 +190,15 @@ public sealed class TileGrid
                 : (TraitIcons.Tradable, FontAwesomeIcon.ExchangeAlt);
             icons.Add((at => GameIcon.DrawAt(drawList, tradeIcon, at, new Vector2(iconSize), glyph, colors.TextMuted), TileInfo.TradeText(item.Trade)));
         }
+        // The job/role icon stands apart, right-aligned.
+        (Action<Vector2> Draw, string Tooltip)? right = null;
         var badge = JobBadges.For(JobBadges.CollapseClasses(item.ClassJobIds, jobs.ParentOf), jobs.GroupOf, jobs.All.Count);
         if (badge.Kind != JobBadgeKind.None)
         {
             var job = badge.Kind == JobBadgeKind.Job ? jobs.Find(badge.JobId) : null;
             var icon = job?.IconId ?? JobCatalog.RoleIcon(badge.Group);
             var name = job?.Name ?? JobGroups.DisplayName(badge.Group);
-            icons.Add((at => GameIcon.DrawAt(drawList, icon, at, new Vector2(iconSize), FontAwesomeIcon.User, colors.TextMuted), name));
+            right = (at => GameIcon.DrawAt(drawList, icon, at, new Vector2(iconSize), FontAwesomeIcon.User, colors.TextMuted), name);
         }
         if (categories != null)
         {
@@ -205,16 +207,19 @@ public sealed class TileGrid
         }
 
         const float spacing = 3f;
-        var fit = TileInfo.FitIcons(icons.Count, iconSize, spacing, width);
+        var (fit, showRight) = TileInfo.FitRow(icons.Count, right != null, iconSize, spacing, width);
         var windowHovered = ImGui.IsWindowHovered();
-        for (var i = 0; i < fit; i++)
+        void Place((Action<Vector2> Draw, string Tooltip) icon, Vector2 at)
         {
-            var at = min + new Vector2(i * (iconSize + spacing), 0);
-            icons[i].Draw(at);
+            icon.Draw(at);
             // Only the icon itself shows a tooltip; the rest of the tile has none.
             if (windowHovered && ImGui.IsMouseHoveringRect(at, at + new Vector2(iconSize)))
-                ImGui.SetTooltip(icons[i].Tooltip);
+                ImGui.SetTooltip(icon.Tooltip);
         }
+        for (var i = 0; i < fit; i++)
+            Place(icons[i], min + new Vector2(i * (iconSize + spacing), 0));
+        if (showRight)
+            Place(right!.Value, min + new Vector2(width - iconSize, 0));
     }
 
     /// <summary>A source category icon; savage gets a red corner because the game has no own icon for it.</summary>

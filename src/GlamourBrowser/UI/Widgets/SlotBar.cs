@@ -16,7 +16,7 @@ public static class SlotBar
     {
         var slots = SlotNames.All;
         var spacing = ImGui.GetStyle().ItemSpacing.X;
-        var edge = Math.Clamp((ImGui.GetContentRegionAvail().X - spacing * (slots.Length - 1)) / slots.Length, 30f * UiScale.Global, 54f * UiScale.Global);
+        var edge = Math.Clamp((ImGui.GetContentRegionAvail().X - spacing * (slots.Length - 1)) / slots.Length, 21f * UiScale.Global, 38f * UiScale.Global);
 
         var changed = false;
         for (var i = 0; i < slots.Length; i++)

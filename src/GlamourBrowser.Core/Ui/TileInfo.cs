@@ -36,6 +36,16 @@ public static class TileInfo
         return tileHeight >= lineHeight * 2 ? 1 : 0;
     }
 
+    /// <summary>
+    /// An icon row with one right-aligned icon (job/role): the right icon is placed first, the left icons fill the rest.
+    /// </summary>
+    public static (int Left, bool Right) FitRow(int leftCount, bool hasRight, float iconWidth, float spacing, float available)
+    {
+        var right = hasRight && iconWidth <= available;
+        var left = FitIcons(leftCount, iconWidth, spacing, right ? available - iconWidth - spacing : available);
+        return (left, right);
+    }
+
     /// <summary>How many icons of <paramref name="iconWidth"/> fit into <paramref name="available"/>; the rest is cut off on the right.</summary>
     public static int FitIcons(int count, float iconWidth, float spacing, float available)
     {

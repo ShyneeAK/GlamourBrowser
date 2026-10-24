@@ -10,7 +10,6 @@ using Dalamud.Interface.Utility.Raii;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using GlamourBrowser.Browser;
 using GlamourBrowser.Core.Items;
-using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Core.Sources;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Utility;
@@ -32,7 +31,6 @@ public sealed unsafe class LivePane
     private readonly JobCatalog jobs;
     private readonly Theme.Theme theme;
     private readonly SourceService sources;
-    private readonly PoseMomentService moments;
     private readonly HashSet<(uint Item, SourceCategory Category)> expanded = new();
     private const int SourcesPerCategory = 3;
     private const uint MapIcon = 60561;        // map flag
@@ -40,10 +38,9 @@ public sealed unsafe class LivePane
     private const uint RecipeIcon = 22;        // main menu: crafting log
 
     public LivePane(BrowserState state, OwnershipService ownership, LivePreview live, CalibrationService calibration, JobCatalog jobs, Theme.Theme theme,
-                    SourceService sources, PoseMomentService moments)
+                    SourceService sources)
     {
         this.sources = sources;
-        this.moments = moments;
         this.state = state;
         this.ownership = ownership;
         this.live = live;
@@ -174,7 +171,6 @@ public sealed unsafe class LivePane
             live.WeaponVisible = !live.WeaponVisible;
         ImGui.SameLine();
         DrawCalibration(item);
-        DrawPoseMoment(item);
 
         ImGui.Separator();
         DrawSources(item);
@@ -305,47 +301,6 @@ public sealed unsafe class LivePane
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip($"{shown[i].Abbreviation} – {shown[i].Name}");
         }
-    }
-
-    /// <summary>Play/pause, a moment slider and saving the moment the tiles are frozen at.</summary>
-    private void DrawPoseMoment(GlamourItem item)
-    {
-        var contentId = Plugin.PlayerState.ContentId;
-        // The stance the live view shows right now.
-        var stance = live.WeaponDrawn ? BrowserState.WeaponDrawnStance : state.IdleStance;
-        var paused = live.PausedAt != null;
-        if (IconButton.Draw("##playpause", 0, paused ? FontAwesomeIcon.Play : FontAwesomeIcon.Pause, paused ? "Abspielen" : "Anhalten", theme))
-        {
-            if (paused)
-                live.Play();
-            else
-                live.Pause();
-        }
-
-        ImGui.SameLine();
-        var duration = live.Animation?.Duration ?? 0;
-        var time = live.PausedAt ?? live.Animation?.Time ?? 0;
-        using (ImRaii.Disabled(duration <= 0))
-        {
-            ImGui.SetNextItemWidth(Math.Max(80, ImGui.GetContentRegionAvail().X - 3 * (ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.X)));
-            if (ImGui.SliderFloat("##moment", ref time, 0, Math.Max(duration, 0.01f), "%.2f s"))
-                live.Seek(time);
-        }
-
-        ImGui.SameLine();
-        if (IconButton.Draw("##moment-save", 0, FontAwesomeIcon.Thumbtack, "Diesen Moment für Kacheln nutzen", theme))
-        {
-            moments.Set(contentId, stance, time);
-            state.InvalidateTiles();
-        }
-        if (moments.Has(contentId, stance))
-        {
-            ImGui.SameLine();
-            if (IconButton.Draw("##moment-reset", 0, FontAwesomeIcon.Undo, "Moment zurücksetzen (Anfang der Animation)", theme)
-                && moments.Remove(contentId, stance))
-                state.InvalidateTiles();
-        }
-        ImGui.TextDisabled(moments.Has(contentId, stance) ? $"Kacheln: {moments.Get(contentId, stance):0.00} s" : "Kacheln: Anfang der Animation");
     }
 
     private void DrawCalibration(GlamourItem item)

@@ -21,14 +21,11 @@ public sealed class BrowserState
     private readonly TileCache<IDalamudTextureWrap> cache;
     private readonly Configuration config;
     private readonly SourceService sources;
-    private readonly PoseMomentService moments;
     private FilterState filter = new();
 
     public BrowserState(IReadOnlyList<GlamourItem> catalog, OwnershipService ownership, AppearanceTracker appearance,
-                        TileQueue queue, TileCache<IDalamudTextureWrap> cache, RenderPool pool, Configuration config, SourceService sources,
-                        PoseMomentService moments)
+                        TileQueue queue, TileCache<IDalamudTextureWrap> cache, RenderPool pool, Configuration config, SourceService sources)
     {
-        this.moments = moments;
         this.sources = sources;
         this.catalog = catalog;
         this.ownership = ownership;
@@ -117,10 +114,8 @@ public sealed class BrowserState
 
     public TileKey KeyFor(GlamourItem item)
         => new(item.Id, 0, 0, config.TileMode, appearance.Hash, Layout.RenderWidth == 0 ? PageLayout.RenderSteps[0] : Layout.RenderWidth,
-               StanceFor(item) is var stance && stance.WeaponDrawn ? TileKey.StandardPose : stance.Pose,
-               Stance.ToMs(moments.Get(Plugin.PlayerState.ContentId, stance)), stance.WeaponDrawn);
+               StanceFor(item) is var stance && stance.WeaponDrawn ? TileKey.StandardPose : stance.Pose, stance.WeaponDrawn);
 
-    /// <summary>The stance for moments saved with the weapon drawn.</summary>
     public static readonly Stance WeaponDrawnStance = new(true, 0);
 
     /// <summary>How the character stands on the item's tile: weapons drawn (when enabled), otherwise the idle pose.</summary>

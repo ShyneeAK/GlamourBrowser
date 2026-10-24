@@ -37,7 +37,7 @@ public class StanceGateTests
     [Fact]
     public void TileKey_WeaponDrawnIsPartOfKey()
     {
-        var a = new TileKey(1, 0, 0, TileMode.CurrentOutfit, 1, 192, TileKey.StandardPose, 0);
+        var a = new TileKey(1, 0, 0, TileMode.CurrentOutfit, 1, 192, TileKey.StandardPose);
         Assert.False(a.WeaponDrawn);
         Assert.NotEqual(a, a with { WeaponDrawn = true });
     }

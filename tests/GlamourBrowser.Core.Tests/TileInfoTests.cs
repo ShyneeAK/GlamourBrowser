@@ -45,4 +45,13 @@ public class TileInfoTests
         Assert.Equal("Handelbar", TileInfo.TradeText(GlamourBrowser.Core.Items.Tradability.Tradable));
         Assert.Equal("Gebunden", TileInfo.TradeText(GlamourBrowser.Core.Items.Tradability.Bound));
     }
+
+    [Fact]
+    public void FitRow_RightIconFirst_ThenLeftIcons()
+    {
+        Assert.Equal((3, true), TileInfo.FitRow(5, true, 16, 2, 80));  // right takes 18, left 3·16+2·2 = 52 of 62
+        Assert.Equal((4, false), TileInfo.FitRow(4, false, 16, 2, 80));
+        Assert.Equal((0, true), TileInfo.FitRow(3, true, 16, 2, 20));
+        Assert.Equal((0, false), TileInfo.FitRow(3, true, 16, 2, 10));
+    }
 }
