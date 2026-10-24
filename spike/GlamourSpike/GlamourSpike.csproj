@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
+  <PropertyGroup>
+    <Version>0.0.0.1</Version>
+    <Author>ShyneeAK</Author>
+    <Name>Glamour Spike</Name>
+    <Punchline>Wegwerf-Test: eigene CharaView als Render-Raster.</Punchline>
+    <Description>Machbarkeitstest fuer GlamourBrowser. Rendert den eigenen Charakter mit verschiedenen Items in eine eigene CharaView und zeigt die Ergebnisse als Kacheln.</Description>
+    <RepoUrl>https://example.invalid/glamourbrowser</RepoUrl>
+    <Tags>spike</Tags>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Shipped with Dalamud; only used to query DXGI video memory. -->
+    <Reference Include="TerraFX.Interop.Windows">
+      <HintPath>$(DalamudLibPath)TerraFX.Interop.Windows.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+</Project>
