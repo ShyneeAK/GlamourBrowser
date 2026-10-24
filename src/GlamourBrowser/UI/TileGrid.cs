@@ -13,10 +13,9 @@ using GlamourBrowser.Rendering;
 
 namespace GlamourBrowser.UI;
 
-/// <summary>Middle column: paging header and the tile grid.</summary>
+/// <summary>The tile grid: rounded cards with the name inside the image and ownership frame/badge.</summary>
 public sealed class TileGrid
 {
-    private const uint TileBackground = 0xFF201A18;
     private const uint ErrorColor = 0xFF4040E0;
 
     private readonly BrowserState state;
@@ -41,9 +40,6 @@ public sealed class TileGrid
 
     public void Draw()
     {
-        DrawHeader();
-        ImGui.Separator();
-
         if (pool.IsPaused)
         {
             ImGui.TextDisabled("Pausiert");
@@ -55,12 +51,15 @@ public sealed class TileGrid
 
         var avail = ImGui.GetContentRegionAvail();
         var spacing = ImGui.GetStyle().ItemSpacing.X;
-        var label = ImGui.GetTextLineHeightWithSpacing();
-        state.UpdateLayout(avail.X, avail.Y, spacing, label);
+        // Names are drawn inside the tile, so no extra label row is needed.
+        state.UpdateLayout(avail.X, avail.Y, spacing, 0);
 
         var layout = state.Layout;
         if (layout.TileWidth <= 0)
+        {
+            ImGui.TextDisabled("Fenster vergrößern oder weniger Kacheln wählen");
             return;
+        }
 
         var page = state.CurrentPage;
         for (var i = 0; i < page.Count; i++)
@@ -79,39 +78,10 @@ public sealed class TileGrid
         }
     }
 
-    private void DrawHeader()
-    {
-        if (ImGui.ArrowButton("##prev", ImGuiDir.Left))
-            state.PreviousPage();
-        ImGui.SameLine();
-        ImGui.TextUnformatted($"Seite {state.PageIndex + 1} / {state.PageCount}");
-        ImGui.SameLine();
-        if (ImGui.ArrowButton("##next", ImGuiDir.Right))
-            state.NextPage();
-        ImGui.SameLine();
-        ImGui.TextDisabled($"{state.Results.Count} Treffer");
-
-        ImGui.SameLine();
-        var columns = config.Columns;
-        var rows = config.Rows;
-        ImGui.SetNextItemWidth(70 * ImGuiHelpers.GlobalScale);
-        var changed = ImGui.SliderInt("##columns", ref columns, 2, 10, "%d Spalten");
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(70 * ImGuiHelpers.GlobalScale);
-        changed |= ImGui.SliderInt("##rows", ref rows, 1, 6, "%d Zeilen");
-        if (changed)
-            state.SetGrid(columns, rows);
-
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(140 * ImGuiHelpers.GlobalScale);
-        var mode = (int)config.TileMode;
-        if (ImGui.Combo("##mode", ref mode, ["Aktuelles Outfit", "Unterwäsche"], 2))
-            state.SetTileMode((TileMode)mode);
-    }
-
     private void DrawTile(GlamourItem item, Vector2 size)
     {
-        ImGui.BeginGroup();
+        const float rounding = 8f;
+        var colors = theme.Colors;
         var pos = ImGui.GetCursorScreenPos();
         if (ImGui.InvisibleButton($"##tile{item.Id}", size))
         {
@@ -121,12 +91,12 @@ public sealed class TileGrid
         var hovered = ImGui.IsItemHovered();
 
         var drawList = ImGui.GetWindowDrawList();
-        drawList.AddRectFilled(pos, pos + size, TileBackground);
+        drawList.AddRectFilled(pos, pos + size, hovered ? colors.CardRaised : colors.Card, rounding);
 
         var key = state.KeyFor(item);
         if (cache.TryGet(key, out var texture) && texture != null)
         {
-            drawList.AddImage(texture.Handle, pos, pos + size);
+            drawList.AddImageRounded(texture.Handle, pos, pos + size, Vector2.Zero, Vector2.One, 0xFFFFFFFF, rounding);
         }
         else
         {
@@ -136,20 +106,23 @@ public sealed class TileGrid
             drawList.AddImage(icon.Handle, iconPos, iconPos + iconSize);
         }
 
+        // Name on a dark gradient along the bottom edge.
+        var lineHeight = ImGui.GetTextLineHeight();
+        var shadeTop = pos + new Vector2(0, size.Y - lineHeight * 2.2f);
+        drawList.AddRectFilledMultiColor(shadeTop, pos + size, 0x00000000, 0x00000000, 0xCC000000, 0xCC000000);
+        drawList.AddText(pos + new Vector2(6, size.Y - lineHeight - 5), colors.Text, Truncate(item.Name, size.X - 12));
+
         var failed = pool.Failures.TryGetValue(key, out var error);
         if (failed)
-            drawList.AddText(pos + new Vector2(4, 2), ErrorColor, "!");
+            drawList.AddText(pos + new Vector2(6, 4), ErrorColor, "!");
 
         var owned = ownership.Current?.IsOwned(item.Id) ?? false;
-        var frame = TileStyle.FrameFor(owned, state.Selected?.Id == item.Id, theme.Colors.Accent);
-        drawList.AddRect(pos, pos + size, frame.Color, 0, ImDrawFlags.None, frame.Thickness);
+        var frame = TileStyle.FrameFor(owned, state.Selected?.Id == item.Id, colors.Accent);
+        drawList.AddRect(pos, pos + size, frame.Color, rounding, ImDrawFlags.None, frame.Thickness);
         // Corner triangle, top right: green when owned, gray when missing.
         var badge = MathF.Max(10f, size.X * 0.12f);
         var corner = pos + new Vector2(size.X, 0);
-        drawList.AddTriangleFilled(corner, corner - new Vector2(badge, 0), corner + new Vector2(0, badge), frame.BadgeColor);
-
-        ImGui.TextUnformatted(Truncate(item.Name, size.X));
-        ImGui.EndGroup();
+        drawList.AddTriangleFilled(corner + new Vector2(-1, 1), corner - new Vector2(badge, -1), corner + new Vector2(-1, badge), frame.BadgeColor);
 
         if (hovered)
             DrawTooltip(item, failed ? error : null);
@@ -160,7 +133,7 @@ public sealed class TileGrid
         ImGui.BeginTooltip();
         ImGui.TextUnformatted(item.Name);
         ImGui.TextDisabled($"Level {item.LevelEquip}");
-        DetailPanel.DrawLocations(ownership, item);
+        LivePane.DrawLocations(ownership, item);
         if (error != null)
             ImGui.TextColored(new Vector4(1, 0.4f, 0.4f, 1), $"Renderfehler: {error}");
         ImGui.EndTooltip();

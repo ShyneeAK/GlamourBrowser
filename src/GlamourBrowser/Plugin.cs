@@ -32,6 +32,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IAddonLifecycle AddonLifecycle { get; private set; } = null!;
     [PluginService] internal static ICondition Condition { get; private set; } = null!;
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
+    [PluginService] internal static IChatGui ChatGui { get; private set; } = null!;
 
     private const string CommandName = "/gbrowser";
 
@@ -71,11 +72,14 @@ public sealed class Plugin : IDalamudPlugin
         browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config);
         Framework.Update += OnFrameworkUpdate;
         var theme = new UI.Theme.Theme(config);
+        var jobs = new JobCatalog(DataManager);
         mainWindow = new MainWindow(
-            new FilterPanel(browser, ownership),
+            new LivePane(browser, ownership, live, calibration, jobs, theme),
+            new TopBar(browser, jobs, config, theme),
+            new FilterColumn(browser, ownership, config),
             new TileGrid(browser, cache, pool, ownership, live, config, theme),
-            new DetailPanel(browser, ownership, live, calibration),
-            theme);
+            theme,
+            config);
         settingsWindow = new SettingsWindow(config, browser, pool, calibration, theme);
         windowSystem.AddWindow(mainWindow);
         windowSystem.AddWindow(settingsWindow);

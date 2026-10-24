@@ -8,23 +8,30 @@ using GlamourBrowser.Rendering;
 
 namespace GlamourBrowser.UI;
 
-/// <summary>Filters left, tile grid in the middle, details with the live preview on the right.</summary>
+/// <summary>WoW-style layout: live pane left; top bar, tile grid and optional filter column right.</summary>
 public sealed class MainWindow : Window
 {
-    private readonly FilterPanel filters;
+    private const float FilterColumnWidth = 220f;
+    private const float MinGridWidth = 120f;
+
+    private readonly LivePane livePane;
+    private readonly TopBar topBar;
+    private readonly FilterColumn filterColumn;
     private readonly TileGrid grid;
-    private readonly DetailPanel details;
     private readonly Theme.Theme theme;
+    private readonly Configuration config;
     private IDisposable? themeScope;
 
-    public MainWindow(FilterPanel filters, TileGrid grid, DetailPanel details, Theme.Theme theme)
+    public MainWindow(LivePane livePane, TopBar topBar, FilterColumn filterColumn, TileGrid grid, Theme.Theme theme, Configuration config)
         : base("GlamourBrowser##GlamourBrowser")
     {
-        this.theme = theme;
-        this.filters = filters;
+        this.livePane = livePane;
+        this.topBar = topBar;
+        this.filterColumn = filterColumn;
         this.grid = grid;
-        this.details = details;
-        SizeConstraints = new WindowSizeConstraints { MinimumSize = new Vector2(1000, 600) };
+        this.theme = theme;
+        this.config = config;
+        SizeConstraints = new WindowSizeConstraints { MinimumSize = new Vector2(1100, 650) };
     }
 
     public override void PreDraw() => themeScope = theme.Push();
@@ -40,26 +47,43 @@ public sealed class MainWindow : Window
         lock (RenderSync.Lock)
         {
             var scale = ImGuiHelpers.GlobalScale;
-            using (var child = ImRaii.Child("##filters", new Vector2(220 * scale, 0), true))
+            var spacing = ImGui.GetStyle().ItemSpacing.X;
+            var total = ImGui.GetContentRegionAvail().X;
+            var left = MathF.Max(300 * scale, total * 0.32f);
+
+            using (var child = ImRaii.Child("##livepane", new Vector2(left, 0), false))
             {
                 if (child.Success)
-                    filters.Draw();
+                    livePane.Draw();
             }
 
             ImGui.SameLine();
-            var detailWidth = 340 * scale;
-            var gridWidth = ImGui.GetContentRegionAvail().X - detailWidth - ImGui.GetStyle().ItemSpacing.X;
-            using (var child = ImRaii.Child("##grid", new Vector2(gridWidth, 0), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse))
+            using var right = ImRaii.Child("##right", Vector2.Zero, false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+            if (!right.Success)
+                return;
+
+            topBar.Draw();
+            ImGui.Separator();
+
+            var filterWidth = config.FilterColumnVisible ? FilterColumnWidth * scale : 0;
+            var gridWidth = MathF.Max(0, ImGui.GetContentRegionAvail().X - filterWidth - (filterWidth > 0 ? spacing : 0));
+            if (gridWidth < MinGridWidth * scale)
             {
-                if (child.Success)
+                ImGui.TextDisabled("Fenster vergrößern oder die Filterspalte ausblenden");
+            }
+            else
+            {
+                using var gridChild = ImRaii.Child("##grid", new Vector2(gridWidth, 0), false, ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
+                if (gridChild.Success)
                     grid.Draw();
             }
 
-            ImGui.SameLine();
-            using (var child = ImRaii.Child("##details", new Vector2(detailWidth, 0), true))
+            if (filterWidth > 0)
             {
-                if (child.Success)
-                    details.Draw();
+                ImGui.SameLine();
+                using var filters = ImRaii.Child("##filters", new Vector2(filterWidth, 0), true);
+                if (filters.Success)
+                    filterColumn.Draw();
             }
         }
     }
