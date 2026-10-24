@@ -31,6 +31,9 @@ public sealed unsafe class RenderPool : IDisposable
     private const int DrawMinFrames = 30;
     private const int DrawStableFrames = 10;
     private const int DrawTimeoutFrames = 120;
+    // When the weapon is still not in hand, sheathe and draw again every this many frames, at most MaxDrawRetries times.
+    private const int DrawRetryFrames = 12;
+    private const int MaxDrawRetries = 3;
     private static readonly TimeSpan IdleRelease = TimeSpan.FromSeconds(5);
 
     private enum Phase { WaitReady, Apply, Loading, Settle, Pose, Blend, Freeze, Copy }
@@ -51,6 +54,7 @@ public sealed unsafe class RenderPool : IDisposable
         /// <summary>The view's animation is frozen at its last frame.</summary>
         public bool Frozen { get; set; }
         public DrawGate? DrawGate { get; set; }
+        public int DrawRetries { get; set; }
         public (TileMode Mode, ulong Hash, EquipSlot Slot)? DressedAs { get; set; }
         public bool Busy => Key != null;
     }
@@ -267,6 +271,7 @@ public sealed unsafe class RenderPool : IDisposable
                         Plugin.Log.Information($"[wstate] tile {worker.Key.Value.ItemId} before draw: {view.DescribeState()}");
                     view.SetWeaponDrawn(true);
                     worker.WeaponDrawn = true;
+                    worker.DrawRetries = 0;
                     worker.DrawGate = new DrawGate(DrawMinFrames, DrawStableFrames, DrawTimeoutFrames);
                 }
                 view.ApplyVisibility(showWeapons: true);
@@ -299,13 +304,25 @@ public sealed unsafe class RenderPool : IDisposable
 
             case Phase.Pose:
                 var (playing, overridden) = view.BaseTimeline();
-                var poseState = worker.DrawGate?.Step(view.TimelineSignature(), view.BodyBlend().Active) ?? worker.PoseGate!.Step(playing);
+                if (worker.DrawGate != null && !view.IsWeaponDrawn() && worker.DrawRetries < MaxDrawRetries)
+                {
+                    // The draw did not take: sheathe on one frame, draw again on the next.
+                    var phase = (worker.DrawGate.Frames + 1) % DrawRetryFrames;
+                    if (phase == 0)
+                        view.SetWeaponDrawn(false);
+                    else if (phase == 1 && worker.DrawGate.Frames > 1)
+                    {
+                        view.SetWeaponDrawn(true);
+                        worker.DrawRetries++;
+                    }
+                }
+                var poseState = worker.DrawGate?.Step(view.TimelineSignature(), view.BodyBlend().Active, view.IsWeaponDrawn()) ?? worker.PoseGate!.Step(playing);
                 if (worker.DrawGate is { Frames: 1 or 15 } && weaponStateBudget > 0)
                     Plugin.Log.Information($"[wstate] tile {worker.Key!.Value.ItemId} draw +{worker.DrawGate.Frames}: {view.DescribeState()}");
                 if (worker.DrawGate != null && poseState != PoseGateState.Wait && weaponStateBudget > 0)
                 {
                     weaponStateBudget--;
-                    Plugin.Log.Information($"[wstate] tile {worker.Key!.Value.ItemId} end ({poseState}): {view.DescribeState()}");
+                    Plugin.Log.Information($"[wstate] tile {worker.Key!.Value.ItemId} end ({poseState}, {worker.DrawRetries} retries): {view.DescribeState()}");
                 }
                 if (poseState == PoseGateState.Wait)
                     return;

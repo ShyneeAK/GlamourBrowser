@@ -201,6 +201,13 @@ public sealed unsafe class CharaViewHandle : IDisposable
 
     public (int Active, string Weights) BodyBlend() => view != null ? AnimationFreeze.BodyBlend(view->GetCharacter()) : (0, "");
 
+    /// <summary>Whether the weapon is really in hand (DrawData.Flags2 bit 0x04, as the game's try-on window shows it).</summary>
+    public bool IsWeaponDrawn()
+    {
+        var character = view != null ? view->GetCharacter() : null;
+        return character != null && character->IsWeaponDrawn;
+    }
+
     /// <summary>A hash over all timeline slots of the character, to see when its animations stop changing.</summary>
     public int TimelineSignature()
     {

@@ -18,7 +18,8 @@ public sealed class DrawGate(int minFrames, int stableFrames, int timeoutFrames)
 
     /// <param name="signature">A hash over all timeline slots of the character.</param>
     /// <param name="activeBodyAnimations">Body animations that still carry weight.</param>
-    public PoseGateState Step(int signature, int activeBodyAnimations)
+    /// <param name="weaponDrawn">The character really has the weapon in hand (Character.IsWeaponDrawn).</param>
+    public PoseGateState Step(int signature, int activeBodyAnimations, bool weaponDrawn)
     {
         frames++;
         if (first == null)
@@ -36,7 +37,7 @@ public sealed class DrawGate(int minFrames, int stableFrames, int timeoutFrames)
             stable++;
         }
 
-        if ((changed || frames >= minFrames) && stable >= stableFrames && activeBodyAnimations <= 1)
+        if (weaponDrawn && (changed || frames >= minFrames) && stable >= stableFrames && activeBodyAnimations <= 1)
             return PoseGateState.Ready;
         return frames > timeoutFrames ? PoseGateState.Timeout : PoseGateState.Wait;
     }
