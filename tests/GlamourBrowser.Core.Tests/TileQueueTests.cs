@@ -4,7 +4,7 @@ namespace GlamourBrowser.Core.Tests;
 
 public class TileQueueTests
 {
-    private static TileKey Key(uint id) => new(id, 0, 0, TileMode.CurrentOutfit, 1, 192, TileKey.StandardPose);
+    private static TileKey Key(uint id) => new(id, 0, 0, TileMode.CurrentOutfit, 1, 192, TileKey.StandardPose, 0);
 
     [Fact]
     public void Dequeue_CurrentPageBeforeNextPage()

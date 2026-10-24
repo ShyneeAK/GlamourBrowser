@@ -23,9 +23,11 @@ public sealed unsafe class RenderPool : IDisposable
     // Frames the idle-pose timeline has to play before the copy (blend from the previous animation).
     private const int PoseBlendFrames = 12;
     private const int PoseTimeoutFrames = 180;
+    // Frames the frozen moment is held (and re-applied) before the copy.
+    private const int FreezeFrames = 3;
     private static readonly TimeSpan IdleRelease = TimeSpan.FromSeconds(5);
 
-    private enum Phase { WaitReady, Apply, Loading, Settle, Pose, Copy }
+    private enum Phase { WaitReady, Apply, Loading, Settle, Pose, Freeze, Copy }
 
     private sealed class Worker(CharaViewHandle view)
     {
@@ -55,6 +57,7 @@ public sealed unsafe class RenderPool : IDisposable
     private bool liveReserved;
     private bool poseWarned;
     private int poseDiagnosticsBudget = 6;
+    private bool freezeWarned;
 
     public RenderPool(TileQueue queue, TileCache<IDalamudTextureWrap> cache, Func<uint, GlamourItem?> lookup,
                       AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor)
@@ -199,6 +202,8 @@ public sealed unsafe class RenderPool : IDisposable
                 view.SetItem(item.Slot, key.ItemId, key.Stain0, key.Stain1);
                 // Tiles keep the weapon sheathed: drawing it plays an animation that would have to finish first.
                 view.ApplyCamera(cameraFor(item.Slot));
+                // The previous tile left the animation frozen.
+                view.SetAnimationPaused(false);
                 worker.PoseChanged = worker.LastPose != key.Pose;
                 worker.LastPose = key.Pose;
                 if (!view.ApplyIdlePose(key.Pose) && !poseWarned)
@@ -263,6 +268,19 @@ public sealed unsafe class RenderPool : IDisposable
                     poseWarned = true;
                     Plugin.Log.Warning($"Idle pose {worker.Key!.Value.Pose} did not start playing; tiles may show the standard pose");
                 }
+                worker.Frames = 0;
+                worker.Phase = Phase.Freeze;
+                break;
+
+            case Phase.Freeze:
+                // Re-applied every frame: the game may still move the animation while the copy is prepared.
+                if (!view.FreezeAt(worker.Key!.Value.MomentMs / 1000f) && !freezeWarned)
+                {
+                    freezeWarned = true;
+                    Plugin.Log.Warning("Freezing the pose moment failed; tiles show a running animation");
+                }
+                if (++worker.Frames < FreezeFrames)
+                    return;
                 var texture = view.GetTexture();
                 if (texture == null || texture->D3D11ShaderResourceView == null)
                 {

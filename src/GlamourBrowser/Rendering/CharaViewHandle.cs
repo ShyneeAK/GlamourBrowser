@@ -194,6 +194,13 @@ public sealed unsafe class CharaViewHandle : IDisposable
         }
     }
 
+    /// <summary>Freezes the character's animations at a moment, see <see cref="AnimationFreeze"/>.</summary>
+    public bool FreezeAt(float seconds) => view != null && AnimationFreeze.TrySet(view->GetCharacter(), seconds, paused: true);
+
+    public bool SetAnimationPaused(bool paused) => view != null && AnimationFreeze.SetPaused(view->GetCharacter(), paused);
+
+    public (float Time, float Duration)? ReadAnimation() => view != null ? AnimationFreeze.Read(view->GetCharacter()) : null;
+
     /// <summary>The base (slot 0) timeline the character is playing right now, and its base override.</summary>
     public (ushort Playing, ushort Override) BaseTimeline()
     {

@@ -10,7 +10,7 @@ public class TileCacheTests
         public void Dispose() => Disposed = true;
     }
 
-    private static TileKey Key(uint id) => new(id, 0, 0, TileMode.CurrentOutfit, 1, 192, TileKey.StandardPose);
+    private static TileKey Key(uint id) => new(id, 0, 0, TileMode.CurrentOutfit, 1, 192, TileKey.StandardPose, 0);
 
     [Fact]
     public void Add_SameKeyDisposesOld()
@@ -69,9 +69,9 @@ public class TileCacheTests
     [Fact]
     public void TileKey_PoseIsPartOfKey()
     {
-        var standard = new TileKey(1, 0, 0, TileMode.CurrentOutfit, 1, 192, TileKey.StandardPose);
+        var standard = new TileKey(1, 0, 0, TileMode.CurrentOutfit, 1, 192, TileKey.StandardPose, 0);
         var idle4 = standard with { Pose = 4 };
         Assert.NotEqual(standard, idle4);
-        Assert.Equal(idle4, new TileKey(1, 0, 0, TileMode.CurrentOutfit, 1, 192, 4));
+        Assert.Equal(idle4, new TileKey(1, 0, 0, TileMode.CurrentOutfit, 1, 192, 4, 0));
     }
 }
