@@ -1,9 +1,13 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/GlamourBrowser.Core/GlamourBrowser.Core.csproj" />
+    <Project Path="src/GlamourBrowser.Sources/GlamourBrowser.Sources.csproj" />
     <Project Path="src/GlamourBrowser/GlamourBrowser.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/GlamourBrowser.Core.Tests/GlamourBrowser.Core.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/SourceProbe/SourceProbe.csproj" />
   </Folder>
 </Solution>
