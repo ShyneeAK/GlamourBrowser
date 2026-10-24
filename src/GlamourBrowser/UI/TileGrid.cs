@@ -167,34 +167,43 @@ public sealed class TileGrid
     private void DrawTraitIcons(ImDrawListPtr drawList, GlamourItem item, IReadOnlySet<SourceCategory>? categories, Vector2 min, float width, float iconSize)
     {
         var colors = theme.Colors;
-        var icons = new List<Action<Vector2>>();
+        var icons = new List<(Action<Vector2> Draw, string Tooltip)>();
         if (item.DyeCount > 0)
-            icons.Add(at =>
+            icons.Add((at =>
             {
                 GameIcon.DrawAt(drawList, 0, at, new Vector2(iconSize), FontAwesomeIcon.PaintBrush, colors.TextMuted);
                 drawList.AddText(ImGui.GetFont(), ImGui.GetFontSize() * 0.75f, at + new Vector2(iconSize * 0.6f, iconSize * 0.35f), colors.Text, item.DyeCount.ToString());
-            });
+            }, TileInfo.DyeText(item.DyeCount)));
         if (item.Trade != Tradability.Bound)
         {
             var glyph = item.Trade == Tradability.Marketable ? FontAwesomeIcon.Store : FontAwesomeIcon.ExchangeAlt;
-            icons.Add(at => GameIcon.DrawAt(drawList, 0, at, new Vector2(iconSize), glyph, colors.TextMuted));
+            icons.Add((at => GameIcon.DrawAt(drawList, 0, at, new Vector2(iconSize), glyph, colors.TextMuted), TileInfo.TradeText(item.Trade)));
         }
         var badge = JobBadges.For(JobBadges.CollapseClasses(item.ClassJobIds, jobs.ParentOf), jobs.GroupOf, jobs.All.Count);
         if (badge.Kind != JobBadgeKind.None)
         {
-            var icon = badge.Kind == JobBadgeKind.Job ? jobs.Find(badge.JobId)?.IconId ?? 0 : JobCatalog.RoleIcon(badge.Group);
-            icons.Add(at => GameIcon.DrawAt(drawList, icon, at, new Vector2(iconSize), FontAwesomeIcon.User, colors.TextMuted));
+            var job = badge.Kind == JobBadgeKind.Job ? jobs.Find(badge.JobId) : null;
+            var icon = job?.IconId ?? JobCatalog.RoleIcon(badge.Group);
+            var name = job?.Name ?? JobGroups.DisplayName(badge.Group);
+            icons.Add((at => GameIcon.DrawAt(drawList, icon, at, new Vector2(iconSize), FontAwesomeIcon.User, colors.TextMuted), name));
         }
         if (categories != null)
         {
             foreach (var category in SourceRanking.Icons(categories))
-                icons.Add(at => DrawSourceIcon(drawList, category, at, iconSize, colors.TextMuted));
+                icons.Add((at => DrawSourceIcon(drawList, category, at, iconSize, colors.TextMuted), SourceCategories.DisplayName(category)));
         }
 
         const float spacing = 3f;
         var fit = TileInfo.FitIcons(icons.Count, iconSize, spacing, width);
+        var windowHovered = ImGui.IsWindowHovered();
         for (var i = 0; i < fit; i++)
-            icons[i](min + new Vector2(i * (iconSize + spacing), 0));
+        {
+            var at = min + new Vector2(i * (iconSize + spacing), 0);
+            icons[i].Draw(at);
+            // Only the icon itself shows a tooltip; the rest of the tile has none.
+            if (windowHovered && ImGui.IsMouseHoveringRect(at, at + new Vector2(iconSize)))
+                ImGui.SetTooltip(icons[i].Tooltip);
+        }
     }
 
     /// <summary>A source category icon; savage gets a red corner because the game has no own icon for it.</summary>

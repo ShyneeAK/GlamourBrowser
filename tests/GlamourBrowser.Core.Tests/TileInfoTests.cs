@@ -35,4 +35,14 @@ public class TileInfoTests
     [InlineData(20f, 16f, 0)]
     public void InfoRows_DropIconsThenLineTwoOnShortTiles(float tileHeight, float lineHeight, int expected)
         => Assert.Equal(expected, TileInfo.InfoRows(tileHeight, lineHeight));
+
+    [Fact]
+    public void TraitTexts()
+    {
+        Assert.Equal("Färbbar (1 Farbkanal)", TileInfo.DyeText(1));
+        Assert.Equal("Färbbar (2 Farbkanäle)", TileInfo.DyeText(2));
+        Assert.Equal("Marktbrett", TileInfo.TradeText(GlamourBrowser.Core.Items.Tradability.Marketable));
+        Assert.Equal("Handelbar", TileInfo.TradeText(GlamourBrowser.Core.Items.Tradability.Tradable));
+        Assert.Equal("Gebunden", TileInfo.TradeText(GlamourBrowser.Core.Items.Tradability.Bound));
+    }
 }

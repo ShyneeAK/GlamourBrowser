@@ -1,3 +1,4 @@
+using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Sources;
 
 namespace GlamourBrowser.Core.Ui;
@@ -7,6 +8,15 @@ public static class TileInfo
 {
     public static string Line(int level, SourceCategory? top)
         => top is { } category ? $"Lv. {level} · {SourceCategories.DisplayName(category)}" : $"Lv. {level}";
+
+    public static string DyeText(int channels) => channels == 1 ? "Färbbar (1 Farbkanal)" : $"Färbbar ({channels} Farbkanäle)";
+
+    public static string TradeText(Tradability trade) => trade switch
+    {
+        Tradability.Marketable => "Marktbrett",
+        Tradability.Tradable => "Handelbar",
+        _ => "Gebunden",
+    };
 
     /// <summary>For owned items: where the item is (first place, plus how many more).</summary>
     public static string OwnedLine(int level, IReadOnlyList<string> places) => places.Count switch
