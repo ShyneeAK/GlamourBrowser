@@ -62,6 +62,7 @@ public sealed unsafe class RenderPool : IDisposable
     private bool poseWarned;
     private int poseDiagnosticsBudget = 6;
     private bool freezeWarned;
+    private int weaponDiagnosticsBudget = 12;
 
     public RenderPool(TileQueue queue, TileCache<IDalamudTextureWrap> cache, Func<uint, GlamourItem?> lookup,
                       AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor)
@@ -251,6 +252,8 @@ public sealed unsafe class RenderPool : IDisposable
                 }
                 // A freshly loaded weapon can come back sheathed even though the view had it drawn: check the
                 // character itself, not what this worker did last time, and draw (or sheathe) again if needed.
+                if (worker.Key!.Value.WeaponDrawn && weaponDiagnosticsBudget > 0)
+                    Plugin.Log.Information($"[weapon] tile {worker.Key.Value.ItemId}: loaded, drawn {view.IsWeaponDrawn()}, worker thinks {worker.WeaponDrawn}, pose changed {worker.PoseChanged}, gate {(worker.StanceGate != null ? "yes" : "no")}");
                 if (view.IsWeaponDrawn() != worker.Key!.Value.WeaponDrawn)
                 {
                     if (!worker.PoseChanged)
@@ -304,6 +307,11 @@ public sealed unsafe class RenderPool : IDisposable
                 var poseState = worker.StanceGate?.Step(playing) ?? worker.PoseGate!.Step(playing);
                 if (poseState == PoseGateState.Wait)
                     return;
+                if (worker.StanceGate != null && weaponDiagnosticsBudget > 0)
+                {
+                    weaponDiagnosticsBudget--;
+                    Plugin.Log.Information($"[weapon] tile {worker.Key!.Value.ItemId}: {poseState}, playing {playing}, drawn {view.IsWeaponDrawn()}, {worker.Stopwatch.ElapsedMilliseconds} ms since apply");
+                }
                 if (poseDiagnosticsBudget > 0 && worker.Key!.Value.Pose != TileKey.StandardPose)
                 {
                     poseDiagnosticsBudget--;

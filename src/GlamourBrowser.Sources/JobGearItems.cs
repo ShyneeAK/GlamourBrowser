@@ -6,7 +6,7 @@ using Lumina.Excel.Sheets;
 
 namespace GlamourBrowser.Sources;
 
-/// <summary>Armour and accessories wearable by exactly one job (plus its base class): their vendor offers count as job gear.</summary>
+/// <summary>Items wearable by exactly one job (plus its base class), weapons included: their vendor offers count as job gear.</summary>
 public static class JobGearItems
 {
     public static IReadOnlySet<uint> Find(GameData data, IReadOnlySet<uint> relevant)
@@ -29,9 +29,6 @@ public static class JobGearItems
         }
 
         var items = data.GetExcelSheet<Item>()!;
-        // Weapons are single-job by nature; only armour and accessories made for one job count as job gear.
-        return relevant.Where(id => items.TryGetRow(id, out var item)
-                                    && singleJob.Contains(item.ClassJobCategory.RowId)
-                                    && item.EquipSlotCategory.Value.MainHand == 0 && item.EquipSlotCategory.Value.OffHand == 0).ToHashSet();
+        return relevant.Where(id => items.TryGetRow(id, out var item) && singleJob.Contains(item.ClassJobCategory.RowId)).ToHashSet();
     }
 }
