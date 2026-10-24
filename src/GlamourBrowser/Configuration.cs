@@ -23,6 +23,8 @@ public sealed class Configuration : IPluginConfiguration
     public SortOrder Sort { get; set; } = SortOrder.Level;
     public bool UseIdlePose { get; set; } = true;
     public bool DrawWeaponsOnTiles { get; set; } = true;
+    /// <summary>The plugin's own UI scale on top of Dalamud's, 0.5–3.</summary>
+    public float UiScale { get; set; } = 1f;
     public bool FilterColumnVisible { get; set; } = true;
     /// <summary>Replace, not merge, on load: otherwise a closed default section would reopen after a restart.</summary>
     [JsonProperty(ObjectCreationHandling = ObjectCreationHandling.Replace)]

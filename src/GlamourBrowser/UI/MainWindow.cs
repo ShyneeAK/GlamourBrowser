@@ -21,6 +21,7 @@ public sealed class MainWindow : Window
     private readonly Theme.Theme theme;
     private readonly Configuration config;
     private IDisposable? themeScope;
+    private IDisposable? fontScope;
 
     public MainWindow(LivePane livePane, TopBar topBar, FilterColumn filterColumn, TileGrid grid, Theme.Theme theme, Configuration config)
         : base("GlamourBrowser##GlamourBrowser")
@@ -34,10 +35,17 @@ public sealed class MainWindow : Window
         SizeConstraints = new WindowSizeConstraints { MinimumSize = new Vector2(1100, 650) };
     }
 
-    public override void PreDraw() => themeScope = theme.Push();
+    public override void PreDraw()
+    {
+        themeScope = theme.Push();
+        // Before Begin, so the title bar scales too.
+        fontScope = UiScale.PushText();
+    }
 
     public override void PostDraw()
     {
+        fontScope?.Dispose();
+        fontScope = null;
         themeScope?.Dispose();
         themeScope = null;
     }
@@ -46,7 +54,7 @@ public sealed class MainWindow : Window
     {
         lock (RenderSync.Lock)
         {
-            var scale = ImGuiHelpers.GlobalScale;
+            var scale = UiScale.Global;
             var spacing = ImGui.GetStyle().ItemSpacing.X;
             var total = ImGui.GetContentRegionAvail().X;
             var left = MathF.Max(300 * scale, total * 0.32f);

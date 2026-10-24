@@ -125,7 +125,7 @@ public sealed unsafe class LivePane
     {
         string glyph;
         Vector2 glyphSize;
-        using (ImRaii.PushFont(UiBuilder.IconFont))
+        using (UiScale.PushIcons())
         {
             glyph = FontAwesomeIcon.QuestionCircle.ToIconString();
             glyphSize = ImGui.CalcTextSize(glyph);
@@ -133,7 +133,7 @@ public sealed unsafe class LivePane
 
         var min = topRight + new Vector2(-glyphSize.X - 8, 8);
         var hovered = ImGui.IsMouseHoveringRect(min, min + glyphSize) && !ImGui.IsMouseDown(ImGuiMouseButton.Left) && !ImGui.IsMouseDown(ImGuiMouseButton.Right);
-        using (ImRaii.PushFont(UiBuilder.IconFont))
+        using (UiScale.PushIcons())
             drawList.AddText(min, hovered ? theme.Colors.Text : theme.Colors.TextMuted, glyph);
         if (hovered)
             ImGui.SetTooltip("Links ziehen: drehen\nRechts ziehen: verschieben\nMausrad: Zoom\nDoppelklick: zurücksetzen");
@@ -148,7 +148,7 @@ public sealed unsafe class LivePane
         }
 
         var colors = theme.Colors;
-        GameIcon.Draw(item.IconId, new Vector2(40 * ImGuiHelpers.GlobalScale), FontAwesomeIcon.Tshirt, colors.TextMuted);
+        GameIcon.Draw(item.IconId, new Vector2(40 * UiScale.Global), FontAwesomeIcon.Tshirt, colors.TextMuted);
         ImGui.SameLine();
         ImGui.BeginGroup();
         ImGui.TextWrapped(item.Name);
@@ -299,7 +299,7 @@ public sealed unsafe class LivePane
             return;
         }
 
-        var size = new Vector2(20 * ImGuiHelpers.GlobalScale);
+        var size = new Vector2(20 * UiScale.Global);
         var perRow = Math.Max(1, (int)(ImGui.GetContentRegionAvail().X / (size.X + 4)));
         var shown = jobs.All.Where(j => item.ClassJobIds.Contains(j.Id)).ToList();
         for (var i = 0; i < shown.Count; i++)

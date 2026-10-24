@@ -18,6 +18,7 @@ public sealed class SettingsWindow : Window
     private readonly CalibrationService calibration;
     private readonly Theme.Theme theme;
     private IDisposable? themeScope;
+    private IDisposable? fontScope;
 
     private static readonly string[] AccentNames = ["Blau", "Violett", "Türkis", "Rosé", "Bernstein"];
 
@@ -32,10 +33,17 @@ public sealed class SettingsWindow : Window
         SizeConstraints = new WindowSizeConstraints { MinimumSize = new Vector2(420, 380) };
     }
 
-    public override void PreDraw() => themeScope = theme.Push();
+    public override void PreDraw()
+    {
+        themeScope = theme.Push();
+        // Before Begin, so the title bar scales too.
+        fontScope = UiScale.PushText();
+    }
 
     public override void PostDraw()
     {
+        fontScope?.Dispose();
+        fontScope = null;
         themeScope?.Dispose();
         themeScope = null;
     }
@@ -68,6 +76,16 @@ public sealed class SettingsWindow : Window
         var weapons = config.DrawWeaponsOnTiles ? 0 : 1;
         if (ImGui.Combo("Waffen-Kacheln", ref weapons, ["Waffe gezogen", "Waffe weggesteckt"], 2))
             state.SetDrawWeaponsOnTiles(weapons == 0);
+
+        var percent = (int)MathF.Round(config.UiScale * 100);
+        ImGui.SliderInt("Skalierung", ref percent, 50, 300, "%d %%", ImGuiSliderFlags.AlwaysClamp);
+        // Fonts are rebuilt only once the slider is released.
+        if (ImGui.IsItemDeactivatedAfterEdit())
+        {
+            config.UiScale = percent / 100f;
+            config.Save();
+            UiScale.Set(config.UiScale);
+        }
 
         var views = config.ParallelViews;
         if (ImGui.SliderInt("Parallele Ansichten", ref views, 1, 3, "%d", ImGuiSliderFlags.AlwaysClamp))

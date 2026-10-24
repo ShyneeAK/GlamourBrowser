@@ -20,7 +20,7 @@ public static class Chip
         var colors = theme.Colors;
         var textSize = ImGui.CalcTextSize(label);
         string cross;
-        using (ImRaii.PushFont(UiBuilder.IconFont))
+        using (UiScale.PushIcons())
             cross = FontAwesomeIcon.Times.ToIconString();
         var crossWidth = closable ? textSize.Y + 6 : 0;
         var size = new Vector2(textSize.X + 20 + crossWidth, textSize.Y + 8);
@@ -34,7 +34,7 @@ public static class Chip
         drawList.AddText(min + new Vector2(10, 4), colors.Text, label);
         if (closable)
         {
-            using (ImRaii.PushFont(UiBuilder.IconFont))
+            using (UiScale.PushIcons())
                 drawList.AddText(min + new Vector2(size.X - crossWidth - 4, 4), colors.Text, cross);
         }
 

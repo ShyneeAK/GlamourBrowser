@@ -17,7 +17,7 @@ public static class GameIcon
             return;
         }
 
-        using (ImRaii.PushFont(UiBuilder.IconFont))
+        using (UiScale.PushIcons())
         {
             var glyph = fallback.ToIconString();
             var textSize = ImGui.CalcTextSize(glyph);

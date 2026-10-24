@@ -34,11 +34,11 @@ public sealed class TopBar
 
     public void Draw()
     {
-        var scale = ImGuiHelpers.GlobalScale;
+        var scale = UiScale.Global;
         var spacing = ImGui.GetStyle().ItemSpacing.X;
 
         // The filter-column toggle comes first so it can never be pushed out of a narrow window.
-        if (ImGuiComponents.IconButton("##filtercolumn", FontAwesomeIcon.Filter))
+        if (IconButton.Draw("##filtercolumn", 0, FontAwesomeIcon.Filter, "", theme))
         {
             config.FilterColumnVisible = !config.FilterColumnVisible;
             config.Save();

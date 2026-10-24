@@ -114,7 +114,7 @@ public sealed class TileGrid
         else
         {
             var icon = Plugin.TextureProvider.GetFromGameIcon(new GameIconLookup(item.IconId)).GetWrapOrEmpty();
-            var iconSize = new Vector2(MathF.Min(size.X * 0.5f, 64 * ImGuiHelpers.GlobalScale));
+            var iconSize = new Vector2(MathF.Min(size.X * 0.5f, 64 * UiScale.Global));
             var iconPos = pos + (size - iconSize) / 2;
             drawList.AddImage(icon.Handle, iconPos, iconPos + iconSize);
         }

@@ -77,6 +77,7 @@ public sealed class Plugin : IDalamudPlugin
         moments = new PoseMomentService();
         browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, moments);
         Framework.Update += OnFrameworkUpdate;
+        UI.UiScale.Set(config.UiScale);
         var theme = new UI.Theme.Theme(config);
         var jobs = new JobCatalog(DataManager);
         mainWindow = new MainWindow(
@@ -179,6 +180,7 @@ public sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.OpenConfigUi -= settingsWindow.Toggle;
         windowSystem.RemoveAllWindows();
         CommandManager.RemoveHandler(CommandName);
+        UI.UiScale.Dispose();
 
         Framework.Update -= OnFrameworkUpdate;
         // CharaViews must be released on the framework thread.

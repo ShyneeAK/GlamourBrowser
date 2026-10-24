@@ -22,7 +22,7 @@ public static class JobPicker
             changed = true;
         }
 
-        var size = new Vector2(32, 32) * ImGuiHelpers.GlobalScale;
+        var size = new Vector2(32, 32) * UiScale.Global;
         foreach (var group in jobs.All.GroupBy(j => j.Group))
         {
             ImGui.Spacing();
