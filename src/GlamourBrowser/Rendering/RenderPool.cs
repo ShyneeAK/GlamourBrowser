@@ -32,7 +32,7 @@ public sealed unsafe class RenderPool : IDisposable
         public int Frames { get; set; }
         public Stopwatch Stopwatch { get; } = new();
         public Task<IDalamudTextureWrap>? CopyTask { get; set; }
-        public (TileMode Mode, ulong Hash)? DressedAs { get; set; }
+        public (TileMode Mode, ulong Hash, EquipSlot Slot)? DressedAs { get; set; }
         public bool Busy => Key != null;
     }
 
@@ -161,10 +161,12 @@ public sealed unsafe class RenderPool : IDisposable
 
                 worker.Key = key;
                 worker.Stopwatch.Restart();
-                if (worker.DressedAs != (key.Mode, key.AppearanceHash))
+                // Re-dress when the slot changes too, otherwise the previous tile's item (e.g. a hat)
+                // stays on the character.
+                if (worker.DressedAs != (key.Mode, key.AppearanceHash, item.Slot))
                 {
                     view.ApplyOutfit(appearance.Outfit, key.Mode, item.Slot);
-                    worker.DressedAs = (key.Mode, key.AppearanceHash);
+                    worker.DressedAs = (key.Mode, key.AppearanceHash, item.Slot);
                 }
                 view.SetItem(item.Slot, key.ItemId, key.Stain0, key.Stain1);
                 // Tiles keep the weapon sheathed: drawing it plays an animation that would have to finish first.

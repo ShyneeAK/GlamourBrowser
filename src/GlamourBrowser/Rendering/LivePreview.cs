@@ -29,6 +29,10 @@ public sealed unsafe class LivePreview : IDisposable
 
     public GlamourItem? Selected { get; private set; }
 
+    /// <summary>Weapon in hand instead of sheathed, toggled from the UI like the game's try-on window.</summary>
+    public bool WeaponDrawn { get; set; }
+    private bool? appliedWeaponDrawn;
+
     public Texture* Texture => view != null ? view.GetTexture() : null;
 
     public void Select(GlamourItem? item) => Selected = item;
@@ -80,6 +84,7 @@ public sealed unsafe class LivePreview : IDisposable
             view = new CharaViewHandle(Slot);
             view.Create(character, appearance.Race, appearance.Sex);
             applied = null;
+            appliedWeaponDrawn = null;
         }
 
         view.Tick();
@@ -92,9 +97,14 @@ public sealed unsafe class LivePreview : IDisposable
         {
             view.ApplyOutfit(appearance.Outfit, config.TileMode, item.Slot);
             view.SetItem(item.Slot, item.Id, 0, 0);
-            view.SetWeaponDrawn(item.Slot is EquipSlot.MainHand or EquipSlot.OffHand);
             view.ApplyCamera(camera);
             applied = wanted;
+        }
+
+        if (appliedWeaponDrawn != WeaponDrawn && view.State == CharaViewHandle.StateReady)
+        {
+            view.SetWeaponDrawn(WeaponDrawn);
+            appliedWeaponDrawn = WeaponDrawn;
         }
 
         ApplyCameraInput(view);

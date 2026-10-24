@@ -130,6 +130,8 @@ public sealed unsafe class DetailPanel
                 live.QueueReset();
         }
 
+        if (ImGui.Button(live.WeaponDrawn ? "Waffe wegstecken" : "Waffe ziehen"))
+            live.WeaponDrawn = !live.WeaponDrawn;
         ImGui.TextDisabled("Links ziehen: drehen · Rechts ziehen: verschieben · Mausrad: Zoom · Doppelklick: zurücksetzen");
     }
 
