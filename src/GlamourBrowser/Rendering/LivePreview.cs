@@ -33,6 +33,10 @@ public sealed unsafe class LivePreview : IDisposable
     public bool WeaponDrawn { get; set; }
     private bool? appliedWeaponDrawn;
 
+    /// <summary>Weapon shown or hidden, toggled from the UI like the game's try-on window.</summary>
+    public bool WeaponVisible { get; set; } = true;
+    private bool? appliedWeaponVisible;
+
     public Texture* Texture => view != null ? view.GetTexture() : null;
 
     public void Select(GlamourItem? item) => Selected = item;
@@ -85,6 +89,7 @@ public sealed unsafe class LivePreview : IDisposable
             view.Create(character, appearance.Race, appearance.Sex);
             applied = null;
             appliedWeaponDrawn = null;
+            appliedWeaponVisible = null;
         }
 
         view.Tick();
@@ -99,6 +104,14 @@ public sealed unsafe class LivePreview : IDisposable
             view.SetItem(item.Slot, item.Id, 0, 0);
             view.ApplyCamera(camera);
             applied = wanted;
+            appliedWeaponVisible = null;
+        }
+
+        // Visibility has to be applied after the new items have loaded.
+        if (appliedWeaponVisible != WeaponVisible && view.IsIdle)
+        {
+            view.ApplyVisibility(WeaponVisible);
+            appliedWeaponVisible = WeaponVisible;
         }
 
         if (appliedWeaponDrawn != WeaponDrawn && view.State == CharaViewHandle.StateReady)

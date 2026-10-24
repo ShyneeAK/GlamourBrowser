@@ -184,13 +184,19 @@ public sealed unsafe class RenderPool : IDisposable
                         Fail(worker, "Zeitüberschreitung beim Laden");
                     return;
                 }
+                view.ApplyVisibility(showWeapons: true);
                 worker.Frames = 0;
                 worker.Phase = Phase.Settle;
                 break;
 
             case Phase.Settle:
-                if (++worker.Frames < SettleFrames)
+                // ApplyVisibility may start another short load; wait until idle again.
+                if (++worker.Frames < SettleFrames || !view.IsIdle)
+                {
+                    if (worker.Frames > TimeoutFrames)
+                        Fail(worker, "Zeitüberschreitung beim Laden");
                     return;
+                }
                 var texture = view.GetTexture();
                 if (texture == null || texture->D3D11ShaderResourceView == null)
                 {

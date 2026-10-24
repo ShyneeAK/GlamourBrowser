@@ -83,6 +83,22 @@ public sealed unsafe class CharaViewHandle : IDisposable
             view->SetItemSlotData((byte)slot, itemId, stain0, stain1, 0, false);
     }
 
+    /// <summary>
+    /// Shows headgear and shows/hides weapons on the view's character, like the game's try-on view does
+    /// in its Update (TryonCharaView vf10 calls HideHeadgear and HideWeapons unconditionally). Call after
+    /// the items have loaded; the flags in ModelData alone do not make weapons visible.
+    /// </summary>
+    public void ApplyVisibility(bool showWeapons)
+    {
+        if (view == null || view->State != StateReady)
+            return;
+        var character = view->GetCharacter();
+        if (character == null)
+            return;
+        character->DrawData.HideHeadgear(0, false);
+        character->DrawData.HideWeapons(!showWeapons);
+    }
+
     /// <summary>Draws the weapon (in hand) for weapon tiles, sheathes it otherwise.</summary>
     public void SetWeaponDrawn(bool drawn)
     {
