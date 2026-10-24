@@ -21,6 +21,7 @@ public sealed class Configuration : IPluginConfiguration
 
     public AccentColor Accent { get; set; } = AccentColor.Blue;
     public SortOrder Sort { get; set; } = SortOrder.Level;
+    public bool UseIdlePose { get; set; } = true;
     public bool FilterColumnVisible { get; set; } = true;
     /// <summary>Replace, not merge, on load: otherwise a closed default section would reopen after a restart.</summary>
     [JsonProperty(ObjectCreationHandling = ObjectCreationHandling.Replace)]

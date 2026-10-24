@@ -47,6 +47,7 @@ public sealed unsafe class RenderPool : IDisposable
     private readonly Dictionary<TileKey, string> failures = new();
     private DateTime lastWork = DateTime.UtcNow;
     private bool liveReserved;
+    private bool poseWarned;
 
     public RenderPool(TileQueue queue, TileCache<IDalamudTextureWrap> cache, Func<uint, GlamourItem?> lookup,
                       AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor)
@@ -191,6 +192,12 @@ public sealed unsafe class RenderPool : IDisposable
                 view.SetItem(item.Slot, key.ItemId, key.Stain0, key.Stain1);
                 // Tiles keep the weapon sheathed: drawing it plays an animation that would have to finish first.
                 view.ApplyCamera(cameraFor(item.Slot));
+                if (!view.ApplyIdlePose(key.Pose) && !poseWarned)
+                {
+                    // The tile then renders in the standard pose.
+                    poseWarned = true;
+                    Plugin.Log.Warning($"Idle pose {key.Pose} could not be applied; tiles use the standard pose");
+                }
                 worker.Frames = 0;
                 worker.Phase = Phase.Loading;
                 break;

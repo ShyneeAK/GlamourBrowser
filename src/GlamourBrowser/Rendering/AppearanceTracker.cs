@@ -1,6 +1,8 @@
 using System;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using FFXIVClientStructs.FFXIV.Client.Game.Control;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 
 namespace GlamourBrowser.Rendering;
 
@@ -13,6 +15,9 @@ public sealed unsafe class AppearanceTracker : IDisposable
     public OutfitSnapshot Outfit { get; private set; } = OutfitSnapshot.Empty;
     public byte Race { get; private set; } = 1;
     public byte Sex { get; private set; }
+
+    /// <summary>The player's idle pose (C-Pose index); a change raises <see cref="Changed"/> as well.</summary>
+    public byte IdlePose { get; private set; }
     public bool IsValid => Hash != 0;
 
     public event Action? Changed;
@@ -42,9 +47,11 @@ public sealed unsafe class AppearanceTracker : IDisposable
         var outfit = OutfitSnapshot.FromEquipped();
         var customize = &character->DrawData.CustomizeData;
         var hash = Fnv1a(new ReadOnlySpan<byte>(customize, sizeof(CustomizeData)), outfit);
-        if (hash == Hash)
+        var pose = PlayerState.Instance()->CurrentPose(EmoteController.PoseType.Idle);
+        if (hash == Hash && pose == IdlePose)
             return;
 
+        IdlePose = pose;
         Hash = hash;
         Outfit = outfit;
         Race = customize->Race;

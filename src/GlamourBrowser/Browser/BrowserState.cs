@@ -91,6 +91,13 @@ public sealed class BrowserState
         RequestTiles();
     }
 
+    public void SetUseIdlePose(bool useIdlePose)
+    {
+        config.UseIdlePose = useIdlePose;
+        config.Save();
+        RequestTiles();
+    }
+
     public void SetSort(SortOrder sort)
     {
         config.Sort = sort;
@@ -99,7 +106,8 @@ public sealed class BrowserState
     }
 
     public TileKey KeyFor(GlamourItem item)
-        => new(item.Id, 0, 0, config.TileMode, appearance.Hash, Layout.RenderWidth == 0 ? PageLayout.RenderSteps[0] : Layout.RenderWidth);
+        => new(item.Id, 0, 0, config.TileMode, appearance.Hash, Layout.RenderWidth == 0 ? PageLayout.RenderSteps[0] : Layout.RenderWidth,
+               config.UseIdlePose ? appearance.IdlePose : TileKey.StandardPose);
 
     /// <summary>Filters again and re-requests the visible tiles.</summary>
     public void Refresh()

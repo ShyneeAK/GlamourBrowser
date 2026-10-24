@@ -16,7 +16,7 @@ public sealed unsafe class LivePreview : IDisposable
     private readonly Func<EquipSlot, CameraPreset?> cameraFor;
     private CharaViewHandle? view;
     private CharaViewHandle? suspended;
-    private (uint ItemId, TileMode Mode, ulong Hash, CameraPreset? Camera)? applied;
+    private (uint ItemId, TileMode Mode, ulong Hash, CameraPreset? Camera, byte Pose)? applied;
     private float rotateX, rotateY, panX, panY, zoom;
     private bool reset;
 
@@ -41,9 +41,6 @@ public sealed unsafe class LivePreview : IDisposable
     public Texture* Texture => view != null ? view.GetTexture() : null;
 
     public void Select(GlamourItem? item) => Selected = item;
-
-    /// <summary>Pose spike: applied to the live view every frame while set; a None request is applied once and cleared.</summary>
-    public (PoseMethod Method, byte CPose, ushort Timeline)? TestPose { get; set; }
 
     public void QueueRotate(float dx, float dy)
     {
@@ -111,12 +108,14 @@ public sealed unsafe class LivePreview : IDisposable
             return;
 
         var camera = cameraFor(item.Slot);
-        var wanted = (item.Id, config.TileMode, appearance.Hash, camera);
+        var pose = config.UseIdlePose ? appearance.IdlePose : TileKey.StandardPose;
+        var wanted = (item.Id, config.TileMode, appearance.Hash, camera, pose);
         if (applied != wanted && view.IsIdle)
         {
             view.ApplyOutfit(appearance.Outfit, config.TileMode, item.Slot);
             view.SetItem(item.Slot, item.Id, 0, 0);
             view.ApplyCamera(camera);
+            view.ApplyIdlePose(pose);
             applied = wanted;
             appliedWeaponVisible = null;
         }
@@ -133,13 +132,6 @@ public sealed unsafe class LivePreview : IDisposable
             view.SetWeaponDrawn(WeaponDrawn);
             appliedWeaponDrawn = WeaponDrawn;
             appliedWeaponVisible = null;
-        }
-
-        if (TestPose is { } pose && view.State == CharaViewHandle.StateReady)
-        {
-            view.ApplyPose(pose.Method, pose.CPose, pose.Timeline);
-            if (pose.Method == PoseMethod.None)
-                TestPose = null;
         }
 
         ApplyCameraInput(view);

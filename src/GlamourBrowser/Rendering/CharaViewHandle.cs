@@ -27,14 +27,6 @@ namespace GlamourBrowser.Rendering;
 ///  - The image ends up in RenderTargetManager.GetCharaViewTexture(index); there are 8 slots (0-7).
 ///  - Dtor(1) frees through the game's operator delete; we free through IMemorySpace instead.
 /// </summary>
-/// <summary>How a pose is put on a view's character (pose spike).</summary>
-public enum PoseMethod
-{
-    None,
-    CPose,
-    BaseOverride,
-}
-
 public sealed unsafe class CharaViewHandle : IDisposable
 {
     public const uint StateReady = 6;
@@ -178,10 +170,11 @@ public sealed unsafe class CharaViewHandle : IDisposable
     /// scene (GameObject.Rotation / Position); "zoom" is a distance in the render camera.
     /// </summary>
     /// <summary>
-    /// Pose spike: sets the idle pose state or overrides the base timeline of the view's character.
-    /// <see cref="PoseMethod.None"/> clears the base override. Returns false when there is no character.
+    /// Puts the character into an idle pose by overriding its base timeline (setting EmoteController.CPoseState
+    /// alone does not change the animation, see the B2 pose spike). The standard pose clears the override.
+    /// Returns false when there is no character or setting the override failed.
     /// </summary>
-    public bool ApplyPose(PoseMethod method, byte cpose, ushort timelineId)
+    public bool ApplyIdlePose(byte pose)
     {
         if (view == null)
             return false;
@@ -190,23 +183,13 @@ public sealed unsafe class CharaViewHandle : IDisposable
             var character = view->GetCharacter();
             if (character == null)
                 return false;
-            switch (method)
-            {
-                case PoseMethod.CPose:
-                    character->EmoteController.CPoseState = cpose;
-                    break;
-                case PoseMethod.BaseOverride:
-                    character->Timeline.BaseOverride = timelineId;
-                    break;
-                default:
-                    character->Timeline.BaseOverride = 0;
-                    break;
-            }
+            // A pose without its own timeline (e.g. the default idle) simply shows the standard pose.
+            character->Timeline.BaseOverride = PoseTimelines.For(pose);
             return true;
         }
         catch (Exception e)
         {
-            Plugin.Log.Warning(e, $"ApplyPose {method} failed");
+            Plugin.Log.Warning(e, $"ApplyIdlePose {pose} failed");
             return false;
         }
     }

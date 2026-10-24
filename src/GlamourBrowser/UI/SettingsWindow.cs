@@ -61,6 +61,10 @@ public sealed class SettingsWindow : Window
         if (ImGui.Combo("Kachel-Modus", ref mode, ["Aktuelles Outfit", "Unterwäsche"], 2))
             state.SetTileMode((TileMode)mode);
 
+        var pose = config.UseIdlePose ? 1 : 0;
+        if (ImGui.Combo("Pose", ref pose, ["Standard", "Meine Idle-Pose"], 2))
+            state.SetUseIdlePose(pose == 1);
+
         var views = config.ParallelViews;
         if (ImGui.SliderInt("Parallele Ansichten", ref views, 1, 3, "%d", ImGuiSliderFlags.AlwaysClamp))
         {
