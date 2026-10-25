@@ -284,6 +284,21 @@ public sealed unsafe class CharaViewHandle : IDisposable
                + " || " + DescribeModelData(view);
     }
 
+    /// <summary>Diagnostics for /gbrowser trace: loading, weapon and animation state of a view in one short line.</summary>
+    public static string DescribeTrace(CharaView* view)
+    {
+        if (view == null || view->State != StateReady)
+            return "not ready";
+        var character = view->GetCharacter();
+        if (character == null)
+            return "no character";
+        ref var weapon = ref character->DrawData.WeaponData[0];
+        return $"copied {view->CharacterDataCopied} loaded {view->CharacterLoaded} | drawn {character->IsWeaponDrawn} f2 {character->DrawData.Flags2:X2} " +
+               $"w0 {weapon.ModelId.Value:X} st {weapon.State:X2} | {DescribeAnimation(character)}, blend {AnimationFreeze.BodyBlend(character)}";
+    }
+
+    public string DescribeTrace() => DescribeTrace(view);
+
     /// <summary>Diagnostics: the view's model data as hex (0x48–0xE0 of the CharaView), to compare views byte by byte.</summary>
     public static string DescribeModelData(CharaView* view)
     {

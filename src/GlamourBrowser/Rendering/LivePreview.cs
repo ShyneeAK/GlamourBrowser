@@ -70,6 +70,10 @@ public sealed unsafe class LivePreview : IDisposable
 
     public string DescribeWeapons() => view?.DescribeWeapons() ?? "live: no view";
 
+    /// <summary>Diagnostics for /gbrowser trace: what the preview asked for and the view's state.</summary>
+    public string DescribeTrace()
+        => $"want drawn {WeaponDrawn} applied {appliedWeaponDrawn} sheathe {sheatheFrames} stance {inHandStance} | {view?.DescribeTrace() ?? "no view"}";
+
     /// <summary>Call once per framework tick, after the render pool.</summary>
     public void Tick()
     {

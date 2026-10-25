@@ -62,6 +62,8 @@ public sealed class Plugin : IDalamudPlugin
     private readonly SourceService sources;
     private readonly MemoryStats memoryStats;
     private bool paused;
+    // Frames left of a /gbrowser trace (live view and the game's try-on window, every third frame).
+    private int traceFrames;
 
     public Plugin()
     {
@@ -135,6 +137,11 @@ public sealed class Plugin : IDalamudPlugin
             Framework.RunOnFrameworkThread(() => GlamourPlate.PlateDiagnostics.Run(parts[1..]));
             return;
         }
+        if (parts.Length > 0 && parts[0] == "trace")
+        {
+            Framework.RunOnFrameworkThread(() => traceFrames = 300);
+            return;
+        }
         if (parts.Length == 0 || parts[0] != "diag")
         {
             mainWindow.Toggle();
@@ -161,6 +168,15 @@ public sealed class Plugin : IDalamudPlugin
                     Log.Information($"[diag] pool: {line}");
             }
         });
+    }
+
+    private unsafe void Trace()
+    {
+        var frame = FFXIVClientStructs.FFXIV.Client.System.Framework.Framework.Instance()->FrameCounter;
+        Log.Information($"[trace] {frame} live: {live.DescribeTrace()}");
+        var tryon = FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentTryon.Instance();
+        if (tryon != null && tryon->CharaView.CharaView.State == 6)
+            Log.Information($"[trace] {frame} tryon: draw {tryon->CharaView.DrawWeapon} | {CharaViewHandle.DescribeTrace(&tryon->CharaView.CharaView)}");
     }
 
     private CameraPreset? CameraFor(EquipSlot slot) => calibration.Get(PlayerState.ContentId, slot);
@@ -190,6 +206,8 @@ public sealed class Plugin : IDalamudPlugin
                 return;
             pool.Tick();
             live.Tick();
+            if (traceFrames > 0 && traceFrames-- % 3 == 0)
+                Trace();
         }
     }
 
