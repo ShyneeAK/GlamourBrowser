@@ -7,6 +7,7 @@
     <Punchline>Glamour-Raster mit gerenderten Charakter-Kacheln.</Punchline>
     <Description>Zeigt alle ausruestbaren Items als Seiten-Raster mit gerenderten Bildern des eigenen Charakters, filterbar, mit Besitzstatus und Fundort pro Item.</Description>
     <RepoUrl>https://github.com/ShyneeAK/GlamourBrowser</RepoUrl>
+    <IconUrl>https://raw.githubusercontent.com/ShyneeAK/GlamourBrowser/main/src/GlamourBrowser/images/icon.png</IconUrl>
     <Tags>glamour;transmog</Tags>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
@@ -17,5 +18,10 @@
     <ProjectReference Include="..\GlamourBrowser.Sources\GlamourBrowser.Sources.csproj" />
     <!-- Ships with Dalamud; only for the VRAM figures of the debug memory line. -->
     <Reference Include="TerraFX.Interop.Windows" Private="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The SDK adds no None items by default. Dalamud shows images/icon.png next to the dll of a dev plugin; the installer uses IconUrl (the packager keeps images out of latest.zip). icon.svg is the source. -->
+    <None Include="images\icon.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
