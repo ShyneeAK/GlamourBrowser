@@ -38,7 +38,8 @@ public sealed class CustomSetDraft
     /// Puts the item into its slot. A ring goes into the selected ring slot, else the first free one (right, then
     /// left), else the right one. Dyes of the replaced piece stay for the channels the new item has.
     /// </summary>
-    public void Put(GlamourItem item, EquipSlot? selectedSlot)
+    /// <returns>The slot the item went into.</returns>
+    public EquipSlot Put(GlamourItem item, EquipSlot? selectedSlot)
     {
         var slot = item.Slot;
         if (slot is EquipSlot.RingRight or EquipSlot.RingLeft)
@@ -51,6 +52,7 @@ public sealed class CustomSetDraft
 
         var old = PieceIn(slot);
         Set(new CustomPiece(slot, item.Id, item.DyeCount >= 1 ? old?.Stain0 ?? 0 : (byte)0, item.DyeCount >= 2 ? old?.Stain1 ?? 0 : (byte)0));
+        return slot;
     }
 
     /// <summary>Takes every piece of the set with its dyes, in the slot the set wears it; other slots stay.</summary>

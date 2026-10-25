@@ -74,6 +74,29 @@ public class TryOnTests
     }
 
     [Fact]
+    public void Put_AWornRingKeepsItsSlotAndTheOtherRingStays()
+    {
+        // The basis wears ring 10 right and 11 left; clicking 11 must not put it on the right finger as well.
+        var tryOn = new TryOn(Basis);
+        tryOn.Put(Item(11, EquipSlot.RingRight), new DyePair(Black, 0));
+
+        Assert.Equal(Piece(EquipSlot.RingRight, 10), tryOn.PieceIn(EquipSlot.RingRight));
+        Assert.Equal(Piece(EquipSlot.RingLeft, 11, Black), tryOn.PieceIn(EquipSlot.RingLeft));
+    }
+
+    [Fact]
+    public void Put_AClickedRingAgainStaysWhereItIs()
+    {
+        var tryOn = new TryOn(Basis);
+        tryOn.Put(Item(30, EquipSlot.RingRight), default);
+        tryOn.Put(Item(31, EquipSlot.RingRight), default);
+        tryOn.Put(Item(30, EquipSlot.RingRight), new DyePair(Black, 0));
+
+        Assert.Equal(Piece(EquipSlot.RingRight, 30, Black), tryOn.PieceIn(EquipSlot.RingRight));
+        Assert.Equal(Piece(EquipSlot.RingLeft, 31), tryOn.PieceIn(EquipSlot.RingLeft));
+    }
+
+    [Fact]
     public void PutAll_CustomSetKeepsItsDyes_DetectedSetTakesTheTileDye()
     {
         var hands = Item(40, EquipSlot.Hands, 1);

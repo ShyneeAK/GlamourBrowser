@@ -38,11 +38,14 @@ public sealed class TryOn
         return null;
     }
 
-    /// <summary>Puts the item on, dyed in <paramref name="dye"/> on the channels it has (as its tile shows it).</summary>
+    /// <summary>
+    /// Puts the item on, dyed in <paramref name="dye"/> on the channels it has (as its tile shows it). A ring that is
+    /// already worn stays on its finger, so clicking it (to see or dye it) does not push the other ring off.
+    /// </summary>
     public void Put(GlamourItem item, DyePair dye)
     {
-        clicked.Put(item, null);
-        var slot = clicked.Pieces.Last(p => p.ItemId == item.Id).Slot;
+        var worn = item.Slot is EquipSlot.RingRight or EquipSlot.RingLeft ? SlotOf(item.Id) : null;
+        var slot = clicked.Put(item, worn is EquipSlot.RingRight or EquipSlot.RingLeft ? worn : null);
         Dye(slot, item, dye);
         OnChanged();
     }
