@@ -1,3 +1,4 @@
+using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Rendering;
 
 namespace GlamourBrowser.Core.Tests;
@@ -83,5 +84,16 @@ public class DrawGateTests
         Assert.True(gate.Changed);
         gate.Step(5, 1, weaponAsWanted: false);
         Assert.True(gate.Changed);    // back to the first signature still counts as changed
+    }
+
+    [Fact]
+    public void SetKey_DiffersFromItemKey_AndNeverDrawsTheWeapon()
+    {
+        var set = new SetId(SetKind.Model, 1);
+        var key = TileKeys.ForSet(set, TileMode.CurrentOutfit, 1, 192, TileKey.StandardPose);
+        Assert.Equal(set, key.Set);
+        Assert.Equal(0u, key.ItemId);
+        Assert.False(key.WeaponDrawn);
+        Assert.NotEqual(new TileKey(1, 0, 0, TileMode.CurrentOutfit, 1, 192, TileKey.StandardPose), key);
     }
 }

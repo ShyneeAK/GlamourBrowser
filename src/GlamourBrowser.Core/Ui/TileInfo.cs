@@ -1,5 +1,6 @@
 using System.Text;
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Sources;
 
 namespace GlamourBrowser.Core.Ui;
@@ -19,21 +20,33 @@ public static class TileInfo
         _ => "Gebunden",
     };
 
+    public static string SetLine(int level, SetProgress progress) => $"Lv. {level} · {progress.Owned}/{progress.Total}";
+
     /// <summary>
     /// Tooltip of a tile's source icon: the sources of every category of the icon's group the item has, best category
     /// first, each with its detail (boss, chest, place); a long list is cut off after <paramref name="maxEntries"/>.
     /// </summary>
     public static string SourceTooltip(SourceCategory shown, IReadOnlyList<ItemSource> sources, int maxEntries = 6)
+        => GroupTooltip(shown, category => sources.Where(s => s.Category == category).Select(Entry).Distinct().ToList(), maxEntries);
+
+    /// <summary>Like <see cref="SourceTooltip"/> for a set: per category one line per piece with its first source there.</summary>
+    public static string SetSourceTooltip(SourceCategory shown, IReadOnlyList<(string Piece, IReadOnlyList<ItemSource> Sources)> pieces, int maxEntries = 6)
+        => GroupTooltip(shown, category => pieces
+            .Select(p => (p.Piece, Source: p.Sources.FirstOrDefault(s => s.Category == category)))
+            .Where(p => p.Source != null)
+            .Select(p => $"{p.Piece} · {Entry(p.Source!)}")
+            .ToList(), maxEntries);
+
+    private static string Entry(ItemSource source) => source.Detail.Length > 0 ? $"{source.Title} · {source.Detail}" : source.Title;
+
+    private static string GroupTooltip(SourceCategory shown, Func<SourceCategory, List<string>> entriesOf, int maxEntries)
     {
         var text = new StringBuilder();
         var listed = 0;
         var skipped = 0;
         foreach (var category in SourceRanking.GroupOf(shown))
         {
-            var entries = sources.Where(s => s.Category == category)
-                .Select(s => s.Detail.Length > 0 ? $"{s.Title} · {s.Detail}" : s.Title)
-                .Distinct()
-                .ToList();
+            var entries = entriesOf(category);
             var room = Math.Min(entries.Count, maxEntries - listed);
             skipped += entries.Count - Math.Max(0, room);
             if (room <= 0)

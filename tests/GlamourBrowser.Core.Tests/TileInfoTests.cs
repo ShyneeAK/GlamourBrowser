@@ -1,3 +1,4 @@
+using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Sources;
 using GlamourBrowser.Core.Ui;
 
@@ -84,5 +85,27 @@ public class TileInfoTests
     {
         var sources = Enumerable.Range(1, 8).Select(i => Src(SourceCategory.Dungeon, $"D{i}")).ToArray();
         Assert.Equal("Dungeon\n  D1\n  D2\n  D3\n  … und 5 weitere", TileInfo.SourceTooltip(SourceCategory.Dungeon, sources, maxEntries: 3));
+    }
+
+    [Fact]
+    public void SetLine_ShowsLevelAndProgress() => Assert.Equal("Lv. 70 · 3/5", TileInfo.SetLine(70, new SetProgress(3, 5)));
+
+    [Fact]
+    public void SetSourceTooltip_OneLinePerPiece()
+    {
+        var pieces = new (string, IReadOnlyList<ItemSource>)[]
+        {
+            ("Asuran-Togi", [Src(SourceCategory.Dungeon, "Sastasha", "Boss 2"), Src(SourceCategory.Dungeon, "Die Tam-Tara-Gruft", "Truhe 1")]),
+            ("Asuran-Tekko", [Src(SourceCategory.Trial, "Ifrit")]),
+            ("Asuran-Kappe", [Src(SourceCategory.GilVendor, "Krämer", "Limsa Lominsa")]),
+        };
+        Assert.Equal("Prüfung\n  Asuran-Tekko · Ifrit\nDungeon\n  Asuran-Togi · Sastasha · Boss 2", TileInfo.SetSourceTooltip(SourceCategory.Trial, pieces));
+    }
+
+    [Fact]
+    public void SetSourceTooltip_CutsOff()
+    {
+        var pieces = Enumerable.Range(1, 8).Select(i => ($"T{i}", (IReadOnlyList<ItemSource>)[Src(SourceCategory.Dungeon, "D")])).ToArray();
+        Assert.Equal("Dungeon\n  T1 · D\n  T2 · D\n  T3 · D\n  … und 5 weitere", TileInfo.SetSourceTooltip(SourceCategory.Dungeon, pieces, maxEntries: 3));
     }
 }
