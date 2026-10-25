@@ -1,3 +1,4 @@
+using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Sources;
 using Lumina;
 
@@ -35,6 +36,11 @@ public sealed class SourceIndexBuilder(GameData data, IReadOnlySet<uint> relevan
         Run(builder, "Mogstation", () => MiscSources.AddMogStation(builder, data, relevantItems, log));
         Run(builder, "Sonstiges", () => MiscSources.AddMisc(builder, data, relevantItems, log));
         Run(builder, "Patches", () => MiscSources.AddPatches(builder, data, relevantItems, log));
+        Run(builder, "Serien", () =>
+        {
+            var (items, dresser, mogStation) = SetSheets.Read(data);
+            builder.SetSets(SetDetection.Build(items, dresser, mogStation));
+        });
         return builder.Build();
     }
 

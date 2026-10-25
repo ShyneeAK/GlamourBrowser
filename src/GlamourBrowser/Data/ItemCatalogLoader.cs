@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using Dalamud.Game;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility;
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Sources;
 using Lumina.Excel.Sheets;
 
 namespace GlamourBrowser.Data;
@@ -15,7 +14,7 @@ public static class ItemCatalogLoader
 {
     public static IReadOnlyList<GlamourItem> Load(IDataManager data)
     {
-        var jobsByCategory = BuildJobsByCategory(data);
+        var jobsByCategory = ClassJobCategories.JobsByCategory(data.GameData);
         var restrictions = new Dictionary<uint, RaceGenderRestriction>();
         var result = new List<GlamourItem>();
 
@@ -23,7 +22,7 @@ public static class ItemCatalogLoader
         {
             if (item.EquipSlotCategory.RowId == 0 || item.ModelMain == 0 || item.Name.IsEmpty)
                 continue;
-            if (SlotOf(item.EquipSlotCategory.Value) is not { } slot)
+            if (ItemSlots.SlotOf(item.EquipSlotCategory.Value) is not { } slot)
                 continue;
 
             jobsByCategory.TryGetValue(item.ClassJobCategory.RowId, out var jobs);
@@ -40,46 +39,6 @@ public static class ItemCatalogLoader
         }
 
         Plugin.Log.Information($"Item catalog: {result.Count} items");
-        return result;
-    }
-
-    /// <summary>The first slot the item occupies (value 1); -1 marks slots it only blocks.</summary>
-    private static EquipSlot? SlotOf(EquipSlotCategory c)
-    {
-        if (c.MainHand == 1) return EquipSlot.MainHand;
-        if (c.OffHand == 1) return EquipSlot.OffHand;
-        if (c.Head == 1) return EquipSlot.Head;
-        if (c.Body == 1) return EquipSlot.Body;
-        if (c.Gloves == 1) return EquipSlot.Hands;
-        if (c.Legs == 1) return EquipSlot.Legs;
-        if (c.Feet == 1) return EquipSlot.Feet;
-        if (c.Ears == 1) return EquipSlot.Ears;
-        if (c.Neck == 1) return EquipSlot.Neck;
-        if (c.Wrists == 1) return EquipSlot.Wrists;
-        if (c.FingerL == 1 || c.FingerR == 1) return EquipSlot.RingRight;
-        return null;
-    }
-
-    /// <summary>
-    /// ClassJobCategory has one bool column per job, named like the English ClassJob.Abbreviation.
-    /// The abbreviation is localized, so the English sheet is used regardless of client language.
-    /// </summary>
-    private static Dictionary<uint, IReadOnlySet<uint>> BuildJobsByCategory(IDataManager data)
-    {
-        var columns = data.GetExcelSheet<ClassJob>(ClientLanguage.English)
-            .Select(job => (job.RowId, Property: typeof(ClassJobCategory).GetProperty(job.Abbreviation.ExtractText(), BindingFlags.Public | BindingFlags.Instance)))
-            .Where(x => x.Property?.PropertyType == typeof(bool))
-            .ToList();
-
-        var result = new Dictionary<uint, IReadOnlySet<uint>>();
-        foreach (var category in data.GetExcelSheet<ClassJobCategory>())
-        {
-            object boxed = category;
-            result[category.RowId] = columns
-                .Where(x => (bool)x.Property!.GetValue(boxed)!)
-                .Select(x => x.RowId)
-                .ToHashSet();
-        }
         return result;
     }
 

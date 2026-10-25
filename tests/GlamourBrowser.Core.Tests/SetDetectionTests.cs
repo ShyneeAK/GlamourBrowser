@@ -123,4 +123,23 @@ public class SetDetectionTests
     [Fact]
     public void Sheet_WithFewerThanTwoKnownPieces_IsDropped()
         => Assert.Empty(Build([Candidate(100, "Hut", Head, set: 1)], [new SheetSet(new SetId(SetKind.Dresser, 7), "Hut-Set", [100, 999])]));
+
+    // Asuran (level 60): accessories for every role are wearable by all classes; only their names tell them apart.
+    private static SetCandidate[] RoleAccessories(EquipSlot slot, uint firstId) =>
+    [
+        Candidate(firstId, $"Asuran-{slot} der Verteidigung", slot, set: 900, jobs: [19, 21, 23, 24]),
+        Candidate(firstId + 1, $"Asuran-{slot} des Spähens", slot, set: 900, jobs: [19, 21, 23, 24]),
+        Candidate(firstId + 2, $"Asuran-{slot} der Magie", slot, set: 900, jobs: [19, 21, 23, 24]),
+    ];
+
+    [Fact]
+    public void Accessory_PrefersTheArmoursNameEnding()
+        => Assert.Contains(11u, Ids(Assert.Single(Build([.. Asuran(), .. RoleAccessories(Ears, 10)]))));
+
+    [Fact]
+    public void Accessory_SlotStaysEmpty_WhenSeveralDifferentlyNamedOnesQualify()
+    {
+        var accessories = RoleAccessories(Ears, 10).Where(a => a.ItemId != 11);
+        Assert.Equal([1u, 2u, 3u], Ids(Assert.Single(Build([.. Asuran(), .. accessories]))));
+    }
 }

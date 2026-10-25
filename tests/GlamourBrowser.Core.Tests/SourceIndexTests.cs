@@ -84,4 +84,15 @@ public class SourceIndexTests
         Assert.Equal(new HashSet<SourceCategory> { SourceCategory.Other }, index.CategoriesOf(5));
         Assert.Equal(new HashSet<SourceCategory> { SourceCategory.RaidSavage }, index.KnownCategoriesOf(1));
     }
+
+    [Fact]
+    public void Sets_AreCopiedIntoTheIndex()
+    {
+        var set = new GlamourBrowser.Core.Sets.GlamourSet(new GlamourBrowser.Core.Sets.SetId(GlamourBrowser.Core.Sets.SetKind.Model, 1), "A-Serie",
+            [new GlamourBrowser.Core.Sets.SetPiece(1, GlamourBrowser.Core.Items.EquipSlot.Head)], 70);
+        var builder = new SourceIndex.Builder();
+        builder.SetSets([set]);
+        Assert.Equal([set], builder.Build().Sets);
+        Assert.Empty(SourceIndex.Empty.Sets);
+    }
 }

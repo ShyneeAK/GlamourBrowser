@@ -1,6 +1,8 @@
+using GlamourBrowser.Core.Sets;
+
 namespace GlamourBrowser.Core.Sources;
 
-/// <summary>Immutable item → sources lookup, built once in the background and handed over as a whole.</summary>
+/// <summary>Immutable item → sources lookup plus the detected sets, built once in the background and handed over as a whole.</summary>
 public sealed class SourceIndex
 {
     private static readonly IReadOnlySet<SourceCategory> OtherOnly = new HashSet<SourceCategory> { SourceCategory.Other };
@@ -9,11 +11,13 @@ public sealed class SourceIndex
     private readonly Dictionary<uint, IReadOnlySet<SourceCategory>> categories;
     private readonly Dictionary<uint, float> patches;
 
-    private SourceIndex(Dictionary<uint, IReadOnlyList<ItemSource>> sources, Dictionary<uint, float> patches, IReadOnlyList<string> failures)
+    private SourceIndex(Dictionary<uint, IReadOnlyList<ItemSource>> sources, Dictionary<uint, float> patches, IReadOnlyList<string> failures,
+                        IReadOnlyList<GlamourSet> sets)
     {
         this.sources = sources;
         this.patches = patches;
         Failures = failures;
+        Sets = sets;
         categories = sources.ToDictionary(kv => kv.Key, kv => (IReadOnlySet<SourceCategory>)kv.Value.Select(s => s.Category).ToHashSet());
     }
 
@@ -22,6 +26,9 @@ public sealed class SourceIndex
     public IReadOnlyList<string> Failures { get; }
 
     public bool HasFailures => Failures.Count > 0;
+
+    /// <summary>Dresser outfits, mog station sets and model series (see <see cref="SetDetection"/>).</summary>
+    public IReadOnlyList<GlamourSet> Sets { get; }
 
     public IReadOnlyList<ItemSource> SourcesOf(uint itemId) => sources.TryGetValue(itemId, out var list) ? list : [];
 
@@ -53,6 +60,7 @@ public sealed class SourceIndex
         private readonly Dictionary<uint, List<ItemSource>> sources = new();
         private readonly Dictionary<uint, float> patches = new();
         private readonly List<string> failures = new();
+        private IReadOnlyList<GlamourSet> sets = [];
 
         /// <summary>Adds a source; an identical category/title/detail for the same item is ignored.</summary>
         public void Add(uint itemId, ItemSource source)
@@ -67,10 +75,13 @@ public sealed class SourceIndex
 
         public void MarkFailure(string family) => failures.Add(family);
 
+        public void SetSets(IReadOnlyList<GlamourSet> value) => sets = value.ToList();
+
         /// <summary>Copies everything, so later changes to the builder do not affect the built index.</summary>
         public SourceIndex Build() => new(
             sources.ToDictionary(kv => kv.Key, kv => (IReadOnlyList<ItemSource>)kv.Value.ToList()),
             new Dictionary<uint, float>(patches),
-            failures.ToList());
+            failures.ToList(),
+            sets);
     }
 }

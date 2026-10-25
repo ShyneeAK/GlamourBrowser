@@ -1,6 +1,8 @@
 // Offline check of the source index against the game data (not part of the plugin).
-// Usage: SourceProbe <sqpack> [itemId ...] [--find "name part"]
+// Usage: SourceProbe <sqpack> [itemId ...] [--find "name part"] [--samples] [--sets]
 using System.Diagnostics;
+using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Sources;
 using GlamourBrowser.Sources;
 using Lumina;
@@ -27,6 +29,34 @@ var relevant = items.Where(i => i.EquipSlotCategory.RowId != 0 && i.ModelMain !=
 var watch = Stopwatch.StartNew();
 var index = new SourceIndexBuilder(data, relevant, Console.WriteLine).Build();
 Console.WriteLine($"Built in {watch.ElapsedMilliseconds} ms for {relevant.Count} items");
+
+if (args.Contains("--sets"))
+{
+    var sets = index.Sets;
+    int Count(SetKind kind) => sets.Count(s => s.Id.Kind == kind);
+    Console.WriteLine($"Sets: {sets.Count} (Kommode {Count(SetKind.Dresser)}, Mogstation {Count(SetKind.MogStation)}, Modell {Count(SetKind.Model)})");
+    for (var n = 0; n < 10 && sets.Count > 0; n++)
+    {
+        var sample = sets[n * sets.Count / 10];
+        Console.WriteLine($"  {sample.Name} [{sample.Id.Kind}]: {string.Join(" | ", sample.Pieces.Select(p => items.GetRow(p.ItemId).Name.ExtractText()))}");
+    }
+
+    var passed = true;
+    void Check(string what, bool ok)
+    {
+        Console.WriteLine($"check {what}: {(ok ? "ok" : "FEHLT")}");
+        passed &= ok;
+    }
+    EquipSlot[] armour = [EquipSlot.Head, EquipSlot.Body, EquipSlot.Hands, EquipSlot.Legs, EquipSlot.Feet];
+    HashSet<uint> ArmourOf(GlamourSet set) => set.Pieces.Where(p => armour.Contains(p.Slot)).Select(p => p.ItemId).ToHashSet();
+    var dresserArmour = sets.Where(s => s.Id.Kind == SetKind.Dresser).Select(ArmourOf).ToList();
+    Check("Ao Oni-Set (45275) mit 5 Teilen", sets.Any(s => s.Id == new SetId(SetKind.Dresser, 45275) && s.Name == "Ao Oni-Set" && s.Pieces.Count == 5));
+    Check("Asuran-Serie des Spähens mit 5 Teilen", sets.Any(s => s.Name == "Asuran-Serie des Spähens" && s.Pieces.Count == 5));
+    Check("keine Modell-Serie mit den Rüstungsteilen eines Kommoden-Sets",
+        !sets.Where(s => s.Id.Kind == SetKind.Model).Any(m => dresserArmour.Any(d => d.SetEquals(ArmourOf(m)))));
+    Console.WriteLine(index.HasFailures ? "Failures: " + string.Join(", ", index.Failures) : "No failures");
+    return passed && !index.HasFailures ? 0 : 1;
+}
 
 foreach (var arg in args.Skip(1).Where(a => uint.TryParse(a, out _)))
 {

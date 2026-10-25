@@ -77,14 +77,30 @@ public static class SetDetection
             // Accessories have models of their own: they join by item level, name start and jobs.
             if (start.Length > 0)
             {
-                pieces.AddRange(PickPerSlot(accessories[group.Key.ItemLevel]
-                    .Where(a => a.Name.StartsWith(start, StringComparison.Ordinal) && armour.All(p => p.Jobs.IsSubsetOf(a.Jobs)))));
+                var ending = SetNames.CommonEnding(names);
+                pieces.AddRange(accessories[group.Key.ItemLevel]
+                    .Where(a => a.Name.StartsWith(start, StringComparison.Ordinal) && armour.All(p => p.Jobs.IsSubsetOf(a.Jobs)))
+                    .GroupBy(a => a.Slot)
+                    .Select(slot => AccessoryFor(slot.ToList(), ending))
+                    .OfType<SetCandidate>());
             }
 
             var body = armour.FirstOrDefault(p => p.Slot == Body) ?? armour.OrderBy(p => p.Slot).First();
             var name = SetNames.FromCommonStart(names) ?? SetNames.Fallback(body.Name);
             yield return Create(new SetId(SetKind.Model, pieces.Min(p => p.ItemId)), name, pieces);
         }
+    }
+
+    /// <summary>
+    /// The accessory of one slot: one with the armour's name ending ("der Magie") first; without one, the only kind
+    /// that qualifies. Several differently named ones (class-wide accessories of every role) leave the slot empty.
+    /// </summary>
+    private static SetCandidate? AccessoryFor(IReadOnlyList<SetCandidate> candidates, string ending)
+    {
+        var sameEnding = ending.Length > 0 ? candidates.Where(c => SetNames.Clean(c.Name).EndsWith(ending, StringComparison.Ordinal)).ToList() : [];
+        if (sameEnding.Count > 0)
+            return PickPerSlot(sameEnding)[0];
+        return candidates.Select(c => SetNames.Clean(c.Name)).Distinct().Count() == 1 ? PickPerSlot(candidates)[0] : null;
     }
 
     /// <summary>One item per slot: one without the old-item marker "†" first, then the lowest id.</summary>

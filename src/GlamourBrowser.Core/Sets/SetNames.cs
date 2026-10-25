@@ -26,14 +26,18 @@ public static class SetNames
     public static string? FromCommonStart(IReadOnlyList<string> names)
     {
         var start = CommonStart(names);
-        return start.Length == 0 ? null : start[..^1] + "-Serie" + CommonEnding(names.Select(Clean).ToList());
+        return start.Length == 0 ? null : start[..^1] + "-Serie" + CommonEnding(names);
     }
 
     public static string Fallback(string pieceName) => $"{Clean(pieceName)} (Serie)";
 
-    private static string CommonEnding(IReadOnlyList<string> names)
+    /// <summary>The ending all names share, from its first " des " or " der " on (" des Spähens"); empty when there is none.</summary>
+    public static string CommonEnding(IReadOnlyList<string> names)
     {
-        var ending = names.Skip(1).Aggregate(names[0], (common, name) => common[^SharedEndLength(common, name)..]);
+        if (names.Count == 0)
+            return "";
+        var clean = names.Select(Clean).ToList();
+        var ending = clean.Skip(1).Aggregate(clean[0], (common, name) => common[^SharedEndLength(common, name)..]);
         foreach (var article in new[] { " des ", " der " })
         {
             var at = ending.IndexOf(article, StringComparison.Ordinal);
@@ -59,5 +63,5 @@ public static class SetNames
         return length;
     }
 
-    private static string Clean(string name) => name.Replace("†", "").Trim();
+    internal static string Clean(string name) => name.Replace("†", "").Trim();
 }
