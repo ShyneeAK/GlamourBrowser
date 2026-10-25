@@ -78,7 +78,8 @@ public sealed class CustomSetDraft
         return true;
     }
 
-    private void Set(CustomPiece piece)
+    /// <summary>Puts the piece into its own slot as it is (used to take over a piece of another look).</summary>
+    public void Set(CustomPiece piece)
     {
         pieces[piece.Slot] = piece;
         sorted = null;
