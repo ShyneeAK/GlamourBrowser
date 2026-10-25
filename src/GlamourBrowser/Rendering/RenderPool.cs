@@ -55,7 +55,7 @@ public sealed unsafe class RenderPool : IDisposable
         public CharaViewHandle View { get; } = view;
         public Phase Phase { get; set; } = Phase.WaitReady;
         public TileKey? Key { get; set; }
-        /// <summary>The try-on as it was when the key was taken: the key was made for it, so the tile is dressed in it.</summary>
+        /// <summary>The try-on around the tile's slots as it was when the key was taken: the key was made for it, so the tile is dressed in it.</summary>
         public IReadOnlyList<CustomPiece> Look { get; set; } = [];
         public int Frames { get; set; }
         public Stopwatch Stopwatch { get; } = new();
@@ -88,7 +88,8 @@ public sealed unsafe class RenderPool : IDisposable
     private readonly Func<TileKey, TileSubject?> lookup;
     private readonly AppearanceTracker appearance;
     private readonly Func<EquipSlot, CameraPreset?> cameraFor;
-    private readonly Func<IReadOnlyList<CustomPiece>> look;
+    // The try-on without the slots a tile covers and without what blocks them (TryOn.LookFor).
+    private readonly Func<ushort, IReadOnlyList<CustomPiece>> look;
     private readonly Func<uint, GlamourItem?> itemOf;
     private readonly List<Worker> workers = new();
     private readonly List<CharaViewHandle> suspended = new();
@@ -99,7 +100,7 @@ public sealed unsafe class RenderPool : IDisposable
     private bool freezeWarned;
 
     public RenderPool(TileQueue queue, TileCache<IDalamudTextureWrap> cache, Func<TileKey, TileSubject?> lookup,
-                      AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor, Func<IReadOnlyList<CustomPiece>> look,
+                      AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor, Func<ushort, IReadOnlyList<CustomPiece>> look,
                       Func<uint, GlamourItem?> itemOf)
     {
         this.itemOf = itemOf;
@@ -222,9 +223,10 @@ public sealed unsafe class RenderPool : IDisposable
     {
         var view = worker.View;
         // Re-dress when the slots change too, otherwise the previous tile's items (e.g. a hat) stay on the
-        // character. Sets with the same slots as the previous tile only swap their pieces.
+        // character. Sets with the same slots as the previous tile only swap their pieces. A robe covers legs and
+        // feet as well: the look around it leaves them out, so nothing put on afterwards takes the robe off again.
         var except = subject.Slots;
-        // The try-on is the look around the tile's items; the key holds its hash without these slots.
+        // The try-on is the look around the tile's items; the key holds its hash.
         var redressed = worker.DressedAs != (key.AppearanceHash, except);
         if (redressed)
         {
@@ -285,7 +287,7 @@ public sealed unsafe class RenderPool : IDisposable
                 worker.Subject = subject;
                 // Taken now, not when dressing: sheathing first can take a while, and a click meanwhile changes the try-on
                 // (the key would then hold another look than the tile shows, and could be shown again later).
-                worker.Look = look();
+                worker.Look = look(subject.Slots);
                 worker.SheatheFrames = -1;
                 worker.SheatheRetries = 0;
                 worker.DrawOutcome = null;

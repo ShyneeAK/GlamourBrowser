@@ -1,4 +1,5 @@
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Sets;
 
 namespace GlamourBrowser.Core.CustomSets;
 
@@ -11,16 +12,21 @@ public sealed class CustomSetDraft
     // Pieces in slot order, built again after a change (the UI reads them every frame).
     private IReadOnlyList<CustomPiece>? sorted;
 
+    // The slots an item blocks besides its own (GlamourItem.Blocks), for the pieces already in the draft.
+    private readonly Func<uint, ushort> blocksOf;
+
     /// <param name="id">The stored set's id, null for a new set.</param>
-    public CustomSetDraft(uint? id, string name, IReadOnlyList<CustomPiece> pieces)
+    /// <param name="blocksOf">The slots an item blocks (<see cref="GlamourItem.Blocks"/>); without it no item blocks any.</param>
+    public CustomSetDraft(uint? id, string name, IReadOnlyList<CustomPiece> pieces, Func<uint, ushort>? blocksOf = null)
     {
+        this.blocksOf = blocksOf ?? (_ => 0);
         Id = id;
         Name = savedName = name;
         this.pieces = pieces.GroupBy(p => p.Slot).ToDictionary(g => g.Key, g => g.Last());
         savedPieces = Pieces;
     }
 
-    public static CustomSetDraft From(CustomSet set) => new(set.Id, set.Name, set.Pieces);
+    public static CustomSetDraft From(CustomSet set, Func<uint, ushort>? blocksOf = null) => new(set.Id, set.Name, set.Pieces, blocksOf);
 
     public uint? Id { get; }
 
@@ -36,10 +42,12 @@ public sealed class CustomSetDraft
 
     /// <summary>
     /// Puts the item into its slot. A ring goes into the selected ring slot, else the first free one (right, then
-    /// left), else the right one. Dyes of the replaced piece stay for the channels the new item has.
+    /// left), else the right one. Dyes of the replaced piece stay for the channels the new item has; a channel the
+    /// replaced piece had no dye on (or an empty slot) takes <paramref name="dye"/>. Like in the game, pieces in the
+    /// slots the item blocks come off, and so does a piece that blocks the item's slot.
     /// </summary>
     /// <returns>The slot the item went into.</returns>
-    public EquipSlot Put(GlamourItem item, EquipSlot? selectedSlot)
+    public EquipSlot Put(GlamourItem item, EquipSlot? selectedSlot, DyePair dye = default)
     {
         var slot = item.Slot;
         if (slot is EquipSlot.RingRight or EquipSlot.RingLeft)
@@ -51,17 +59,39 @@ public sealed class CustomSetDraft
         }
 
         var old = PieceIn(slot);
-        Set(new CustomPiece(slot, item.Id, item.DyeCount >= 1 ? old?.Stain0 ?? 0 : (byte)0, item.DyeCount >= 2 ? old?.Stain1 ?? 0 : (byte)0));
+        var stain0 = old?.Stain0 is > 0 and var kept0 ? kept0 : dye.First;
+        var stain1 = old?.Stain1 is > 0 and var kept1 ? kept1 : dye.Second;
+        ClearBlocked(slot, item.Blocks);
+        Set(new CustomPiece(slot, item.Id, item.DyeCount >= 1 ? stain0 : (byte)0, item.DyeCount >= 2 ? stain1 : (byte)0));
         return slot;
     }
 
-    /// <summary>Takes every piece of the set with its dyes, in the slot the set wears it; other slots stay.</summary>
-    public void PutAll(SetSubject set)
+    /// <summary>
+    /// Takes every piece of the set in the slot the set wears it; other slots stay unless a piece blocks them. A custom
+    /// set brings its dyes, a detected set's pieces are dyed like single items (<see cref="Put"/>) in <paramref name="dye"/>.
+    /// </summary>
+    public void PutAll(SetSubject set, DyePair dye = default)
     {
         foreach (var piece in set.Wear)
         {
+            if (set.Set.Id.Kind != SetKind.Custom)
+            {
+                Put(piece, piece.Slot, dye);
+                continue;
+            }
             var (stain0, stain1) = set.StainsOf(piece.Slot);
+            ClearBlocked(piece.Slot, piece.Blocks);
             Set(new CustomPiece(piece.Slot, piece.Id, stain0, stain1));
+        }
+    }
+
+    /// <summary>Takes off what a new piece in <paramref name="slot"/> would collide with: pieces in the slots it blocks, and pieces that block its slot.</summary>
+    private void ClearBlocked(EquipSlot slot, ushort blocks)
+    {
+        foreach (var piece in pieces.Values.ToList())
+        {
+            if (piece.Slot != slot && (SlotMask.Contains(blocks, piece.Slot) || SlotMask.Contains(blocksOf(piece.ItemId), slot)))
+                Remove(piece.Slot);
         }
     }
 

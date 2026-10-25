@@ -68,6 +68,9 @@ public sealed class TileGrid
     private readonly TryOnService tryOn;
     // What the last import did, shown next to its button for a moment.
     private (string Text, DateTime At)? importStatus;
+    private const string ContextPopup = "##tilecontext";
+    // The tile whose context menu is open.
+    private TileSubject? contextSubject;
     // A custom set keeps its id while it changes: its content hash and name are part of the key.
     private readonly Dictionary<((uint ItemId, SetId Set) Id, uint Variant, string Name), TileLabels> labels = new();
     private (float Width, float FontSize, int Ownership, bool SourcesReady) labelsFor;
@@ -102,7 +105,16 @@ public sealed class TileGrid
         // Slot selection sits above the tiles it filters, the tile display options right-aligned next to it.
         var filter = state.Filter;
         if (SlotBar.Draw("slotbar", ref filter, theme, DisplayOptionsWidth()))
+        {
             state.Filter = filter;
+            // A selection of another slot goes: the camera button would otherwise calibrate that slot. The set editor
+            // shows its draft as the selection and keeps it.
+            if (!editor.IsOpen && !SlotSelection.KeepsSelection(state.Selected, filter))
+            {
+                state.Selected = null;
+                live.Select(null);
+            }
+        }
         DrawDisplayOptions();
         ImGui.Spacing();
 
@@ -180,6 +192,7 @@ public sealed class TileGrid
                 ImGui.SameLine();
             DrawTile(page[i], new Vector2(layout.TileWidth, layout.TileHeight));
         }
+        DrawContextMenu();
         DrawPager(gridTopLeft, layout);
 
         if (ImGui.IsWindowHovered() && ImGui.GetIO().MouseWheel is var wheel && wheel != 0)
@@ -309,7 +322,10 @@ public sealed class TileGrid
         return state.Results.Count > 0;
     }
 
-    /// <summary>Page arrows and number, centered right below the full grid (also when the last page has fewer tiles).</summary>
+    /// <summary>
+    /// First page, page arrows, number and last page, centered right below the full grid (also when the last page has
+    /// fewer tiles).
+    /// </summary>
     private void DrawPager(Vector2 gridTopLeft, PageLayoutResult layout)
     {
         var style = ImGui.GetStyle();
@@ -317,8 +333,18 @@ public sealed class TileGrid
         var gridHeight = config.Rows * layout.TileHeight + (config.Rows - 1) * style.ItemSpacing.Y;
         var pageText = $"Seite {state.PageIndex + 1} / {state.PageCount}";
         var arrow = ImGui.GetFrameHeight();
-        var width = arrow * 2 + ImGui.CalcTextSize(pageText).X + style.ItemSpacing.X * 2;
+        var width = arrow * 4 + ImGui.CalcTextSize(pageText).X + style.ItemSpacing.X * 4;
         ImGui.SetCursorPos(gridTopLeft + new Vector2(MathF.Max(0, (gridWidth - width) / 2), gridHeight + style.ItemSpacing.Y));
+        var first = state.PageIndex == 0;
+        var last = state.PageIndex >= state.PageCount - 1;
+        using (ImRaii.Disabled(first))
+        {
+            if (ImGui.Button("«##first", new Vector2(arrow)))
+                state.ShowFirstPage();
+        }
+        if (!first && ImGui.IsItemHovered())
+            ImGui.SetTooltip("Erste Seite");
+        ImGui.SameLine();
         if (ImGui.ArrowButton("##prev", ImGuiDir.Left))
             state.PreviousPage();
         ImGui.SameLine();
@@ -327,6 +353,14 @@ public sealed class TileGrid
         ImGui.SameLine();
         if (ImGui.ArrowButton("##next", ImGuiDir.Right))
             state.NextPage();
+        ImGui.SameLine();
+        using (ImRaii.Disabled(last))
+        {
+            if (ImGui.Button("»##last", new Vector2(arrow)))
+                state.ShowLastPage();
+        }
+        if (!last && ImGui.IsItemHovered())
+            ImGui.SetTooltip("Letzte Seite");
 
         if (config.ShowMemoryStats)
             DrawMemoryStats(gridTopLeft.X, gridWidth);
@@ -390,6 +424,11 @@ public sealed class TileGrid
         var pos = ImGui.GetCursorScreenPos();
         var clicked = ImGui.InvisibleButton($"##tile{subject.Id.ItemId}-{subject.Id.Set.Kind}{subject.Id.Set.Value}", size);
         var hovered = ImGui.IsItemHovered();
+        if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+        {
+            contextSubject = subject;
+            ImGui.OpenPopup(ContextPopup);
+        }
         // The star in the top-left corner puts the item or set on the wishlist; a click anywhere else selects the tile.
         var starPos = pos + new Vector2(6, 5);
         var starSize = WishStarSize();
@@ -403,7 +442,7 @@ public sealed class TileGrid
             wishlist.Toggle(subject);
         // While a custom set is edited, a tile goes into it instead of being selected.
         else if (clicked && editor.IsOpen)
-            editor.Put(subject);
+            editor.Put(subject, state.TileDye);
         // Otherwise it is selected and put on in the try-on, dyed like its tile.
         else if (clicked)
         {
@@ -488,6 +527,70 @@ public sealed class TileGrid
     }
 
     private bool IsOwned(uint itemId) => ownership.Current?.IsOwned(itemId) ?? false;
+
+    /// <summary>
+    /// The right-click menu of a tile: the other pieces of the item's sets (a set tile: its own pieces) to put on one by
+    /// one, or the whole set. They go on like a click on their tile (into the set editor while it is open), dyed in the
+    /// tile dye; the selection stays, the pieces can be selected below the live view.
+    /// </summary>
+    private void DrawContextMenu()
+    {
+        if (!ImGui.BeginPopup(ContextPopup))
+            return;
+        switch (contextSubject)
+        {
+            case SetSubject set:
+                ImGui.TextDisabled(set.Name);
+                DrawSetPieces(set, null);
+                break;
+            case ItemSubject { Item: var item }:
+                var sets = state.SetsOf(item.Id);
+                if (sets.Count == 0)
+                    ImGui.TextDisabled(sources.IsReady ? "Gehört zu keinem Ausrüstungs-Set" : "Ausrüstungs-Sets werden geladen …");
+                else if (sets.Count == 1)
+                {
+                    ImGui.TextDisabled(sets[0].Name);
+                    DrawSetPieces(sets[0], item.Id);
+                }
+                else
+                {
+                    for (var i = 0; i < sets.Count; i++)
+                    {
+                        using var id = ImRaii.PushId(i);
+                        if (ImGui.BeginMenu(sets[i].Name))
+                        {
+                            DrawSetPieces(sets[i], item.Id);
+                            ImGui.EndMenu();
+                        }
+                    }
+                }
+                break;
+        }
+        ImGui.EndPopup();
+    }
+
+    /// <summary>One entry per piece ("Kopf anziehen: …", checked while worn) and one for the whole set; <paramref name="except"/> is the tile's own item.</summary>
+    private void DrawSetPieces(SetSubject set, uint? except)
+    {
+        foreach (var piece in set.Pieces.Where(p => p.Id != except))
+        {
+            var worn = editor.Draft?.PieceIn(piece.Slot)?.ItemId == piece.Id || !editor.IsOpen && tryOn.TryOn.SlotOf(piece.Id) != null;
+            if (ImGui.MenuItem($"{SlotNames.Full(piece.Slot)} anziehen: {piece.Name}##{piece.Id}", "", worn))
+                PutOn(state.ItemSubjectFor(piece.Id) ?? new ItemSubject(piece));
+        }
+        ImGui.Separator();
+        if (ImGui.MenuItem("Ganzes Set anziehen"))
+            PutOn(set);
+    }
+
+    /// <summary>Like a click on the subject's tile, but without selecting it.</summary>
+    private void PutOn(TileSubject subject)
+    {
+        if (editor.IsOpen)
+            editor.Put(subject, state.TileDye);
+        else
+            tryOn.Put(subject, state.TileDye);
+    }
 
     /// <summary>The tile's wishlist star with a dark shadow, readable on bright renders too.</summary>
     private static void DrawWishStar(ImDrawListPtr drawList, Vector2 at, uint color)

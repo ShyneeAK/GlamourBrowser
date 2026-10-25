@@ -29,4 +29,17 @@ public static class SlotSelection
     /// </summary>
     public static FilterState ToggleMode(FilterState filter, BrowseMode mode)
         => filter.Mode == mode ? filter with { Mode = BrowseMode.Items } : filter with { Mode = mode, Slots = new HashSet<EquipSlot>() };
+
+    /// <summary>
+    /// Whether a selection stays when the slot bar changes the view: an item while its slot is shown (all slots, or one of
+    /// them chosen) or in the wishlist, a set in the set modes and the wishlist. Otherwise it would stay selected for
+    /// another slot, and a camera set for it would overwrite that slot's calibration unnoticed.
+    /// </summary>
+    public static bool KeepsSelection(TileSubject? selected, FilterState filter) => selected switch
+    {
+        null => true,
+        ItemSubject { Item: var item } => filter.Mode == BrowseMode.Wishlist
+                                          || filter.Mode == BrowseMode.Items && (filter.Slots.Count == 0 || filter.Slots.Contains(item.Slot)),
+        _ => filter.Mode != BrowseMode.Items,
+    };
 }

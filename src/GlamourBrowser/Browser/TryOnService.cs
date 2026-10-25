@@ -17,11 +17,12 @@ public sealed class TryOnService : IDisposable
     private readonly AppearanceTracker appearance;
     private readonly Configuration config;
 
-    public TryOnService(AppearanceTracker appearance, Configuration config)
+    /// <param name="blocksOf">The slots an item blocks besides its own (<see cref="GlamourItem.Blocks"/>).</param>
+    public TryOnService(AppearanceTracker appearance, Configuration config, Func<uint, ushort> blocksOf)
     {
         this.appearance = appearance;
         this.config = config;
-        TryOn = new TryOn(Basis());
+        TryOn = new TryOn(Basis(), blocksOf);
         appearance.Changed += OnAppearanceChanged;
         Plugin.ClientState.Login += Reset;
         Plugin.ClientState.Logout += OnLogout;

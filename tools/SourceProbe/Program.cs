@@ -1,5 +1,5 @@
 // Offline check of the source index against the game data (not part of the plugin).
-// Usage: SourceProbe <sqpack> [itemId ...] [--find "name part"] [--samples] [--sets]
+// Usage: SourceProbe <sqpack> [itemId ...] [--find "name part"] [--samples] [--sets] [--blocks]
 using System.Diagnostics;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Sets;
@@ -22,6 +22,21 @@ if (findIndex >= 0 && findIndex + 1 < args.Length)
 {
     foreach (var item in items.Where(i => i.EquipSlotCategory.RowId != 0 && i.Name.ExtractText().Contains(args[findIndex + 1], StringComparison.OrdinalIgnoreCase)).Take(20))
         Console.WriteLine($"{item.RowId}: {item.Name.ExtractText()}");
+    return 0;
+}
+
+if (args.Contains("--blocks"))
+{
+    // Items that cover more than their own slot (robes over legs and feet, two-handed weapons), per slot and blocked slots.
+    var covering = items.Where(i => i.EquipSlotCategory.RowId != 0 && i.ModelMain != 0)
+        .Select(i => (Item: i, Slot: ItemSlots.SlotOf(i.EquipSlotCategory.Value), Blocks: ItemSlots.BlocksOf(i.EquipSlotCategory.Value)))
+        .Where(x => x.Slot != null && x.Blocks != 0)
+        .ToList();
+    foreach (var group in covering.GroupBy(x => (x.Slot, x.Blocks)).OrderByDescending(g => g.Count()))
+    {
+        var blocked = string.Join(" ", Enum.GetValues<EquipSlot>().Where(s => SlotMask.Contains(group.Key.Blocks, s)));
+        Console.WriteLine($"{group.Key.Slot} blocks {blocked}: {group.Count()} items, e.g. {string.Join(", ", group.Take(3).Select(x => x.Item.Name.ExtractText()))}");
+    }
     return 0;
 }
 

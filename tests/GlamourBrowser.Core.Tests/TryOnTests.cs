@@ -215,4 +215,68 @@ public class TryOnTests
         Assert.Equal(before, tryOn.KeyHash(body));
         Assert.NotEqual(all, tryOn.KeyHash(0));
     }
+
+    // A robe 90 over legs and feet, a two-handed lance 91 over the off hand; everything else blocks nothing.
+    private static readonly GlamourItem Robe = Item(90, EquipSlot.Body) with { Blocks = SlotMask.Of([EquipSlot.Legs, EquipSlot.Feet]) };
+    private static readonly GlamourItem Lance = Item(91, EquipSlot.MainHand) with { Blocks = SlotMask.Of(EquipSlot.OffHand) };
+
+    private static ushort BlocksOf(uint item) => item == Robe.Id ? Robe.Blocks : item == Lance.Id ? Lance.Blocks : (ushort)0;
+
+    private static readonly IReadOnlyList<CustomPiece> Outfit =
+        [Piece(EquipSlot.MainHand, 5), Piece(EquipSlot.OffHand, 6), Piece(EquipSlot.Head, 1), Piece(EquipSlot.Body, 2), Piece(EquipSlot.Legs, 3), Piece(EquipSlot.Feet, 4)];
+
+    [Fact]
+    public void Put_ARobeHidesTheWornLegsAndFeet()
+    {
+        var tryOn = new TryOn(Outfit, BlocksOf);
+        tryOn.Put(Robe, default);
+
+        Assert.Equal([Piece(EquipSlot.MainHand, 5), Piece(EquipSlot.OffHand, 6), Piece(EquipSlot.Head, 1), Piece(EquipSlot.Body, 90)], tryOn.Pieces);
+        Assert.Null(tryOn.SlotOf(3));
+    }
+
+    [Fact]
+    public void Put_LegsTakeTheRobeOff_AndTheWornBodyAndFeetComeBack()
+    {
+        var tryOn = new TryOn(Outfit, BlocksOf);
+        tryOn.Put(Robe, default);
+        tryOn.Put(Item(30, EquipSlot.Legs), default);
+
+        Assert.Equal([Piece(EquipSlot.MainHand, 5), Piece(EquipSlot.OffHand, 6), Piece(EquipSlot.Head, 1), Piece(EquipSlot.Body, 2),
+                      Piece(EquipSlot.Legs, 30), Piece(EquipSlot.Feet, 4)], tryOn.Pieces);
+    }
+
+    [Fact]
+    public void Put_AShieldTakesAWornTwoHandedWeaponOff()
+    {
+        var tryOn = new TryOn([Piece(EquipSlot.MainHand, Lance.Id), Piece(EquipSlot.Head, 1)], BlocksOf);
+        tryOn.Put(Item(60, EquipSlot.OffHand), default);
+
+        Assert.Equal([Piece(EquipSlot.OffHand, 60), Piece(EquipSlot.Head, 1)], tryOn.Pieces);
+    }
+
+    [Fact]
+    public void Put_ATwoHandedWeaponTakesAClickedShieldOff()
+    {
+        var tryOn = new TryOn(Outfit, BlocksOf);
+        tryOn.Put(Item(60, EquipSlot.OffHand), default);
+        tryOn.Put(Lance, default);
+
+        Assert.Equal(Lance.Id, tryOn.PieceIn(EquipSlot.MainHand)?.ItemId);
+        Assert.Null(tryOn.PieceIn(EquipSlot.OffHand));
+    }
+
+    [Fact]
+    public void LookFor_LeavesOutTheTilesSlotsAndWhatBlocksThem()
+    {
+        var tryOn = new TryOn(Outfit, BlocksOf);
+        tryOn.Put(Robe, default);
+
+        // A legs tile: the robe would come off for it, so the worn body shows (feet too, the robe no longer hides them).
+        Assert.Equal([Piece(EquipSlot.MainHand, 5), Piece(EquipSlot.OffHand, 6), Piece(EquipSlot.Head, 1), Piece(EquipSlot.Body, 2), Piece(EquipSlot.Feet, 4)],
+                     tryOn.LookFor(SlotMask.Of(EquipSlot.Legs)));
+        // The robe's own tile covers body, legs and feet.
+        Assert.Equal([Piece(EquipSlot.MainHand, 5), Piece(EquipSlot.OffHand, 6), Piece(EquipSlot.Head, 1)], tryOn.LookFor(Robe.Covers));
+        Assert.Equal(Looks.Hash(tryOn.LookFor(Robe.Covers)), tryOn.KeyHash(Robe.Covers));
+    }
 }

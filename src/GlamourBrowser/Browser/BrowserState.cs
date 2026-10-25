@@ -118,6 +118,8 @@ public sealed class BrowserState
 
     public void ShowFirstPage() => GoToPage(0);
 
+    public void ShowLastPage() => GoToPage(PageCount - 1);
+
     public void SetGrid(int columns, int rows)
     {
         // The page's first item stays in view; remembered pages of other slots no longer match the page size.
@@ -143,7 +145,7 @@ public sealed class BrowserState
     /// <summary>The tile dye where it applies: not in the wishlist and custom set modes, which only search.</summary>
     public DyePair TileDye => BrowseModes.OnlySearch(filter.Mode) ? default : filter.Dye;
 
-    /// <summary>The look part of a tile key: face and body, and the try-on without the slots the tile replaces.</summary>
+    /// <summary>The look part of a tile key: face and body, and the try-on without the slots the tile covers (see <see cref="TryOn.LookFor"/>).</summary>
     private ulong LookHash(ushort exceptSlots) => appearance.CustomizeHash * 31 + tryOn.TryOn.KeyHash(exceptSlots);
 
     public void SetTileWeaponsDrawn(bool drawn)
@@ -207,12 +209,12 @@ public sealed class BrowserState
         _ => throw new ArgumentOutOfRangeException(nameof(subject)),
     };
 
-    /// <summary>An item tile: the item in the tile dye on its channels, its stance, on the try-on without its slot.</summary>
+    /// <summary>An item tile: the item in the tile dye on its channels, its stance, on the try-on without the slots it covers.</summary>
     private TileKey ItemKey(GlamourItem item)
     {
         var (stain0, stain1) = TileDyes.For(item, TileDye);
         var stance = StanceFor(item);
-        return new(item.Id, stain0, stain1, config.TileMode, LookHash(SlotMask.Of(item.Slot)), RenderWidth,
+        return new(item.Id, stain0, stain1, config.TileMode, LookHash(item.Covers), RenderWidth,
                    stance.WeaponDrawn ? TileKey.StandardPose : stance.Pose, stance.WeaponDrawn);
     }
 
@@ -224,6 +226,9 @@ public sealed class BrowserState
 
     /// <summary>A detected set or one of the custom sets.</summary>
     public SetSubject? SetSubjectFor(SetId id) => id.Kind == SetKind.Custom ? MySets.FirstOrDefault(s => s.Set.Id == id) : sets.Find(id);
+
+    /// <summary>The detected sets the catalog item is a piece of (none until the source index is ready).</summary>
+    public IReadOnlyList<SetSubject> SetsOf(uint itemId) => sets.SetsOf(itemId);
 
     /// <summary>The catalog item for a custom set piece (null when the catalog does not know it).</summary>
     public GlamourItem? ItemOf(uint itemId) => itemSubjects.TryGetValue(itemId, out var subject) ? subject.Item : null;

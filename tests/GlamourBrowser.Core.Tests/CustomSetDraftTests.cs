@@ -65,6 +65,43 @@ public class CustomSetDraftTests
     }
 
     [Fact]
+    public void Put_TileDyeFillsOnlyChannelsWithoutADye()
+    {
+        // Channel 1 already dyed stays, the undyed channel 2 takes the tile dye; an empty slot takes both.
+        var draft = new CustomSetDraft(null, "Set", [new CustomPiece(Body, 10, 5, 0)]);
+        draft.Put(Item(11, Body), null, new DyePair(81, 82));
+        draft.Put(Item(20, Head), null, new DyePair(81, 82));
+        Assert.Equal([new CustomPiece(Head, 20, 81, 82), new CustomPiece(Body, 11, 5, 82)], draft.Pieces);
+    }
+
+    [Fact]
+    public void PutAll_DetectedSetTakesTheTileDyeLikeItems_CustomSetItsOwn()
+    {
+        var head = Item(20, Head);
+        var detected = new SetSubject(new GlamourSet(new SetId(SetKind.Dresser, 1), "Set", [new SetPiece(20, Head), new SetPiece(10, Body)], 50), [head, Robe]);
+        var draft = new CustomSetDraft(null, "Set", [new CustomPiece(Body, 10, 5, 0)]);
+        draft.PutAll(detected, new DyePair(81, 82));
+        Assert.Equal([new CustomPiece(Head, 20, 81, 82), new CustomPiece(Body, 10, 5, 82)], draft.Pieces);
+
+        var custom = CustomSetSubjects.ToSubject(new CustomSet(2, "Anderes", [new CustomPiece(Body, 10, 0, 4)], Now), id => id == 10 ? Robe : null)!;
+        draft.PutAll(custom, new DyePair(81, 82));
+        Assert.Equal(new CustomPiece(Body, 10, 0, 4), draft.PieceIn(Body));
+    }
+
+    [Fact]
+    public void Put_ARobeTakesLegsAndFeetOff_AndLegsTakeTheRobeOff()
+    {
+        var gown = Item(12, Body) with { Blocks = SlotMask.Of([Legs, Feet]) };
+        var draft = new CustomSetDraft(null, "Set", [new CustomPiece(Head, 20, 0, 0), new CustomPiece(Legs, 30, 0, 0), new CustomPiece(Feet, 40, 0, 0)],
+                                       id => id == 12 ? gown.Blocks : (ushort)0);
+        draft.Put(gown, null);
+        Assert.Equal([new CustomPiece(Head, 20, 0, 0), new CustomPiece(Body, 12, 0, 0)], draft.Pieces);
+
+        draft.Put(Item(31, Legs), null);
+        Assert.Equal([new CustomPiece(Head, 20, 0, 0), new CustomPiece(Legs, 31, 0, 0)], draft.Pieces);
+    }
+
+    [Fact]
     public void SetStain_OnlyForExistingChannels()
     {
         var draft = Empty();

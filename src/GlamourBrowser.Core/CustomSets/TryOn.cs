@@ -10,17 +10,32 @@ namespace GlamourBrowser.Core.CustomSets;
 /// </summary>
 public sealed class TryOn
 {
-    private readonly CustomSetDraft clicked = new(null, "", []);
-    private IReadOnlyList<CustomPiece>? pieces;
-    // Key hashes per excepted slots, asked for every tile on every frame; dropped on any change.
-    private readonly Dictionary<ushort, uint> keyHashes = new();
+    private readonly CustomSetDraft clicked;
+    private readonly Func<uint, ushort> blocksOf;
+    // The look and its key hash per slots left free for a tile, asked for every tile on every frame; dropped on any change.
+    private readonly Dictionary<ushort, (IReadOnlyList<CustomPiece> Look, uint Hash)> looks = new();
 
-    public TryOn(IReadOnlyList<CustomPiece> basis) => Basis = basis.ToList();
+    /// <param name="blocksOf">The slots an item blocks (<see cref="GlamourItem.Blocks"/>), for the basis and the clicked pieces.</param>
+    public TryOn(IReadOnlyList<CustomPiece> basis, Func<uint, ushort>? blocksOf = null)
+    {
+        this.blocksOf = blocksOf ?? (_ => 0);
+        clicked = new CustomSetDraft(null, "", [], this.blocksOf);
+        Basis = basis.ToList();
+    }
 
     public IReadOnlyList<CustomPiece> Basis { get; private set; }
 
-    /// <summary>The basis with every clicked slot replaced, in slot order.</summary>
-    public IReadOnlyList<CustomPiece> Pieces => pieces ??= Looks.Overlay(Basis, clicked.Pieces);
+    /// <summary>
+    /// The basis with every clicked slot replaced, in slot order; a clicked piece that blocks other slots (a robe over
+    /// legs and feet) hides the basis there for as long as it is worn.
+    /// </summary>
+    public IReadOnlyList<CustomPiece> Pieces => LookFor(0);
+
+    /// <summary>
+    /// What a tile wears around its own items: <see cref="Pieces"/> without the slots in <paramref name="cover"/> (a
+    /// <see cref="SlotMask"/>) and without pieces that block one of them, which the tile's items would take off.
+    /// </summary>
+    public IReadOnlyList<CustomPiece> LookFor(ushort cover) => Cached(cover).Look;
 
     /// <summary>Something was clicked (or dyed) since the last reset.</summary>
     public bool HasChanges => clicked.Pieces.Count > 0;
@@ -29,10 +44,10 @@ public sealed class TryOn
 
     public CustomPiece? PieceIn(EquipSlot slot) => Pieces.FirstOrDefault(p => p.Slot == slot) is { ItemId: not 0 } piece ? piece : null;
 
-    /// <summary>The slot a clicked piece with the item is in, else one of the basis; null when it is not worn.</summary>
+    /// <summary>The slot a clicked piece with the item is in, else one of the look; null when it is not worn (or hidden).</summary>
     public EquipSlot? SlotOf(uint itemId)
     {
-        foreach (var piece in clicked.Pieces.Concat(Basis))
+        foreach (var piece in clicked.Pieces.Concat(Pieces))
         {
             if (piece.ItemId == itemId)
                 return piece.Slot;
@@ -94,12 +109,17 @@ public sealed class TryOn
         OnChanged();
     }
 
-    /// <summary>The look's hash without the slots a tile replaces anyway: its part of the tile key.</summary>
-    public uint KeyHash(ushort exceptSlots)
+    /// <summary>The hash of <see cref="LookFor"/>: the try-on's part of the key of a tile that covers <paramref name="cover"/>.</summary>
+    public uint KeyHash(ushort cover) => Cached(cover).Hash;
+
+    private (IReadOnlyList<CustomPiece> Look, uint Hash) Cached(ushort cover)
     {
-        if (!keyHashes.TryGetValue(exceptSlots, out var hash))
-            keyHashes[exceptSlots] = hash = Looks.Hash(Pieces, exceptSlots);
-        return hash;
+        if (!looks.TryGetValue(cover, out var cached))
+        {
+            var look = Looks.Overlay(Basis, clicked.Pieces, blocksOf, cover);
+            looks[cover] = cached = (look, Looks.Hash(look));
+        }
+        return cached;
     }
 
     private void Dye(EquipSlot slot, GlamourItem item, DyePair dye)
@@ -111,8 +131,7 @@ public sealed class TryOn
 
     private void OnChanged()
     {
-        pieces = null;
-        keyHashes.Clear();
+        looks.Clear();
         Changed?.Invoke();
     }
 }

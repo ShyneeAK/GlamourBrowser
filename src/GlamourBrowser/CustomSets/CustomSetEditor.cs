@@ -21,6 +21,7 @@ public sealed class CustomSetEditor
     private readonly LivePreview live;
     private readonly IReadOnlyDictionary<uint, uint> variants;
     private readonly AppearanceTracker appearance;
+    private readonly Func<uint, ushort> blocksOf;
     private Func<CustomSetDraft>? pendingStart;
     // The store the draft belongs to: another one (a login without logout) means another character.
     private CustomSetStore? draftStore;
@@ -28,9 +29,11 @@ public sealed class CustomSetEditor
     private SetSubject? draftSubject;
 
     /// <param name="variants">"+N" variants mapped to their base item: start pieces are shown as their base.</param>
+    /// <param name="blocksOf">The slots an item blocks besides its own: a robe put in takes legs and feet out.</param>
     public CustomSetEditor(BrowserState state, CustomSetService customSets, LivePreview live, IReadOnlyDictionary<uint, uint> variants,
-                           AppearanceTracker appearance)
+                           AppearanceTracker appearance, Func<uint, ushort> blocksOf)
     {
+        this.blocksOf = blocksOf;
         this.appearance = appearance;
         this.state = state;
         this.customSets = customSets;
@@ -53,9 +56,10 @@ public sealed class CustomSetEditor
     public bool AsksToDiscard => pendingStart != null;
 
     public void StartNew(string name, IReadOnlyList<CustomPiece> pieces)
-        => Start(() => new CustomSetDraft(null, name, pieces.Select(p => p with { ItemId = variants.GetValueOrDefault(p.ItemId, p.ItemId) }).ToList()));
+        => Start(() => new CustomSetDraft(null, name, pieces.Select(p => p with { ItemId = variants.GetValueOrDefault(p.ItemId, p.ItemId) }).ToList(),
+                                          blocksOf));
 
-    public void StartEdit(CustomSet set) => Start(() => CustomSetDraft.From(set));
+    public void StartEdit(CustomSet set) => Start(() => CustomSetDraft.From(set, blocksOf));
 
     /// <summary>A new set from what the character wears (glamour preferred), with its dyes.</summary>
     public void StartFromOutfit()
@@ -70,18 +74,21 @@ public sealed class CustomSetEditor
             Open(start());
     }
 
-    /// <summary>A click on a tile: an item goes into its slot, a set brings all its pieces with their dyes.</summary>
-    public void Put(TileSubject subject)
+    /// <summary>
+    /// A click on a tile: an item goes into its slot, a set brings all its pieces with their dyes. The tile dye
+    /// (<paramref name="dye"/>) colours the channels the set has no dye on yet, as the tile showed it.
+    /// </summary>
+    public void Put(TileSubject subject, DyePair dye = default)
     {
         if (Draft == null)
             return;
         switch (subject)
         {
             case ItemSubject { Item: var item }:
-                Draft.Put(item, SelectedSlot);
+                Draft.Put(item, SelectedSlot, dye);
                 break;
             case SetSubject set:
-                Draft.PutAll(set);
+                Draft.PutAll(set, dye);
                 break;
         }
         UpdatePreview();

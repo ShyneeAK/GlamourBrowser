@@ -137,6 +137,39 @@ public sealed unsafe class LivePane
             ImGui.SameLine();
             ImGui.TextDisabled("Als ‚Neues Set‘ gespeichert");
         }
+
+        DrawWornPieces();
+    }
+
+    /// <summary>
+    /// One icon per piece the try-on wears (known items, in slot order): a click selects it again, for its card, dyes and
+    /// camera, without putting anything on. Wraps when the pane is narrow.
+    /// </summary>
+    private void DrawWornPieces()
+    {
+        var size = new Vector2(ImGui.GetFrameHeight());
+        var spacing = ImGui.GetStyle().ItemSpacing.X;
+        var right = ImGui.GetCursorScreenPos().X + ImGui.GetContentRegionAvail().X;
+        var first = true;
+        foreach (var piece in tryOn.TryOn.Pieces)
+        {
+            if (state.ItemSubjectFor(piece.ItemId) is not { } subject)
+                continue;
+            if (!first)
+            {
+                ImGui.SameLine();
+                if (ImGui.GetCursorScreenPos().X + size.X > right)
+                    ImGui.NewLine();
+            }
+            first = false;
+            var selected = state.Selected is ItemSubject { Item.Id: var id } && id == piece.ItemId;
+            if (IconToggle.Draw($"##worn{(int)piece.Slot}", subject.Item.IconId, size, selected, $"{SlotNames.Full(piece.Slot)}: {subject.Name}\nKlick: auswählen",
+                    theme, FontAwesomeIcon.Tshirt))
+            {
+                state.Selected = subject;
+                live.Select(subject);
+            }
+        }
     }
 
     private void DrawLive(Vector2 area)
@@ -425,6 +458,11 @@ public sealed unsafe class LivePane
             Util.OpenLink($"https://ffxivteamcraft.com/db/de/item/{item.Id}");
         ImGui.SameLine();
         ImGui.TextDisabled("Teamcraft");
+        ImGui.SameLine();
+        if (IconButton.Draw("##google", 0, FontAwesomeIcon.Search, "Google-Suche nach dem Item-Namen", theme))
+            Util.OpenLink("https://www.google.com/search?q=" + Uri.EscapeDataString(item.Name + " FFXIV"));
+        ImGui.SameLine();
+        ImGui.TextDisabled("Google");
     }
 
     private void DrawSource(ItemSource source, string id)

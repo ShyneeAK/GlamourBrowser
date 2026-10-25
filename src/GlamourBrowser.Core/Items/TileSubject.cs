@@ -16,7 +16,8 @@ public abstract record TileSubject
     /// <summary>The slot whose camera calibration frames the subject.</summary>
     public abstract EquipSlot CameraSlot { get; }
 
-    public ushort Slots => SlotMask.Of(Wear.Select(w => w.Slot));
+    /// <summary>The slots the subject replaces on the character (a <see cref="SlotMask"/>): those of its items and the ones they block.</summary>
+    public ushort Slots => (ushort)Wear.Aggregate(0, (mask, item) => mask | item.Covers);
 }
 
 public sealed record ItemSubject(GlamourItem Item) : TileSubject

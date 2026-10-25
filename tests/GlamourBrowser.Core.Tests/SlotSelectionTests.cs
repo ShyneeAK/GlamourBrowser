@@ -55,4 +55,17 @@ public class SlotSelectionTests
         Assert.Equal(BrowseMode.Items, state.Mode);
         Assert.Equal(Set(EquipSlot.Head), state.Slots);
     }
+
+    private static readonly ItemSubject Chest = new(new GlamourItem(1, "Brust", 0, EquipSlot.Body, new HashSet<uint>(), 50, 0, RaceGenderRestriction.None));
+
+    [Fact]
+    public void KeepsSelection_ItemOnlyWhileItsSlotIsShown()
+    {
+        Assert.True(SlotSelection.KeepsSelection(Chest, new FilterState()));
+        Assert.True(SlotSelection.KeepsSelection(Chest, new FilterState { Slots = Set(EquipSlot.Body, EquipSlot.Feet) }));
+        Assert.False(SlotSelection.KeepsSelection(Chest, new FilterState { Slots = Set(EquipSlot.Feet) }));
+        Assert.False(SlotSelection.KeepsSelection(Chest, new FilterState { Mode = BrowseMode.Sets }));
+        Assert.True(SlotSelection.KeepsSelection(Chest, new FilterState { Mode = BrowseMode.Wishlist }));
+        Assert.True(SlotSelection.KeepsSelection(null, new FilterState { Slots = Set(EquipSlot.Feet) }));
+    }
 }
