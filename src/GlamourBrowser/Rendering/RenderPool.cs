@@ -36,9 +36,13 @@ public sealed unsafe class RenderPool : IDisposable
     // seconds later takes), so the retries go on for a good part of the timeout.
     private const int DrawRetryFrames = 20;
     private const int MaxDrawRetries = 8;
-    // Sheathing a weapon of another kind before the next weapon tile: at least this long, at most until the timeout.
+    // Sheathing a weapon of another kind before the next weapon tile: at least this long, at most until the timeout. The
+    // game drops sheathes as well (seen with /gbrowser trace: the weapon stayed drawn and the next tile kept the old
+    // stance), so one that has not taken is sent again every SheatheRetryFrames, at most MaxSheatheRetries times.
     internal const int SheatheMinFrames = 8;
-    internal const int SheatheTimeoutFrames = 90;
+    internal const int SheatheTimeoutFrames = 150;
+    private const int SheatheRetryFrames = 20;
+    private const int MaxSheatheRetries = 5;
     // The stance of a drawn weapon that is not the tile's own (the outfit's weapon behind an off-hand tile).
     internal const string OwnWeapon = "own";
     private static readonly TimeSpan IdleRelease = TimeSpan.FromSeconds(5);
@@ -69,6 +73,7 @@ public sealed unsafe class RenderPool : IDisposable
         public string? InHandStance { get; set; }
         /// <summary>Diagnostics: frames spent sheathing before this tile (-1: none) and how drawing ended.</summary>
         public int SheatheFrames { get; set; } = -1;
+        public int SheatheRetries { get; set; }
         public string? DrawOutcome { get; set; }
         /// <summary>What the view wears besides the tile's items: the outfit of this look without these slots (a <see cref="SlotMask"/>).</summary>
         public (TileMode Mode, ulong Hash, ushort Except)? DressedAs { get; set; }
@@ -266,6 +271,7 @@ public sealed unsafe class RenderPool : IDisposable
                 worker.Key = key;
                 worker.Subject = subject;
                 worker.SheatheFrames = -1;
+                worker.SheatheRetries = 0;
                 worker.DrawOutcome = null;
                 worker.Stopwatch.Restart();
                 // The game picks the stance when a weapon is drawn and keeps it for the next weapon loaded into the hand:
@@ -279,6 +285,8 @@ public sealed unsafe class RenderPool : IDisposable
                     worker.WeaponDrawn = false;
                     worker.InHandStance = null;
                     worker.Frames = 0;
+                    worker.DrawRetries = 0;
+                    worker.RetryPending = false;
                     worker.Phase = Phase.Sheathe;
                     return;
                 }
@@ -287,12 +295,28 @@ public sealed unsafe class RenderPool : IDisposable
 
             case Phase.Sheathe:
                 worker.Frames++;
+                if (worker.RetryPending)
+                {
+                    // Second half of a retry: sheathe again.
+                    view.SetWeaponDrawn(false);
+                    worker.RetryPending = false;
+                    worker.DrawRetries++;
+                    return;
+                }
+                if (view.IsWeaponDrawn() && !view.IsChangingStance() && worker.Frames % SheatheRetryFrames == 0 && worker.DrawRetries < MaxSheatheRetries)
+                {
+                    // The sheathe did not take, and the same toggle again does nothing: draw on this frame, sheathe on the next.
+                    view.SetWeaponDrawn(true);
+                    worker.RetryPending = true;
+                    return;
+                }
                 // Sheathed to the end of its animation (no item loading), or given up after the timeout: the tile then keeps
                 // the old stance.
                 if (worker.Frames < SheatheMinFrames || (view.IsWeaponInHand() || view.IsChangingStance()) && worker.Frames < SheatheTimeoutFrames
                     || !view.IsIdle)
                     return;
                 worker.SheatheFrames = worker.Frames;
+                worker.SheatheRetries = worker.DrawRetries;
                 Dress(worker, worker.Key!.Value, worker.Subject!);
                 break;
 
@@ -463,7 +487,7 @@ public sealed unsafe class RenderPool : IDisposable
                 if (WeaponDiagnosticsBudget > 0 && lookup(done) is ItemSubject { Item: { Slot: EquipSlot.MainHand or EquipSlot.OffHand } weapon })
                 {
                     WeaponDiagnosticsBudget--;
-                    Plugin.Log.Information($"[diag] tile {done.ItemId} {weapon.Name}: stance {worker.InHandStance}, sheathe {worker.SheatheFrames}, " +
+                    Plugin.Log.Information($"[diag] tile {done.ItemId} {weapon.Name}: stance {worker.InHandStance}, sheathe {worker.SheatheFrames}/{worker.SheatheRetries}, " +
                                            $"retries {worker.DrawRetries}, draw {worker.DrawOutcome} | {view.DescribeTrace()}");
                 }
                 cache.Add(done, task.Result);
