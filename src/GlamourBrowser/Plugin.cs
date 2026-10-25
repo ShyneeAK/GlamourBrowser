@@ -139,7 +139,12 @@ public sealed class Plugin : IDalamudPlugin
         }
         if (parts.Length > 0 && parts[0] == "trace")
         {
-            Framework.RunOnFrameworkThread(() => traceFrames = 300);
+            Framework.RunOnFrameworkThread(() =>
+            {
+                traceFrames = 300;
+                // Weapon tiles too: one line each for the next ones copied.
+                pool.WeaponDiagnosticsBudget = 40;
+            });
             return;
         }
         if (parts.Length == 0 || parts[0] != "diag")

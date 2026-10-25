@@ -67,6 +67,9 @@ public sealed unsafe class RenderPool : IDisposable
         public TileSubject? Subject { get; set; }
         /// <summary>The kind of weapon in hand (<see cref="WeaponStance"/>), whose stance it is held in; null when sheathed.</summary>
         public string? InHandStance { get; set; }
+        /// <summary>Diagnostics: frames spent sheathing before this tile (-1: none) and how drawing ended.</summary>
+        public int SheatheFrames { get; set; } = -1;
+        public string? DrawOutcome { get; set; }
         /// <summary>What the view wears besides the tile's items: the outfit of this look without these slots (a <see cref="SlotMask"/>).</summary>
         public (TileMode Mode, ulong Hash, ushort Except)? DressedAs { get; set; }
         public bool Busy => Key != null;
@@ -262,6 +265,8 @@ public sealed unsafe class RenderPool : IDisposable
 
                 worker.Key = key;
                 worker.Subject = subject;
+                worker.SheatheFrames = -1;
+                worker.DrawOutcome = null;
                 worker.Stopwatch.Restart();
                 // The game picks the stance when a weapon is drawn and keeps it for the next weapon loaded into the hand:
                 // a weapon of another kind is sheathed first, while nothing loads (a sheathe during a load is ignored),
@@ -287,6 +292,7 @@ public sealed unsafe class RenderPool : IDisposable
                 if (worker.Frames < SheatheMinFrames || (view.IsWeaponInHand() || view.IsChangingStance()) && worker.Frames < SheatheTimeoutFrames
                     || !view.IsIdle)
                     return;
+                worker.SheatheFrames = worker.Frames;
                 Dress(worker, worker.Key!.Value, worker.Subject!);
                 break;
 
@@ -389,6 +395,8 @@ public sealed unsafe class RenderPool : IDisposable
                 }
                 if (poseState == PoseGateState.Wait)
                     return;
+                if (worker.DrawGate != null)
+                    worker.DrawOutcome = $"{poseState} after {worker.DrawGate.Frames} frames";
                 if (poseState == PoseGateState.Timeout && !poseWarned)
                 {
                     poseWarned = true;
@@ -452,10 +460,11 @@ public sealed unsafe class RenderPool : IDisposable
                 }
 
                 var done = worker.Key!.Value;
-                if (WeaponDiagnosticsBudget > 0 && lookup(done) is ItemSubject { Item.Slot: EquipSlot.MainHand or EquipSlot.OffHand })
+                if (WeaponDiagnosticsBudget > 0 && lookup(done) is ItemSubject { Item: { Slot: EquipSlot.MainHand or EquipSlot.OffHand } weapon })
                 {
                     WeaponDiagnosticsBudget--;
-                    Plugin.Log.Information($"[diag] tile {done.ItemId}: {view.DescribeWeapons()}");
+                    Plugin.Log.Information($"[diag] tile {done.ItemId} {weapon.Name}: stance {worker.InHandStance}, sheathe {worker.SheatheFrames}, " +
+                                           $"retries {worker.DrawRetries}, draw {worker.DrawOutcome} | {view.DescribeTrace()}");
                 }
                 cache.Add(done, task.Result);
                 failures.Remove(done);
