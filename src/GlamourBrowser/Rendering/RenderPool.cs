@@ -57,6 +57,8 @@ public sealed unsafe class RenderPool : IDisposable
         public int DrawRetries { get; set; }
         /// <summary>A retry toggled the weapon the other way last frame; this frame toggles it back.</summary>
         public bool RetryPending { get; set; }
+        /// <summary>The job the tile's character holds its weapon as (Core's StanceJob); null: the player's own.</summary>
+        public byte? WeaponJob { get; set; }
         /// <summary>What the view wears besides the tile's items: the outfit of this look without these slots (a <see cref="SlotMask"/>).</summary>
         public (TileMode Mode, ulong Hash, ushort Except)? DressedAs { get; set; }
         public bool Busy => Key != null;
@@ -67,6 +69,7 @@ public sealed unsafe class RenderPool : IDisposable
     private readonly Func<TileKey, TileSubject?> lookup;
     private readonly AppearanceTracker appearance;
     private readonly Func<EquipSlot, CameraPreset?> cameraFor;
+    private readonly Func<GlamourItem, byte?> stanceJobOf;
     private readonly List<Worker> workers = new();
     private readonly List<CharaViewHandle> suspended = new();
     private readonly Dictionary<TileKey, string> failures = new();
@@ -76,8 +79,9 @@ public sealed unsafe class RenderPool : IDisposable
     private bool freezeWarned;
 
     public RenderPool(TileQueue queue, TileCache<IDalamudTextureWrap> cache, Func<TileKey, TileSubject?> lookup,
-                      AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor)
+                      AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor, Func<GlamourItem, byte?> stanceJobOf)
     {
+        this.stanceJobOf = stanceJobOf;
         this.queue = queue;
         this.cache = cache;
         this.lookup = lookup;
@@ -207,6 +211,7 @@ public sealed unsafe class RenderPool : IDisposable
                 }
 
                 worker.Key = key;
+                worker.WeaponJob = subject is ItemSubject { Item: var weapon } ? stanceJobOf(weapon) : null;
                 worker.Stopwatch.Restart();
                 // Re-dress when the slots change too, otherwise the previous tile's items (e.g. a hat) stay on the
                 // character. Sets with the same slots as the previous tile only swap their pieces.
@@ -262,9 +267,14 @@ public sealed unsafe class RenderPool : IDisposable
                 // across item loads, and a toggle can be dropped. The DrawGate waits for the stance to settle.
                 var wantDrawn = worker.Key!.Value.WeaponDrawn;
                 var inHand = view.IsWeaponInHand();
+                // The weapon is held in the stance of the job set on the character: another job than the previous
+                // weapon's means drawing anew, a weapon in hand is sheathed now and drawn on the next frame.
+                var redraw = wantDrawn && view.SetClassJob(worker.WeaponJob) && inHand;
                 if (wantDrawn || worker.WeaponDrawn || inHand)
                 {
-                    if (inHand != wantDrawn || worker.WeaponDrawn != wantDrawn)
+                    if (redraw)
+                        view.SetWeaponDrawn(false);
+                    else if (inHand != wantDrawn || worker.WeaponDrawn != wantDrawn)
                         view.SetWeaponDrawn(wantDrawn);
                     if (!wantDrawn)
                     {
@@ -275,7 +285,7 @@ public sealed unsafe class RenderPool : IDisposable
                     }
                     worker.WeaponDrawn = wantDrawn;
                     worker.DrawRetries = 0;
-                    worker.RetryPending = false;
+                    worker.RetryPending = redraw;
                     worker.DrawGate = new DrawGate(DrawMinFrames, DrawStableFrames, DrawTimeoutFrames);
                 }
                 view.ApplyVisibility(showWeapons: true);

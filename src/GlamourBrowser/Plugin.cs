@@ -85,12 +85,13 @@ public sealed class Plugin : IDalamudPlugin
         appearance = new AppearanceTracker();
         var byId = catalog.ToDictionary(i => i.Id);
         // The browser state is created below; the pool asks it only once it ticks.
-        pool = new RenderPool(queue, cache, key => browser?.SubjectFor(key), appearance, CameraFor) { MaxViews = config.ParallelViews };
-        live = new LivePreview(pool, appearance, config, CameraFor);
+        var jobs = new JobCatalog(DataManager);
+        byte? StanceJobOf(GlamourItem item) => StanceJob.ForItem(item, jobs.ParentOf);
+        pool = new RenderPool(queue, cache, key => browser?.SubjectFor(key), appearance, CameraFor, StanceJobOf) { MaxViews = config.ParallelViews };
+        live = new LivePreview(pool, appearance, config, CameraFor, StanceJobOf);
         // Variants too: their sources are merged into the base item.
         sources = new SourceService(catalog.Select(i => i.Id).Concat(variants.Keys).ToHashSet());
         var sets = new SetCatalog(byId, variants, sources);
-        var jobs = new JobCatalog(DataManager);
         var dyes = new DyeCatalog(DataManager);
         browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets, wishlist, jobs, customSets);
         UI.UiScale.Set(config.UiScale);

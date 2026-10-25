@@ -75,6 +75,23 @@ public sealed unsafe class CharaViewHandle : IDisposable
         // Used by the game for EquipRestriction checks.
         view->Race = race;
         view->Sex = sex;
+        ownJob = source->CharacterData.ClassJob;
+    }
+
+    private byte ownJob;
+
+    /// <summary>
+    /// Gives the view's character the job (null: the player's own, taken over at creation), so a drawn weapon is held in
+    /// that job's battle stance. True when it changed: a weapon already in hand has to be drawn anew to take it on.
+    /// </summary>
+    public bool SetClassJob(byte? job)
+    {
+        var character = view != null && view->State == StateReady ? view->GetCharacter() : null;
+        var wanted = job ?? ownJob;
+        if (character == null || wanted == 0 || character->CharacterData.ClassJob == wanted)
+            return false;
+        character->CharacterData.ClassJob = wanted;
+        return true;
     }
 
     /// <summary>Call once per framework tick.</summary>

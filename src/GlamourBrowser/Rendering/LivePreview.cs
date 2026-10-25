@@ -15,6 +15,7 @@ public sealed unsafe class LivePreview : IDisposable
     private readonly AppearanceTracker appearance;
     private readonly Configuration config;
     private readonly Func<EquipSlot, CameraPreset?> cameraFor;
+    private readonly Func<GlamourItem, byte?> stanceJobOf;
     private CharaViewHandle? view;
     private CharaViewHandle? suspended;
     // The variant is a custom set's content hash: an edited set (or draft) is dressed again.
@@ -23,8 +24,10 @@ public sealed unsafe class LivePreview : IDisposable
     private float rotateX, rotateY, panX, panY, zoom;
     private bool reset;
 
-    public LivePreview(RenderPool pool, AppearanceTracker appearance, Configuration config, Func<EquipSlot, CameraPreset?> cameraFor)
+    public LivePreview(RenderPool pool, AppearanceTracker appearance, Configuration config, Func<EquipSlot, CameraPreset?> cameraFor,
+                       Func<GlamourItem, byte?> stanceJobOf)
     {
+        this.stanceJobOf = stanceJobOf;
         this.pool = pool;
         this.appearance = appearance;
         this.config = config;
@@ -141,7 +144,15 @@ public sealed unsafe class LivePreview : IDisposable
             appliedWeaponVisible = weaponVisible;
         }
 
-        if (appliedWeaponDrawn != weaponDrawn && view.State == CharaViewHandle.StateReady)
+        // The weapon is held in the stance of the job set on the character (a weapon's own job, else the player's): a
+        // new job while the weapon is in hand sheathes it now, the block below draws it again on the next tick.
+        var job = subject is ItemSubject { Item: var item } ? stanceJobOf(item) : null;
+        if (weaponDrawn && view.IsIdle && view.SetClassJob(job) && appliedWeaponDrawn == true)
+        {
+            view.SetWeaponDrawn(false);
+            appliedWeaponDrawn = null;
+        }
+        else if (appliedWeaponDrawn != weaponDrawn && view.State == CharaViewHandle.StateReady)
         {
             view.SetWeaponDrawn(weaponDrawn);
             appliedWeaponDrawn = weaponDrawn;
