@@ -67,9 +67,9 @@ public sealed class FilterColumn
         {
             var min = f.MinLevel;
             var max = f.MaxLevel;
-            ImGui.SetNextItemWidth(-1);
-            if (ImGui.DragIntRange2("##level", ref min, ref max, 0.2f, 1, 100, "von %d", "bis %d"))
-                state.Filter = f with { MinLevel = Math.Clamp(min, 1, 100), MaxLevel = Math.Clamp(Math.Max(max, min), 1, 100) };
+            ImGui.TextDisabled($"{min} – {max}");
+            if (RangeSlider.Draw("##level", ref min, ref max, 1, 100, theme))
+                state.Filter = f with { MinLevel = min, MaxLevel = max };
             Section.End();
         }
 

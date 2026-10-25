@@ -85,16 +85,11 @@ public sealed class TopBar
                 state.SetSort((SortOrder)sort);
         }
 
-        // Drag fields instead of sliders: no grab knob covering the label.
+        // A picker instead of drag fields: its grid shows the size and takes a new one with one click.
         var columns = config.Columns;
         var rows = config.Rows;
-        NextOnLine(160 * scale + spacing);
-        ImGui.SetNextItemWidth(80 * scale);
-        var gridChanged = ImGui.DragInt("##columns", ref columns, 0.05f, 2, 10, "%d Spalten", ImGuiSliderFlags.AlwaysClamp);
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(80 * scale);
-        gridChanged |= ImGui.DragInt("##rows", ref rows, 0.05f, 1, 6, "%d Zeilen", ImGuiSliderFlags.AlwaysClamp);
-        if (gridChanged)
+        NextOnLine(ImGui.CalcTextSize("10 × 6").X + ImGui.GetStyle().FramePadding.X * 2);
+        if (GridPicker.Draw("gridsize", ref columns, ref rows, theme))
             state.SetGrid(columns, rows);
 
         var hitsText = $"{state.Results.Count} Treffer";
