@@ -28,7 +28,7 @@ public class FilterChipsTests
             WearableOnly = false,
         };
 
-        Assert.Equal(["Suche: robe", "Kopf", "Füße", "PLD", "Level 50–70", "Färbbar", "Habe ich", "Auch nicht tragbare"],
+        Assert.Equal(["Suche: robe", "Kopf", "Füße", "PLD", "Level 50–70", "Nur Färbbare", "Habe ich", "Auch nicht tragbare"],
             Chips(state).Select(c => c.Label));
     }
 

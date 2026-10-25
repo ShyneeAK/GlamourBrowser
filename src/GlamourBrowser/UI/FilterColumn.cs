@@ -77,7 +77,7 @@ public sealed class FilterColumn
         var dyeable = f.DyeableOnly;
         using (ImRaii.Disabled(f.Sets))
         {
-            if (ImGui.Checkbox("Färbbar", ref dyeable))
+            if (ImGui.Checkbox("Nur Färbbare", ref dyeable))
                 state.Filter = f with { DyeableOnly = dyeable };
         }
         if (f.Sets && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))

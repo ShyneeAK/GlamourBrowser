@@ -37,7 +37,7 @@ public static class FilterChips
             chips.Add(new FilterChip($"Level {state.MinLevel}–{state.MaxLevel}", state with { MinLevel = defaults.MinLevel, MaxLevel = defaults.MaxLevel }));
 
         if (state.DyeableOnly)
-            chips.Add(new FilterChip("Färbbar", state with { DyeableOnly = false }));
+            chips.Add(new FilterChip("Nur Färbbare", state with { DyeableOnly = false }));
 
         if (state.Ownership != OwnershipFilter.All)
             chips.Add(new FilterChip(state.Ownership == OwnershipFilter.Owned ? "Habe ich" : "Fehlt mir", state with { Ownership = OwnershipFilter.All }));
