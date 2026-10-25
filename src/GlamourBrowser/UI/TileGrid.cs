@@ -197,10 +197,15 @@ public sealed class TileGrid
                 DrawTraitIcons(drawList, item, categories, shadeTop + new Vector2(textX, 6 + lineHeight * 2), size.X - 12, iconSize);
         }
 
-        if (pool.Failures.ContainsKey(key))
+        if (pool.Failures.TryGetValue(key, out var error))
         {
             drawList.AddText(pos + new Vector2(6, 4), ErrorColor, "!");
-            drawList.AddText(pos + new Vector2(6, 4 + lineHeight), ErrorColor, Truncate("Renderfehler", size.X - 12));
+            var labelPos = pos + new Vector2(6, 4 + lineHeight);
+            var label = Truncate("Renderfehler", size.X - 12);
+            drawList.AddText(labelPos, ErrorColor, label);
+            // Like the trait icons, only the marker itself shows a tooltip: the reason of the failure.
+            if (hovered && ImGui.IsMouseHoveringRect(pos, labelPos + ImGui.CalcTextSize(label)))
+                ImGui.SetTooltip($"Renderfehler: {error}");
         }
         drawList.PopClipRect();
 

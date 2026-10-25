@@ -259,19 +259,28 @@ public sealed unsafe class LivePane
         {
             try
             {
+                // Agents are null-checked: a null agent would crash the game, the catch does not catch access violations.
                 switch (action)
                 {
                     case MapFlag flag:
                         Plugin.GameGui.OpenMapWithMapLink(new MapLinkPayload(flag.TerritoryId, flag.MapId, flag.X, flag.Y, 0.05f));
                         break;
                     case DutyFinder duty:
-                        AgentContentsFinder.Instance()->OpenRegularDuty(duty.ContentFinderConditionId);
+                        var finder = AgentContentsFinder.Instance();
+                        if (finder != null)
+                            finder->OpenRegularDuty(duty.ContentFinderConditionId);
+                        else
+                            Plugin.Log.Warning("Duty finder agent not available");
                         break;
                     case OpenStore store:
                         Util.OpenLink(StoreLinks.ProductUrl(store.StoreId));
                         break;
                     case OpenRecipe recipe:
-                        AgentRecipeNote.Instance()->OpenRecipeByRecipeId(recipe.RecipeId);
+                        var recipeNote = AgentRecipeNote.Instance();
+                        if (recipeNote != null)
+                            recipeNote->OpenRecipeByRecipeId(recipe.RecipeId);
+                        else
+                            Plugin.Log.Warning("Recipe note agent not available");
                         break;
                 }
             }
