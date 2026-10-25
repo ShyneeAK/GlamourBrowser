@@ -24,7 +24,7 @@ public sealed class SourceIndexBuilder(GameData data, IReadOnlySet<uint> relevan
             Run(builder, "Job-Ausrüstung", () => jobGear = JobGearItems.Find(data, relevantItems));
             Run(builder, "Gil-Händler", () => ShopSources.AddGilShops(builder, data, npcs, relevantItems, jobGear));
             Run(builder, "Staatliche Gesellschaft", () => ShopSources.AddGrandCompany(builder, data, npcs, relevantItems));
-            Run(builder, "Spezialshops", () => ShopSources.AddSpecialShops(builder, data, npcs, relevantItems));
+            Run(builder, "Spezialshops", () => ShopSources.AddSpecialShops(builder, data, npcs, relevantItems, jobGear));
         }
         Run(builder, "Inhalte", () => ContentSources.AddDuties(builder, data, relevantItems, log));
         Run(builder, "Inhalts-Ketten", () => ContentSources.AddDutyChains(builder, data, relevantItems, log));

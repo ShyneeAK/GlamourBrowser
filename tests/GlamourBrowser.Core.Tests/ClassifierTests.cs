@@ -90,4 +90,12 @@ public class ClassifierTests
 
     [Fact]
     public void ExpansionFromPatch_ZeroIsUnknown() => Assert.Null(Expansions.FromPatch(0));
+
+    [Theory]
+    [InlineData(1u, 0u, true, JobGear)]        // free re-obtain shops for job gear
+    [InlineData(1u, 0u, false, Other)]         // free achievement rewards and replicas
+    [InlineData(0u, 0u, false, Other)]         // no cost at all
+    [InlineData(28u, 375u, false, Tomestones)] // paid entries keep their currency category
+    public void SpecialShopEntry(uint currency, uint amount, bool jobGear, SourceCategory expected)
+        => Assert.Equal(expected, CurrencyCategory.ForSpecialShop(currency, amount, jobGear, TomestoneIds));
 }

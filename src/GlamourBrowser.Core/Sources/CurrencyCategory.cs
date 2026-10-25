@@ -28,4 +28,14 @@ public static class CurrencyCategory
             return SourceCategory.Tomestones;
         return SourceCategory.Tokens;
     }
+
+    /// <summary>
+    /// Category of a SpecialShop entry. Free entries (amount 0: re-obtaining job gear, achievement rewards, replicas)
+    /// are no purchase, whatever currency code they carry.
+    /// </summary>
+    /// <param name="jobGear">The item is wearable by a single job.</param>
+    public static SourceCategory ForSpecialShop(uint currencyItemId, uint amount, bool jobGear, IReadOnlySet<uint> tomestoneItemIds)
+        => amount == 0
+            ? jobGear ? SourceCategory.JobGear : SourceCategory.Other
+            : From(currencyItemId, tomestoneItemIds);
 }

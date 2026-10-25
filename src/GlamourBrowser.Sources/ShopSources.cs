@@ -48,7 +48,8 @@ public static class ShopSources
         }
     }
 
-    public static void AddSpecialShops(SourceIndex.Builder builder, GameData data, ShopNpcResolver npcs, IReadOnlySet<uint> relevant)
+    /// <param name="jobGear">Single-job items: free entries for them (re-obtaining job gear) count as job gear.</param>
+    public static void AddSpecialShops(SourceIndex.Builder builder, GameData data, ShopNpcResolver npcs, IReadOnlySet<uint> relevant, IReadOnlySet<uint> jobGear)
     {
         var tomestoneRows = data.GetExcelSheet<TomestonesItem>()!.ToList();
         var tomestoneIds = tomestoneRows.Select(t => t.Item.RowId).ToHashSet();
@@ -69,13 +70,13 @@ public static class ShopSources
                     break;
                 }
                 var currency = costItem == 0 ? 0 : SpecialShopCost.ResolveItemId(costItem, shop.UseCurrencyType, ordered);
-                var category = CurrencyCategory.From(currency, tomestoneIds);
 
                 foreach (var receive in entry.ReceiveItems)
                 {
                     var itemId = receive.Item.RowId;
                     if (relevant.Contains(itemId))
-                        AddVendor(builder, npcs, itemId, shop.RowId, shop.Name.ExtractText(), category, currency, costAmount);
+                        AddVendor(builder, npcs, itemId, shop.RowId, shop.Name.ExtractText(),
+                                  CurrencyCategory.ForSpecialShop(currency, costAmount, jobGear.Contains(itemId), tomestoneIds), currency, costAmount);
                 }
             }
         }
