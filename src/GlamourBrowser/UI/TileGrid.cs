@@ -27,6 +27,18 @@ public sealed class TileGrid
     private const uint ErrorColor = 0xFF4040E0;
     // Trait and source icons at the bottom of a tile, relative to the line height.
     private const float TraitIconScale = 1.5f;
+    // Upper bound for cached tile texts before they are dropped and rebuilt for the shown pages.
+    private const int MaxLabels = 1000;
+
+    private enum TraitKind { Dye, Trade, Source, Job }
+
+    /// <param name="Label">Text drawn over the icon (the dye channel count).</param>
+    /// <param name="Tooltip">Fixed tooltip; source icons build theirs only while hovered.</param>
+    private readonly record struct TraitIcon(TraitKind Kind, uint IconId, FontAwesomeIcon Fallback, SourceCategory Category = default,
+                                             string? Label = null, string? Tooltip = null);
+
+    /// <summary>A tile's texts, already cut to the tile width, and its icons: built once per item, not every frame.</summary>
+    private sealed record TileLabels(string Name, string Line, TraitIcon[] Icons, TraitIcon? Job);
 
     private readonly BrowserState state;
     private readonly TileCache<IDalamudTextureWrap> cache;
@@ -37,6 +49,9 @@ public sealed class TileGrid
     private readonly Theme.Theme theme;
     private readonly SourceService sources;
     private readonly JobCatalog jobs;
+    private readonly Dictionary<uint, TileLabels> labels = new();
+    private (float Width, float FontSize, int Ownership, bool SourcesReady) labelsFor;
+    private int ownershipVersion;
 
     public TileGrid(BrowserState state, TileCache<IDalamudTextureWrap> cache, RenderPool pool, OwnershipService ownership,
                     LivePreview live, Configuration config, Theme.Theme theme, SourceService sources, JobCatalog jobs)
@@ -50,6 +65,7 @@ public sealed class TileGrid
         this.ownership = ownership;
         this.live = live;
         this.config = config;
+        ownership.Changed += () => ownershipVersion++;
     }
 
     public void Draw()
@@ -81,6 +97,14 @@ public sealed class TileGrid
         {
             ImGui.TextDisabled("Fenster vergrößern oder weniger Kacheln wählen");
             return;
+        }
+
+        // Tile texts depend on the width, the font, ownership and the source index: rebuilt when one of them changes.
+        var labelsKey = (layout.TileWidth, ImGui.GetFontSize(), ownershipVersion, sources.IsReady);
+        if (labelsKey != labelsFor || labels.Count > MaxLabels)
+        {
+            labels.Clear();
+            labelsFor = labelsKey;
         }
 
         var gridTopLeft = ImGui.GetCursorPos();
@@ -206,19 +230,12 @@ public sealed class TileGrid
             var shadeTop = pos + new Vector2(0, size.Y - stripHeight);
             drawList.AddRectFilled(shadeTop, pos + size, 0xB0000000, rounding, ImDrawFlags.RoundCornersBottom);
             var textX = 6f;
-            var categories = sources.IsReady ? sources.Index.KnownCategoriesOf(item.Id) : null;
-            drawList.AddText(shadeTop + new Vector2(textX, 4), colors.Text, Truncate(item.Name, size.X - 12));
+            var text = LabelsFor(item, owned, size.X - 12);
+            drawList.AddText(shadeTop + new Vector2(textX, 4), colors.Text, text.Name);
             if (rows >= 2)
-            {
-                // Owned: where it is; missing: where to get it.
-                var places = owned ? ownership.Current?.LocationsOf(item.Id).Select(l => l.DisplayName).ToList() ?? [] : [];
-                var line = places.Count > 0
-                    ? TileInfo.OwnedLine(item.LevelEquip, places)
-                    : TileInfo.Line(item.LevelEquip, categories != null ? SourceRanking.Top(categories) : null);
-                drawList.AddText(shadeTop + new Vector2(textX, 4 + lineHeight), colors.TextMuted, Truncate(line, size.X - 12));
-            }
+                drawList.AddText(shadeTop + new Vector2(textX, 4 + lineHeight), colors.TextMuted, text.Line);
             if (rows >= 3)
-                DrawTraitIcons(drawList, item, categories, shadeTop + new Vector2(textX, 6 + lineHeight * 2), size.X - 12, iconSize);
+                DrawTraitIcons(drawList, item, text, shadeTop + new Vector2(textX, 6 + lineHeight * 2), size.X - 12, iconSize);
         }
 
         if (pool.Failures.TryGetValue(key, out var error))
@@ -243,56 +260,68 @@ public sealed class TileGrid
         drawList.AddTriangleFilled(corner, corner - new Vector2(badge, 0), corner + new Vector2(0, badge), frame.BadgeColor);
     }
 
-    /// <summary>Dye channels, tradability, job/role and one source icon per group; cut off on the right when the tile is narrow.</summary>
-    private void DrawTraitIcons(ImDrawListPtr drawList, GlamourItem item, IReadOnlySet<SourceCategory>? categories, Vector2 min, float width, float iconSize)
+    /// <summary>The tile's texts and icons from the per-item cache, built on the first frame the tile shows.</summary>
+    private TileLabels LabelsFor(GlamourItem item, bool owned, float width)
     {
-        var colors = theme.Colors;
-        // Tooltips are built only for the hovered icon.
-        var icons = new List<(Action<Vector2> Draw, Func<string> Tooltip)>();
+        if (labels.TryGetValue(item.Id, out var cached))
+            return cached;
+
+        var categories = sources.IsReady ? sources.Index.KnownCategoriesOf(item.Id) : null;
+        // Owned: where it is; missing: where to get it.
+        var places = owned ? ownership.Current?.LocationsOf(item.Id).Select(l => l.DisplayName).ToList() ?? [] : [];
+        var line = places.Count > 0
+            ? TileInfo.OwnedLine(item.LevelEquip, places)
+            : TileInfo.Line(item.LevelEquip, categories != null ? SourceRanking.Top(categories) : null);
+
+        var icons = new List<TraitIcon>();
         if (item.DyeCount > 0)
-            icons.Add((at =>
-            {
-                GameIcon.DrawAt(drawList, TraitIcons.Dye, at, new Vector2(iconSize), FontAwesomeIcon.PaintBrush, colors.TextMuted);
-                drawList.AddText(ImGui.GetFont(), ImGui.GetFontSize() * 0.75f, at + new Vector2(iconSize * 0.6f, iconSize * 0.35f), colors.Text, item.DyeCount.ToString());
-            }, () => TileInfo.DyeText(item.DyeCount)));
+            icons.Add(new TraitIcon(TraitKind.Dye, TraitIcons.Dye, FontAwesomeIcon.PaintBrush, Label: item.DyeCount.ToString(), Tooltip: TileInfo.DyeText(item.DyeCount)));
         if (item.Trade != Tradability.Bound)
         {
             var (tradeIcon, glyph) = item.Trade == Tradability.Marketable
                 ? (TraitIcons.Marketable, FontAwesomeIcon.Store)
                 : (TraitIcons.Tradable, FontAwesomeIcon.ExchangeAlt);
-            icons.Add((at => GameIcon.DrawAt(drawList, tradeIcon, at, new Vector2(iconSize), glyph, colors.TextMuted), () => TileInfo.TradeText(item.Trade)));
+            icons.Add(new TraitIcon(TraitKind.Trade, tradeIcon, glyph, Tooltip: TileInfo.TradeText(item.Trade)));
         }
+        if (categories != null)
+            icons.AddRange(SourceRanking.Icons(categories).Select(category => new TraitIcon(TraitKind.Source, 0, default, category)));
+
         // The job/role icon stands apart, right-aligned.
-        (Action<Vector2> Draw, Func<string> Tooltip)? right = null;
+        TraitIcon? job = null;
         var badge = JobBadges.For(JobBadges.CollapseClasses(item.ClassJobIds, jobs.ParentOf), jobs.GroupOf, jobs.All.Count);
         if (badge.Kind != JobBadgeKind.None)
         {
-            var job = badge.Kind == JobBadgeKind.Job ? jobs.Find(badge.JobId) : null;
-            var icon = job?.IconId ?? JobCatalog.RoleIcon(badge.Group);
-            var name = job?.Name ?? JobGroups.DisplayName(badge.Group);
-            right = (at => GameIcon.DrawAt(drawList, icon, at, new Vector2(iconSize), FontAwesomeIcon.User, colors.TextMuted), () => name);
+            var info = badge.Kind == JobBadgeKind.Job ? jobs.Find(badge.JobId) : null;
+            job = new TraitIcon(TraitKind.Job, info?.IconId ?? JobCatalog.RoleIcon(badge.Group), FontAwesomeIcon.User,
+                                Tooltip: info?.Name ?? JobGroups.DisplayName(badge.Group));
         }
-        if (categories != null)
-        {
-            foreach (var category in SourceRanking.Icons(categories))
-                icons.Add((at => DrawSourceIcon(drawList, category, at, iconSize, colors.TextMuted),
-                           () => TileInfo.SourceTooltip(category, sources.Index.SourcesOf(item.Id))));
-        }
+        return labels[item.Id] = new TileLabels(Truncate(item.Name, width), Truncate(line, width), icons.ToArray(), job);
+    }
 
+    /// <summary>Dye channels, tradability and one source icon per group, the job/role right-aligned; cut off on the right when the tile is narrow.</summary>
+    private void DrawTraitIcons(ImDrawListPtr drawList, GlamourItem item, TileLabels text, Vector2 min, float width, float iconSize)
+    {
         const float spacing = 3f;
-        var (fit, showRight) = TileInfo.FitRow(icons.Count, right != null, iconSize, spacing, width);
+        var (fit, showRight) = TileInfo.FitRow(text.Icons.Length, text.Job != null, iconSize, spacing, width);
         var windowHovered = ImGui.IsWindowHovered();
-        void Place((Action<Vector2> Draw, Func<string> Tooltip) icon, Vector2 at)
-        {
-            icon.Draw(at);
-            // Only the icon itself shows a tooltip; the rest of the tile has none.
-            if (windowHovered && ImGui.IsMouseHoveringRect(at, at + new Vector2(iconSize)))
-                ImGui.SetTooltip(icon.Tooltip());
-        }
         for (var i = 0; i < fit; i++)
-            Place(icons[i], min + new Vector2(i * (iconSize + spacing), 0));
+            DrawTrait(drawList, item, text.Icons[i], min + new Vector2(i * (iconSize + spacing), 0), iconSize, windowHovered);
         if (showRight)
-            Place(right!.Value, min + new Vector2(width - iconSize, 0));
+            DrawTrait(drawList, item, text.Job!.Value, min + new Vector2(width - iconSize, 0), iconSize, windowHovered);
+    }
+
+    private void DrawTrait(ImDrawListPtr drawList, GlamourItem item, TraitIcon icon, Vector2 at, float iconSize, bool windowHovered)
+    {
+        var colors = theme.Colors;
+        if (icon.Kind == TraitKind.Source)
+            DrawSourceIcon(drawList, icon.Category, at, iconSize, colors.TextMuted);
+        else
+            GameIcon.DrawAt(drawList, icon.IconId, at, new Vector2(iconSize), icon.Fallback, colors.TextMuted);
+        if (icon.Label != null)
+            drawList.AddText(ImGui.GetFont(), ImGui.GetFontSize() * 0.75f, at + new Vector2(iconSize * 0.6f, iconSize * 0.35f), colors.Text, icon.Label);
+        // Only the icon itself shows a tooltip; the rest of the tile has none.
+        if (windowHovered && ImGui.IsMouseHoveringRect(at, at + new Vector2(iconSize)))
+            ImGui.SetTooltip(icon.Tooltip ?? TileInfo.SourceTooltip(icon.Category, sources.Index.SourcesOf(item.Id)));
     }
 
     /// <summary>A source category icon; savage gets a red corner because the game has no own icon for it.</summary>
