@@ -38,7 +38,8 @@ public sealed class JobCatalog
     /// <summary>ClassJob.ClassJobParent: a job's base class (WHM → CNJ); a class is its own parent.</summary>
     public uint ParentOf(uint id) => parents.GetValueOrDefault(id, id);
 
-    public JobGroup GroupOf(uint id) => byId.TryGetValue(id, out var job) ? job.Group : JobGroup.Melee;
+    /// <summary>The job's group; null for an id the catalog does not know.</summary>
+    public JobGroup? GroupOf(uint id) => byId.TryGetValue(id, out var job) ? job.Group : null;
 
     /// <summary>Role icons as shown in the party list.</summary>
     public static uint RoleIcon(JobGroup group) => group switch

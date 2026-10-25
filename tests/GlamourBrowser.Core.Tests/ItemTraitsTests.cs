@@ -7,11 +7,12 @@ namespace GlamourBrowser.Core.Tests;
 
 public class ItemTraitsTests
 {
-    // Paladin 19, Warrior 21, Dark Knight 32, Gunbreaker 37 are tanks; Bard 23, White Mage 24.
-    private static JobGroup GroupOf(uint job) => job switch
+    // Paladin 19, Warrior 21, Dark Knight 32, Gunbreaker 37 are tanks; Bard 23, White Mage 24; 99 is unknown.
+    private static JobGroup? GroupOf(uint job) => job switch
     {
         19 or 21 or 32 or 37 => JobGroup.Tank,
         24 => JobGroup.Healer,
+        99 => null,
         _ => JobGroup.Ranged,
     };
 
@@ -32,6 +33,13 @@ public class ItemTraitsTests
 
     [Fact]
     public void JobBadge_Mixed_None() => Assert.Equal(JobBadgeKind.None, JobBadges.For(new HashSet<uint> { 19, 24 }, GroupOf, AllJobs).Kind);
+
+    [Fact]
+    public void JobBadge_UnknownJob_None() => Assert.Equal(JobBadgeKind.None, JobBadges.For(new HashSet<uint> { 99 }, GroupOf, AllJobs).Kind);
+
+    [Fact]
+    public void JobBadge_UnknownJobAmongOneRole_None()
+        => Assert.Equal(JobBadgeKind.None, JobBadges.For(new HashSet<uint> { 19, 21, 99 }, GroupOf, AllJobs).Kind);
 
     [Fact]
     public void JobBadge_AllOrEmpty_None()

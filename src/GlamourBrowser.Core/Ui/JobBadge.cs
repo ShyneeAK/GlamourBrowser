@@ -24,18 +24,21 @@ public static class JobBadges
     /// <summary>Gear for exactly one job (its base class may be listed too), e.g. artifact gear.</summary>
     public static bool IsSingleJob(IReadOnlySet<uint> jobs, Func<uint, uint> parentOf) => CollapseClasses(jobs, parentOf).Count == 1;
 
-    /// <summary>One job → its icon; all jobs in one role → the role icon; mixed, none or every job → no badge.</summary>
-    public static JobBadge For(IReadOnlySet<uint> jobs, Func<uint, JobGroup> groupOf, int allJobsCount)
+    /// <summary>
+    /// One job → its icon; all jobs in one role → the role icon; mixed, none or every job → no badge.
+    /// A job <paramref name="groupOf"/> does not know (null) gives no badge rather than a guessed role.
+    /// </summary>
+    public static JobBadge For(IReadOnlySet<uint> jobs, Func<uint, JobGroup?> groupOf, int allJobsCount)
     {
         if (jobs.Count == 0 || jobs.Count >= allJobsCount)
             return default;
         if (jobs.Count == 1)
         {
             var job = jobs.First();
-            return new JobBadge(JobBadgeKind.Job, job, groupOf(job));
+            return groupOf(job) is { } group ? new JobBadge(JobBadgeKind.Job, job, group) : default;
         }
 
         var groups = jobs.Select(groupOf).Distinct().ToList();
-        return groups.Count == 1 ? new JobBadge(JobBadgeKind.Role, 0, groups[0]) : default;
+        return groups is [{ } only] ? new JobBadge(JobBadgeKind.Role, 0, only) : default;
     }
 }
