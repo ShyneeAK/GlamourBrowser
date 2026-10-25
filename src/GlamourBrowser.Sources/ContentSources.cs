@@ -19,7 +19,7 @@ public static class ContentSources
         {
             if (!relevant.Contains(itemId) || !duties.TryGetRow(cfcId, out var cfc))
                 return;
-            builder.Add(itemId, new ItemSource(CategoryOf(cfc, englishDuties), Capitalize(cfc.Name.ExtractText()), detail, new DutyFinder(cfcId)));
+            builder.Add(itemId, new ItemSource(CategoryOf(cfc, englishDuties), Capitalize(cfc.Name.ExtractText()), detail, DutyFinderFor(cfc)));
         }
 
         foreach (var drop in SupplementalCsv.Load<DungeonBossDrop>(data, CsvLoader.DungeonBossDropResourceName, log))
@@ -99,9 +99,15 @@ public static class ContentSources
                 continue;
             var via = items.TryGetRow(chain.ViaItemId, out var viaItem) ? viaItem.Name.ExtractText() : "";
             var detail = chain.Kind == ChainKind.Coffer ? $"aus {via}" : $"über {via}";
-            builder.Add(chain.ItemId, new ItemSource(CategoryOf(cfc, englishDuties), Capitalize(cfc.Name.ExtractText()), detail, new DutyFinder(chain.DutyId)));
+            builder.Add(chain.ItemId, new ItemSource(CategoryOf(cfc, englishDuties), Capitalize(cfc.Name.ExtractText()), detail, DutyFinderFor(cfc)));
         }
     }
+
+    /// <summary>
+    /// Only duties the duty finder lists (a sort position) get the button; treasure map and deep dungeons, Eureka or
+    /// Bozja are entered elsewhere. IsInDutyFinder does not tell: it is false for ultimates and the newest savage tier too.
+    /// </summary>
+    private static DutyFinder? DutyFinderFor(ContentFinderCondition cfc) => cfc.SortKey > 0 ? new DutyFinder(cfc.RowId) : null;
 
     internal static SourceCategory CategoryOf(ContentFinderCondition cfc, Lumina.Excel.ExcelSheet<ContentFinderCondition>? english)
     {
