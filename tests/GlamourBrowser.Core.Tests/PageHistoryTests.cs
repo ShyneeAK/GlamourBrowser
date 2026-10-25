@@ -66,13 +66,17 @@ public class PageHistoryTests
     }
 
     [Fact]
+    public void MaxPages_AllowsAHundredPagesInTheCache()
+        => Assert.Equal(100, PageHistory.MaxPages);
+
+    [Fact]
     public void Show_KeepsAtMostMaxPagesBeforeTheCurrent()
     {
         var history = new PageHistory();
         for (var i = 1u; i <= PageHistory.MaxPages + 10; i++)
             history.Show(Page(i));
 
-        var before = history.Before(100).ToList();
+        var before = history.Before(PageHistory.MaxPages + 10).ToList();
         Assert.Equal(PageHistory.MaxPages, before.Count);
         Assert.Equal(Key(PageHistory.MaxPages + 9), before[0]);
     }

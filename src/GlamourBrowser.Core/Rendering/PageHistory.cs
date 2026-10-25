@@ -7,7 +7,7 @@ namespace GlamourBrowser.Core.Rendering;
 public sealed class PageHistory
 {
     /// <summary>The most pages kept before the current one.</summary>
-    public const int MaxPages = 20;
+    public const int MaxPages = 100;
 
     private readonly List<IReadOnlyList<TileKey>> pages = new();
 

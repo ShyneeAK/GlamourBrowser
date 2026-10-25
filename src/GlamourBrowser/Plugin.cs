@@ -70,11 +70,12 @@ public sealed class Plugin : IDalamudPlugin
     public Plugin()
     {
         config = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-        if (config.Version < 2)
+        if (config.Version < 3)
         {
-            // Saved before the page cache default went up: the old default would stay otherwise.
-            config.CachedPages = 8;
-            config.Version = 2;
+            // Saved before the page cache default went up: an old default would stay otherwise (a chosen value stays).
+            if (config.Version < 2 || config.CachedPages == 8)
+                config.CachedPages = 10;
+            config.Version = 3;
             config.Save();
         }
         calibration = new CalibrationService(config);
