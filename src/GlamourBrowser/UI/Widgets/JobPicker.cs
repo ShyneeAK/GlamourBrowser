@@ -11,14 +11,16 @@ namespace GlamourBrowser.UI.Widgets;
 
 /// <summary>
 /// Job icons grouped by role: a click chooses or drops a job, a click on a group's name chooses the whole group,
-/// "Alle Jobs" clears. Meant to be drawn inside a popup, which stays open for more clicks.
+/// "Alle Jobs" clears; "Nur job-exklusive" switches from gear any chosen job can wear to gear made for them alone.
+/// Meant to be drawn inside a popup, which stays open for more clicks.
 /// </summary>
 public static class JobPicker
 {
     private const int PerRow = 8;
 
     /// <param name="groups">Every job (and class) of <paramref name="jobs"/> with its group.</param>
-    public static bool Draw(string id, JobCatalog jobs, IReadOnlyList<(uint Id, JobGroup Group)> groups, ref IReadOnlySet<uint> selected, Theme.Theme theme)
+    public static bool Draw(string id, JobCatalog jobs, IReadOnlyList<(uint Id, JobGroup Group)> groups, ref IReadOnlySet<uint> selected,
+                            ref bool exclusive, Theme.Theme theme)
     {
         var changed = false;
         if (ImGui.Selectable("Alle Jobs", selected.Count == 0, ImGuiSelectableFlags.DontClosePopups))
@@ -26,6 +28,11 @@ public static class JobPicker
             selected = new HashSet<uint>();
             changed = true;
         }
+        changed |= ImGui.Checkbox($"Nur job-exklusive##{id}-exclusive", ref exclusive);
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip(exclusive
+                ? "An: nur Ausrüstung, die für die gewählten Jobs gemacht ist (keine, die auch andere Jobs tragen)"
+                : "Aus: alles, was einer der gewählten Jobs tragen kann");
 
         var size = new Vector2(32, 32) * UiScale.Global;
         foreach (var group in jobs.All.GroupBy(j => j.Group))

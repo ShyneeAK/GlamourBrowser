@@ -32,7 +32,7 @@ public static class ItemFilter
                                                      Func<uint, float>? patchOf, Func<uint, uint>? parentOf)
     {
         var search = filter.SearchText.Trim();
-        var jobs = new JobFilter(filter.Jobs, parentOf ?? (job => job));
+        var jobs = new JobFilter(filter.Jobs, parentOf ?? (job => job), filter.JobsExclusive);
         return items
             .Where(i => search.Length == 0 || i.Name.Contains(search, StringComparison.OrdinalIgnoreCase))
             .Where(i => filter.Slots.Count == 0 || filter.Slots.Contains(i.Slot))

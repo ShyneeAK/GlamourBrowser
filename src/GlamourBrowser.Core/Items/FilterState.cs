@@ -17,8 +17,10 @@ public sealed record FilterState
 
     /// <summary>What the grid shows; the slots only apply to <see cref="BrowseMode.Items"/>.</summary>
     public BrowseMode Mode { get; init; }
-    /// <summary>Gear made for these jobs (see <see cref="JobFilter"/>); empty means every item.</summary>
+    /// <summary>Gear these jobs can wear (see <see cref="JobFilter"/>); empty means every item.</summary>
     public IReadOnlySet<uint> Jobs { get; init; } = new HashSet<uint>();
+    /// <summary>Only gear made for the chosen jobs alone ("Nur job-exklusive"), not gear other jobs can wear too.</summary>
+    public bool JobsExclusive { get; init; }
     public int MinLevel { get; init; } = 1;
     public int MaxLevel { get; init; } = 100;
     /// <summary>Only items with at least one dye channel ("Nur Färbbare").</summary>

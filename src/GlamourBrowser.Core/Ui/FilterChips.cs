@@ -33,6 +33,8 @@ public static class FilterChips
         {
             foreach (var part in jobParts(state.Jobs))
                 chips.Add(new FilterChip(part.Label, state with { Jobs = state.Jobs.Where(j => !part.Ids.Contains(j)).ToHashSet() }));
+            if (state.JobsExclusive)
+                chips.Add(new FilterChip("Nur job-exklusive", state with { JobsExclusive = false }));
         }
 
         if (state.MinLevel != defaults.MinLevel || state.MaxLevel != defaults.MaxLevel)

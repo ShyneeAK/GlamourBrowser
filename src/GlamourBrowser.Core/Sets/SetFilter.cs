@@ -16,7 +16,7 @@ public static class SetFilter
         Func<uint, IReadOnlySet<SourceCategory>>? categoriesOf = null, Func<uint, float>? patchOf = null, Func<uint, uint>? parentOf = null)
     {
         var search = filter.SearchText.Trim();
-        var jobs = new JobFilter(filter.Jobs, parentOf ?? (job => job));
+        var jobs = new JobFilter(filter.Jobs, parentOf ?? (job => job), filter.JobsExclusive);
         var withoutCategories = sets
             .Where(s => search.Length == 0 || s.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
                         || s.Pieces.Any(p => p.Name.Contains(search, StringComparison.OrdinalIgnoreCase)))

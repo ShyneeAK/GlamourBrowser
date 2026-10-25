@@ -71,8 +71,9 @@ public sealed class TopBar
             PopupButton.Draw("jobpicker", jobLabel, () =>
             {
                 var selected = state.Filter.Jobs;
-                if (JobPicker.Draw("jobs", jobs, jobGroups, ref selected, theme))
-                    state.Filter = state.Filter with { Jobs = selected };
+                var exclusive = state.Filter.JobsExclusive;
+                if (JobPicker.Draw("jobs", jobs, jobGroups, ref selected, ref exclusive, theme))
+                    state.Filter = state.Filter with { Jobs = selected, JobsExclusive = exclusive };
             });
         }
         DisabledHint(onlySearch);

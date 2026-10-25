@@ -49,6 +49,15 @@ public class FilterChipsTests
     }
 
     [Fact]
+    public void ExclusiveJobs_HaveAChipOnlyWithJobs()
+    {
+        var chips = Chips(new FilterState { Jobs = new HashSet<uint> { 19 }, JobsExclusive = true });
+        Assert.Equal(["PLD", "Nur job-exklusive"], chips.Select(c => c.Label));
+        Assert.False(chips[1].WithoutThis.JobsExclusive);
+        Assert.Empty(Chips(new FilterState { JobsExclusive = true }));
+    }
+
+    [Fact]
     public void DyeChip_RemovesTheDyeFilter()
         => Assert.False(Assert.Single(Chips(new FilterState { DyeableOnly = true })).WithoutThis.DyeableOnly);
 

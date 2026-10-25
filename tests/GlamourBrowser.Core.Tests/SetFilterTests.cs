@@ -35,15 +35,24 @@ public class SetFilterTests
     }
 
     [Fact]
-    public void Job_EveryArmourPieceMadeForThatJob()
+    public void Job_EveryArmourPieceTheJobCanWear()
+    {
+        Assert.Equal([2u], Ids(Apply(new FilterState { Jobs = new HashSet<uint> { 19 } }).Results));
+        Assert.Equal([1u], Ids(Apply(new FilterState { Jobs = new HashSet<uint> { 39 } }).Results));
+        // A gladiator wears neither: B's body piece is for paladins only.
+        Assert.Empty(Apply(new FilterState { Jobs = new HashSet<uint> { 21 } }).Results);
+    }
+
+    [Fact]
+    public void Job_Exclusive_EveryArmourPieceMadeForThatJob()
     {
         // B's helmet fits two jobs: not job gear. C is: the accessory does not count while there is armour.
         var c = Set(3, "Paladin-Set", 90, Item(31, "Paladin-Helm", Head, [19]), Item(32, "Paladin-Panzer", Body, [1, 19]),
                     Item(33, "Ohrringe", Ears, [19, 21, 30]));
-        Assert.Equal([3u], Ids(Apply(new FilterState { Jobs = new HashSet<uint> { 19 } }, sets: [A, B, c]).Results));
-        Assert.Empty(Apply(new FilterState { Jobs = new HashSet<uint> { 21 } }, sets: [A, B, c]).Results);
+        Assert.Equal([3u], Ids(Apply(new FilterState { Jobs = new HashSet<uint> { 19 }, JobsExclusive = true }, sets: [A, B, c]).Results));
+        Assert.Empty(Apply(new FilterState { Jobs = new HashSet<uint> { 21 }, JobsExclusive = true }, sets: [A, B, c]).Results);
         // Both tank jobs of B's helmet chosen: now all of B's armour is gear for them.
-        Assert.Equal([2u, 3u], Ids(Apply(new FilterState { Jobs = new HashSet<uint> { 19, 21 } }, sets: [A, B, c]).Results).Order().ToArray());
+        Assert.Equal([2u, 3u], Ids(Apply(new FilterState { Jobs = new HashSet<uint> { 19, 21 }, JobsExclusive = true }, sets: [A, B, c]).Results).Order().ToArray());
     }
 
     [Fact]
