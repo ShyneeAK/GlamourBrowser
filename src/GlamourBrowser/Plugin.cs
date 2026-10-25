@@ -98,7 +98,7 @@ public sealed class Plugin : IDalamudPlugin
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
-            HelpMessage = "Öffnet den GlamourBrowser. /gbrowser diag schreibt den Waffenzustand aller Ansichten ins Log.",
+            HelpMessage = "Öffnet den GlamourBrowser. /gbrowser diag schreibt den Waffenzustand aller Ansichten ins Log, /gbrowser plate den Zustand des Glamour-Plate-Editors.",
         });
 
         PluginInterface.UiBuilder.Draw += windowSystem.Draw;
@@ -109,6 +109,11 @@ public sealed class Plugin : IDalamudPlugin
     private void OnCommand(string command, string args)
     {
         var parts = args.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length > 0 && parts[0] == "plate")
+        {
+            Framework.RunOnFrameworkThread(() => GlamourPlate.PlateDiagnostics.Run(parts[1..]));
+            return;
+        }
         if (parts.Length == 0 || parts[0] != "diag")
         {
             mainWindow.Toggle();
