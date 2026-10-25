@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
@@ -22,6 +23,8 @@ public sealed class TopBar
     private readonly JobCatalog jobs;
     private readonly Configuration config;
     private readonly Theme.Theme theme;
+    // Every job and class with its group, for choosing whole groups and naming the choice.
+    private readonly IReadOnlyList<(uint Id, JobGroup Group)> jobGroups;
     private string search = "";
     private bool searchActive;
 
@@ -31,6 +34,7 @@ public sealed class TopBar
         this.jobs = jobs;
         this.config = config;
         this.theme = theme;
+        jobGroups = jobs.All.Select(j => (j.Id, j.Group)).ToList();
     }
 
     public void Draw()
@@ -58,17 +62,18 @@ public sealed class TopBar
 
         // Job and sort do not apply to the wishlist (newest entry first).
         var wishlistMode = state.Filter.Wishlist;
-        var jobLabel = state.Filter.ClassJobId is { } id ? jobs.Find(id)?.Abbreviation ?? "Job" : "Job";
+        var jobLabel = JobSelection.Label(JobParts(state.Filter.Jobs));
         NextOnLine(ImGui.CalcTextSize(jobLabel).X + ImGui.GetStyle().FramePadding.X * 2);
         using (ImRaii.Disabled(wishlistMode))
         {
             PopupButton.Draw("jobpicker", jobLabel, () =>
             {
-                var selected = state.Filter.ClassJobId;
-                if (JobPicker.Draw("jobs", jobs, ref selected, theme))
-                    state.Filter = state.Filter with { ClassJobId = selected };
+                var selected = state.Filter.Jobs;
+                if (JobPicker.Draw("jobs", jobs, jobGroups, ref selected, theme))
+                    state.Filter = state.Filter with { Jobs = selected };
             });
         }
+        DisabledHint(wishlistMode);
 
         NextOnLine(130 * scale);
         ImGui.SetNextItemWidth(130 * scale);
@@ -84,6 +89,7 @@ public sealed class TopBar
             if (ImGui.Combo("##sort", ref sort, ["Nach Level", "Neueste zuerst"], 2))
                 state.SetSort((SortOrder)sort);
         }
+        DisabledHint(wishlistMode);
 
         // A picker instead of drag fields: its grid shows the size and takes a new one with one click.
         var columns = config.Columns;
@@ -110,7 +116,7 @@ public sealed class TopBar
 
     private void DrawChips()
     {
-        var chips = FilterChips.From(state.Filter, SlotName, JobName);
+        var chips = FilterChips.From(state.Filter, SlotName, JobParts);
         if (chips.Count == 0)
             return;
 
@@ -137,4 +143,13 @@ public sealed class TopBar
     private static string SlotName(EquipSlot slot) => SlotNames.All.FirstOrDefault(s => s.Slot == slot).Name ?? slot.ToString();
 
     private string JobName(uint id) => jobs.Find(id)?.Abbreviation ?? id.ToString();
+
+    private IReadOnlyList<JobPart> JobParts(IReadOnlySet<uint> selected) => JobSelection.Parts(selected, jobGroups, JobName);
+
+    /// <summary>Why the control before it is grayed out in the wishlist mode.</summary>
+    private static void DisabledHint(bool wishlistMode)
+    {
+        if (wishlistMode && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip("gilt nicht für die Wunschliste");
+    }
 }

@@ -42,8 +42,20 @@ public class ItemFilterTests
             Item(1, "Tank", EquipSlot.Body, jobs: [19, 21]), Item(2, "GLA PLD", EquipSlot.Body, jobs: [1, 19]), Item(3, "PLD", EquipSlot.Body, jobs: [19]),
             Item(4, "WHM", EquipSlot.Body, jobs: [24]), Item(5, "GLA", EquipSlot.Body, jobs: [1]), Item(6, "Alle", EquipSlot.Body, jobs: [1, 19, 21, 24]),
         };
-        Assert.Equal([2u, 3u], Ids(Apply(items, new FilterState { ClassJobId = 19 })).Order().ToArray());
-        Assert.Equal([4u], Ids(Apply(items, new FilterState { ClassJobId = 24 })));
+        Assert.Equal([2u, 3u], Ids(Apply(items, new FilterState { Jobs = new HashSet<uint> { 19 } })).Order().ToArray());
+        Assert.Equal([4u], Ids(Apply(items, new FilterState { Jobs = new HashSet<uint> { 24 } })));
+    }
+
+    [Fact]
+    public void Jobs_GearOnlyTheSelectedJobsWear()
+    {
+        // All crafters chosen (Carpenter 8, Blacksmith 9): gear for one or several of them, not gear a gatherer (16) wears too.
+        var items = new[]
+        {
+            Item(1, "CRP", EquipSlot.MainHand, jobs: [8]), Item(2, "BSM", EquipSlot.MainHand, jobs: [9]), Item(3, "Handwerker", EquipSlot.Body, jobs: [8, 9]),
+            Item(4, "Handwerker und Sammler", EquipSlot.Body, jobs: [8, 9, 16]), Item(5, "MIN", EquipSlot.MainHand, jobs: [16]),
+        };
+        Assert.Equal([1u, 2u, 3u], Ids(Apply(items, new FilterState { Jobs = new HashSet<uint> { 8, 9 } })).Order().ToArray());
     }
 
     [Fact]

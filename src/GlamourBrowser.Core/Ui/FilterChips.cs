@@ -9,7 +9,8 @@ public sealed record FilterChip(string Label, FilterState WithoutThis);
 /// <summary>One removable chip per active filter, in a fixed order; in the wishlist mode only the filters that apply there.</summary>
 public static class FilterChips
 {
-    public static IReadOnlyList<FilterChip> From(FilterState state, Func<EquipSlot, string> slotName, Func<uint, string> jobName)
+    /// <param name="jobParts">The job selection as whole groups and single jobs, see <see cref="JobSelection.Parts"/>.</param>
+    public static IReadOnlyList<FilterChip> From(FilterState state, Func<EquipSlot, string> slotName, Func<IReadOnlySet<uint>, IReadOnlyList<JobPart>> jobParts)
     {
         var defaults = new FilterState();
         var chips = new List<FilterChip>();
@@ -30,8 +31,11 @@ public static class FilterChips
         foreach (var slot in Enum.GetValues<EquipSlot>().Where(state.Slots.Contains))
             chips.Add(new FilterChip(slotName(slot), state with { Slots = state.Slots.Where(s => s != slot).ToHashSet() }));
 
-        if (state.ClassJobId is { } job)
-            chips.Add(new FilterChip(jobName(job), state with { ClassJobId = null }));
+        if (state.Jobs.Count > 0)
+        {
+            foreach (var part in jobParts(state.Jobs))
+                chips.Add(new FilterChip(part.Label, state with { Jobs = state.Jobs.Where(j => !part.Ids.Contains(j)).ToHashSet() }));
+        }
 
         if (state.MinLevel != defaults.MinLevel || state.MaxLevel != defaults.MaxLevel)
             chips.Add(new FilterChip($"Level {state.MinLevel}–{state.MaxLevel}", state with { MinLevel = defaults.MinLevel, MaxLevel = defaults.MaxLevel }));

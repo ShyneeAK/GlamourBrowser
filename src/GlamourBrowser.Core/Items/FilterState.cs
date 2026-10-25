@@ -20,8 +20,8 @@ public sealed record FilterState
 
     /// <summary>The grid shows the wishlist (the star of the slot bar); only the search applies.</summary>
     public bool Wishlist { get; init; }
-    /// <summary>Gear made for this one job (see <see cref="JobFilter"/>).</summary>
-    public uint? ClassJobId { get; init; }
+    /// <summary>Gear made for these jobs (see <see cref="JobFilter"/>); empty means every item.</summary>
+    public IReadOnlySet<uint> Jobs { get; init; } = new HashSet<uint>();
     public int MinLevel { get; init; } = 1;
     public int MaxLevel { get; init; } = 100;
     /// <summary>Only items with at least one dye channel ("Nur Färbbare").</summary>

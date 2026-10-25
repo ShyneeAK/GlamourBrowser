@@ -7,8 +7,9 @@ namespace GlamourBrowser.Core.Tests;
 public class FilterChipsTests
 {
     private static string SlotName(EquipSlot s) => s switch { EquipSlot.Head => "Kopf", EquipSlot.Feet => "Füße", _ => s.ToString() };
-    private static string JobName(uint id) => id == 19 ? "PLD" : "?";
-    private static IReadOnlyList<FilterChip> Chips(FilterState s) => FilterChips.From(s, SlotName, JobName);
+    private static readonly IReadOnlyList<(uint Id, JobGroup Group)> Jobs = [(19, JobGroup.Tank), (21, JobGroup.Tank), (8, JobGroup.Crafter), (9, JobGroup.Crafter)];
+    private static string JobName(uint id) => id switch { 19 => "PLD", 21 => "WAR", 8 => "CRP", 9 => "BSM", _ => "?" };
+    private static IReadOnlyList<FilterChip> Chips(FilterState s) => FilterChips.From(s, SlotName, jobs => JobSelection.Parts(jobs, Jobs, JobName));
 
     [Fact]
     public void NoActiveFilters_NoChips() => Assert.Empty(Chips(new FilterState()));
@@ -20,7 +21,7 @@ public class FilterChipsTests
         {
             SearchText = "robe",
             Slots = new HashSet<EquipSlot> { EquipSlot.Head, EquipSlot.Feet },
-            ClassJobId = 19,
+            Jobs = new HashSet<uint> { 19 },
             MinLevel = 50,
             MaxLevel = 70,
             DyeableOnly = true,
@@ -39,11 +40,19 @@ public class FilterChipsTests
     [Fact]
     public void Chips_RemoveSlot()
     {
-        var state = new FilterState { Slots = new HashSet<EquipSlot> { EquipSlot.Head, EquipSlot.Feet }, ClassJobId = 19 };
+        var state = new FilterState { Slots = new HashSet<EquipSlot> { EquipSlot.Head, EquipSlot.Feet }, Jobs = new HashSet<uint> { 19 } };
         var without = Chips(state).Single(c => c.Label == "Kopf").WithoutThis;
 
         Assert.Equal(new HashSet<EquipSlot> { EquipSlot.Feet }, without.Slots);
-        Assert.Equal(19u, without.ClassJobId);
+        Assert.Equal(new HashSet<uint> { 19 }, without.Jobs);
+    }
+
+    [Fact]
+    public void JobChips_OnePerGroupOrJob_AndRemoveOnlyTheirJobs()
+    {
+        var chips = Chips(new FilterState { Jobs = new HashSet<uint> { 19, 8, 9 } });
+        Assert.Equal(["PLD", "Handwerk"], chips.Select(c => c.Label));
+        Assert.Equal(new HashSet<uint> { 19 }, chips[1].WithoutThis.Jobs);
     }
 
     [Fact]
@@ -93,7 +102,7 @@ public class FilterChipsTests
     public void WishlistMode_ShowsOnlySearchAndWishlistChips()
     {
         // The other filters keep their state for later, but do not apply to the wishlist.
-        var state = new FilterState { Wishlist = true, SearchText = "robe", ClassJobId = 19, MinLevel = 50, Ownership = OwnershipFilter.Owned };
+        var state = new FilterState { Wishlist = true, SearchText = "robe", Jobs = new HashSet<uint> { 19 }, MinLevel = 50, Ownership = OwnershipFilter.Owned };
         Assert.Equal(["Suche: robe", "Wunschliste"], Chips(state).Select(c => c.Label));
     }
 }
