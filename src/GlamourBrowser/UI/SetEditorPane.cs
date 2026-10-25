@@ -8,6 +8,7 @@ using GlamourBrowser.Core.CustomSets;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.CustomSets;
 using GlamourBrowser.Data;
+using GlamourBrowser.GlamourPlate;
 using GlamourBrowser.UI.Widgets;
 
 namespace GlamourBrowser.UI;
@@ -22,9 +23,11 @@ public sealed class SetEditorPane
     private readonly BrowserState state;
     private readonly DyeCatalog dyes;
     private readonly Theme.Theme theme;
+    private readonly GlamourPlateBridge plates;
 
-    public SetEditorPane(CustomSetEditor editor, BrowserState state, DyeCatalog dyes, Theme.Theme theme)
+    public SetEditorPane(CustomSetEditor editor, BrowserState state, DyeCatalog dyes, Theme.Theme theme, GlamourPlateBridge plates)
     {
+        this.plates = plates;
         this.editor = editor;
         this.state = state;
         this.dyes = dyes;
@@ -57,6 +60,8 @@ public sealed class SetEditorPane
         ImGui.SameLine();
         if (ImGui.Button("Verwerfen"))
             editor.Discard();
+        ImGui.SameLine();
+        PlateTransferUi.DrawButton(plates, draft.Pieces);
 
         DrawDiscardQuestion();
     }

@@ -20,6 +20,7 @@ using GlamourBrowser.Rendering;
 using GlamourBrowser.UI.Widgets;
 using GlamourBrowser.Wishlist;
 using GlamourBrowser.CustomSets;
+using GlamourBrowser.GlamourPlate;
 
 namespace GlamourBrowser.UI;
 
@@ -38,6 +39,7 @@ public sealed unsafe class LivePane
     private readonly DyeCatalog dyes;
     private readonly CustomSetEditor editor;
     private readonly SetEditorPane editorPane;
+    private readonly GlamourPlateBridge plates;
     private readonly HashSet<(uint Item, SourceCategory Category)> expanded = new();
     // Pieces of the selected set whose sources are open.
     private readonly HashSet<uint> openPieces = new();
@@ -45,8 +47,9 @@ public sealed unsafe class LivePane
 
     public LivePane(BrowserState state, OwnershipService ownership, LivePreview live, CalibrationService calibration, JobCatalog jobs, Theme.Theme theme,
                     SourceService sources, WishlistService wishlist, CustomSetService customSets, DyeCatalog dyes, CustomSetEditor editor,
-                    SetEditorPane editorPane)
+                    SetEditorPane editorPane, GlamourPlateBridge plates)
     {
+        this.plates = plates;
         this.editor = editor;
         this.editorPane = editorPane;
         this.sources = sources;
@@ -70,6 +73,7 @@ public sealed unsafe class LivePane
         using var card = ImRaii.Child("##itemcard", Vector2.Zero, true);
         if (!card.Success)
             return;
+        PlateTransferUi.DrawResult(plates);
         // While a custom set is edited, the editor takes the card's place.
         if (editor.IsOpen)
             editorPane.Draw();
@@ -228,6 +232,8 @@ public sealed unsafe class LivePane
                 editor.StartEdit(stored);
             ImGui.SameLine();
             DrawDeleteButton(set);
+            if (customSets.Current?.Find(set.Set.Id.Value) is { } toTransfer)
+                PlateTransferUi.DrawButton(plates, toTransfer.Pieces);
         }
         ImGui.Separator();
 

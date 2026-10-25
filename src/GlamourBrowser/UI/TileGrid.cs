@@ -24,6 +24,7 @@ using GlamourBrowser.Sources;
 using GlamourBrowser.UI.Widgets;
 using GlamourBrowser.Wishlist;
 using GlamourBrowser.CustomSets;
+using GlamourBrowser.GlamourPlate;
 
 namespace GlamourBrowser.UI;
 
@@ -62,6 +63,7 @@ public sealed class TileGrid
     private readonly WishlistPlanView planView;
     private readonly CustomSetService customSets;
     private readonly CustomSetEditor editor;
+    private readonly GlamourPlateBridge plates;
     // A custom set keeps its id while it changes: its content hash and name are part of the key.
     private readonly Dictionary<((uint ItemId, SetId Set) Id, uint Variant, string Name), TileLabels> labels = new();
     private (float Width, float FontSize, int Ownership, bool SourcesReady) labelsFor;
@@ -69,13 +71,14 @@ public sealed class TileGrid
 
     public TileGrid(BrowserState state, TileCache<IDalamudTextureWrap> cache, RenderPool pool, OwnershipService ownership,
                     LivePreview live, Configuration config, Theme.Theme theme, SourceService sources, JobCatalog jobs,
-                    WishlistService wishlist, WishlistPlanView planView, CustomSetService customSets, CustomSetEditor editor)
+                    WishlistService wishlist, WishlistPlanView planView, CustomSetService customSets, CustomSetEditor editor, GlamourPlateBridge plates)
     {
         this.sources = sources;
         this.wishlist = wishlist;
         this.planView = planView;
         this.customSets = customSets;
         this.editor = editor;
+        this.plates = plates;
         this.jobs = jobs;
         this.theme = theme;
         this.state = state;
@@ -192,10 +195,7 @@ public sealed class TileGrid
                 editor.StartNew(CustomSetStore.DefaultName, []);
             if (ImGui.Selectable("Aktuelles Outfit"))
                 editor.StartFromOutfit();
-            using (ImRaii.Disabled())
-                ImGui.Selectable("Glamour-Plate");
-            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-                ImGui.SetTooltip("Glamour-Plates zuerst an der Kommode öffnen");
+            DrawPlateStart();
             ImGui.EndPopup();
         }
 
@@ -210,6 +210,28 @@ public sealed class TileGrid
             return false;
         }
         return true;
+    }
+
+    /// <summary>The start point "Glamour-Plate": one entry per saved plate with its number of pieces, once the game has the plates.</summary>
+    private void DrawPlateStart()
+    {
+        if (!ImGui.BeginMenu("Glamour-Plate", plates.PlatesLoaded))
+        {
+            if (!plates.PlatesLoaded && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                ImGui.SetTooltip("Glamour-Plates zuerst an der Kommode öffnen");
+            return;
+        }
+        for (var i = 0; i < plates.PlateCount; i++)
+        {
+            if (plates.ReadPlate(i) is not { } pieces)
+                continue;
+            if (ImGui.MenuItem($"Plate {i + 1} · {(pieces.Count == 1 ? "1 Teil" : $"{pieces.Count} Teile")}"))
+            {
+                editor.StartNew($"Glamour-Plate {i + 1}", pieces);
+                ImGui.CloseCurrentPopup();
+            }
+        }
+        ImGui.EndMenu();
     }
 
     /// <summary>The wishlist mode's hints, view switch and filter (tiles only), or the plan by source; false when no grid follows.</summary>
