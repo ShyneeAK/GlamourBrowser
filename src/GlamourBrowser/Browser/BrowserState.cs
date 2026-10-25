@@ -160,7 +160,7 @@ public sealed class BrowserState
 
     public TileKey KeyFor(TileSubject subject) => subject switch
     {
-        SetSubject set => TileKeys.ForSet(set.Set.Id, config.TileMode, appearance.Hash, RenderWidth, IdleStance.Pose),
+        SetSubject set => TileKeys.ForSet(set.Set.Id, config.TileMode, appearance.Hash, RenderWidth, IdleStance.Pose, set.Variant),
         ItemSubject { Item: var item } => new(item.Id, 0, 0, config.TileMode, appearance.Hash, RenderWidth,
                                               StanceFor(item) is var stance && stance.WeaponDrawn ? TileKey.StandardPose : stance.Pose, stance.WeaponDrawn),
         _ => throw new ArgumentOutOfRangeException(nameof(subject)),

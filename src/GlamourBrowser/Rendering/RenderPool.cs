@@ -217,9 +217,12 @@ public sealed unsafe class RenderPool : IDisposable
                     view.ApplyOutfit(appearance.Outfit, key.Mode, except);
                     worker.DressedAs = (key.Mode, key.AppearanceHash, except);
                 }
-                // Set keys carry no dye.
+                // Sets carry their dyes per slot (custom sets; none for detected ones), items the key's dye.
                 foreach (var piece in subject.Wear)
-                    view.SetItem(piece.Slot, piece.Id, key.Stain0, key.Stain1);
+                {
+                    var (stain0, stain1) = subject is SetSubject set ? set.StainsOf(piece.Slot) : (key.Stain0, key.Stain1);
+                    view.SetItem(piece.Slot, piece.Id, stain0, stain1);
+                }
                 // The weapon is drawn or sheathed once the item has loaded (Loading phase), and that has to finish
                 // first (DrawGate in the Pose phase).
                 view.ApplyCamera(cameraFor(subject.CameraSlot));

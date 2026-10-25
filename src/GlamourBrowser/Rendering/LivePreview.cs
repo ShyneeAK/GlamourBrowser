@@ -17,7 +17,8 @@ public sealed unsafe class LivePreview : IDisposable
     private readonly Func<EquipSlot, CameraPreset?> cameraFor;
     private CharaViewHandle? view;
     private CharaViewHandle? suspended;
-    private ((uint ItemId, SetId Set) Subject, TileMode Mode, ulong Hash, CameraPreset? Camera)? applied;
+    // The variant is a custom set's content hash: an edited set (or draft) is dressed again.
+    private ((uint ItemId, SetId Set) Subject, uint Variant, TileMode Mode, ulong Hash, CameraPreset? Camera)? applied;
     private byte? appliedPose;
     private float rotateX, rotateY, panX, panY, zoom;
     private bool reset;
@@ -111,12 +112,15 @@ public sealed unsafe class LivePreview : IDisposable
             return;
 
         var camera = cameraFor(subject.CameraSlot);
-        var wanted = (subject.Id, config.TileMode, appearance.Hash, camera);
+        var wanted = (subject.Id, (subject as SetSubject)?.Variant ?? 0, config.TileMode, appearance.Hash, camera);
         if (applied != wanted && view.IsIdle)
         {
             view.ApplyOutfit(appearance.Outfit, config.TileMode, subject.Slots);
             foreach (var piece in subject.Wear)
-                view.SetItem(piece.Slot, piece.Id, 0, 0);
+            {
+                var (stain0, stain1) = subject is SetSubject set ? set.StainsOf(piece.Slot) : ((byte)0, (byte)0);
+                view.SetItem(piece.Slot, piece.Id, stain0, stain1);
+            }
             view.ApplyCamera(camera);
             applied = wanted;
             appliedPose = null;
