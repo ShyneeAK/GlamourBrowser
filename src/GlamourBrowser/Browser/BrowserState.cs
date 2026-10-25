@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Interface.Textures.TextureWraps;
@@ -135,15 +136,17 @@ public sealed class BrowserState
             var store = ownership.Current;
             // Categories and patches only once the background index is ready; the sort always comes from the config.
             var index = sources.IsReady ? sources.Index : null;
-            Results = ItemFilter.Apply(catalog, filter with { Sort = config.Sort }, id => store?.IsOwned(id) ?? false, appearance.Race, appearance.Sex,
-                index == null ? null : index.CategoriesOf, index == null ? null : index.PatchOf);
-            PageIndex = ItemFilter.ClampPage(PageIndex, Results.Count, PageSize);
-            if (index != null)
+            Func<uint, bool> isOwned = id => store?.IsOwned(id) ?? false;
+            if (index == null)
+                Results = ItemFilter.Apply(catalog, filter with { Sort = config.Sort }, isOwned, appearance.Race, appearance.Sex);
+            else
             {
-                var withoutCategories = ItemFilter.Apply(catalog, filter with { Categories = new HashSet<SourceCategory>() }, id => store?.IsOwned(id) ?? false,
+                // One pass for both: the numbers behind the category checkboxes ignore the categories themselves.
+                (Results, var withoutCategories) = ItemFilter.ApplyWithCategoryBase(catalog, filter with { Sort = config.Sort }, isOwned,
                     appearance.Race, appearance.Sex, index.CategoriesOf, index.PatchOf);
                 CountsWithoutCategories = index.Counts(withoutCategories.Select(i => i.Id));
             }
+            PageIndex = ItemFilter.ClampPage(PageIndex, Results.Count, PageSize);
             RequestTiles();
         }
     }

@@ -54,4 +54,22 @@ public class ItemFilterSourceTests
         var filter = new FilterState { Sort = SortOrder.Newest };
         Assert.Equal([2u, 1u], Apply([Item(1, 50), Item(2, 90)], filter, null, null));
     }
+
+    [Fact]
+    public void WithCategoryBase_ResultsAsApply_BaseSkipsOnlyTheCategoryFilter()
+    {
+        var categories = new Dictionary<uint, IReadOnlySet<SourceCategory>>
+        {
+            [1] = new HashSet<SourceCategory> { SourceCategory.RaidSavage },
+            [2] = new HashSet<SourceCategory> { SourceCategory.Crafting },
+            [3] = new HashSet<SourceCategory> { SourceCategory.RaidSavage },
+        };
+        var items = new[] { Item(1, 50), Item(2, 60), Item(3, 10) };
+        var filter = new FilterState { MinLevel = 20, Categories = new HashSet<SourceCategory> { SourceCategory.RaidSavage } };
+
+        var (results, withoutCategories) = ItemFilter.ApplyWithCategoryBase(items, filter, _ => false, 1, 0, id => categories[id], null);
+
+        Assert.Equal(Apply(items, filter, id => categories[id], null), results.Select(i => i.Id).ToArray());
+        Assert.Equal([1u, 2u], withoutCategories.Select(i => i.Id).Order().ToArray());   // the level filter still applies
+    }
 }
