@@ -23,6 +23,7 @@ public static class UiScale
     /// <summary>Dalamud's global scale times the plugin's factor, for fixed pixel sizes.</summary>
     public static float Global => ImGuiHelpers.GlobalScale * Factor;
 
+    /// <summary>Rebuilds the fonts for a new factor. Not while one of them is pushed: disposing a pushed font handle throws.</summary>
     public static void Set(float factor)
     {
         factor = Math.Clamp(factor, Min, Max);
@@ -33,10 +34,10 @@ public static class UiScale
         if (factor == 1f)
             return;
 
-        var size = UiBuilder.DefaultFontSizePx * factor;
+        // The size is read on every build, so a rebuild after a change of Dalamud's font size picks up the new base.
         var atlas = Plugin.PluginInterface.UiBuilder.FontAtlas;
-        text = atlas.NewDelegateFontHandle(e => e.OnPreBuild(tk => tk.AddDalamudDefaultFont(size)));
-        icons = atlas.NewDelegateFontHandle(e => e.OnPreBuild(tk => tk.AddFontAwesomeIconFont(new SafeFontConfig { SizePx = size })));
+        text = atlas.NewDelegateFontHandle(e => e.OnPreBuild(tk => tk.AddDalamudDefaultFont(UiBuilder.DefaultFontSizePx * factor)));
+        icons = atlas.NewDelegateFontHandle(e => e.OnPreBuild(tk => tk.AddFontAwesomeIconFont(new SafeFontConfig { SizePx = UiBuilder.DefaultFontSizePx * factor })));
     }
 
     /// <summary>Pushes the scaled text font; wrap a whole window in it.</summary>

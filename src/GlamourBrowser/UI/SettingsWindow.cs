@@ -20,6 +20,7 @@ public sealed class SettingsWindow : Window
     private IDisposable? themeScope;
     private IDisposable? fontScope;
     private int? scaleDraft;
+    private float? pendingScale;
 
     private static readonly string[] AccentNames = ["Blau", "Violett", "Türkis", "Rosé", "Bernstein"];
 
@@ -37,6 +38,13 @@ public sealed class SettingsWindow : Window
     public override void PreDraw()
     {
         themeScope = theme.Push();
+        // A new scale takes effect here, while none of the plugin's fonts is pushed: Dalamud refuses to dispose
+        // a font handle that is still pushed.
+        if (pendingScale is { } scale)
+        {
+            UiScale.Set(scale);
+            pendingScale = null;
+        }
         // Before Begin, so the title bar scales too.
         fontScope = UiScale.PushText();
     }
@@ -83,7 +91,7 @@ public sealed class SettingsWindow : Window
         {
             config.UiScale = percent / 100f;
             config.Save();
-            UiScale.Set(config.UiScale);
+            pendingScale = config.UiScale;
             scaleDraft = null;
         }
 
