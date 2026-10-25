@@ -16,11 +16,15 @@ public sealed unsafe class AppearanceTracker : IDisposable
     public byte Race { get; private set; } = 1;
     public byte Sex { get; private set; }
 
-    /// <summary>The player's idle pose (C-Pose index); a change raises <see cref="Changed"/> as well.</summary>
+    /// <summary>The player's idle pose (C-Pose index); a change alone raises <see cref="PoseChanged"/>.</summary>
     public byte IdlePose { get; private set; }
     public bool IsValid => Hash != 0;
 
+    /// <summary>The look (customize data or outfit) changed: every rendered tile is outdated.</summary>
     public event Action? Changed;
+
+    /// <summary>Only the idle pose changed: tiles keyed by the pose are re-requested, the others stay valid.</summary>
+    public event Action? PoseChanged;
 
     public AppearanceTracker()
     {
@@ -51,12 +55,17 @@ public sealed unsafe class AppearanceTracker : IDisposable
         if (hash == Hash && pose == IdlePose)
             return;
 
+        var lookChanged = hash != Hash;
         IdlePose = pose;
         Hash = hash;
         Outfit = outfit;
         Race = customize->Race;
         Sex = customize->Sex;
-        Changed?.Invoke();
+        // A look change re-requests all tiles anyway, the pose included.
+        if (lookChanged)
+            Changed?.Invoke();
+        else
+            PoseChanged?.Invoke();
     }
 
     private static ulong Fnv1a(ReadOnlySpan<byte> customize, OutfitSnapshot outfit)

@@ -38,6 +38,8 @@ public sealed class BrowserState
         (config.Columns, config.Rows) = PageLayout.ClampGrid(config.Columns, config.Rows);
 
         appearance.Changed += InvalidateTiles;
+        // The pose is part of the tile key: new keys render, the cache drops the old ones; with the standard pose nothing changes.
+        appearance.PoseChanged += RequestTiles;
         ownership.Changed += OnOwnershipChanged;
         pool.Disrupted += RequestTiles;
         sources.Ready += Refresh;
