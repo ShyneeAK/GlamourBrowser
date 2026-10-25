@@ -2,7 +2,7 @@
 
 A [Dalamud](https://github.com/goatcorp/Dalamud) plugin for Final Fantasy XIV that shows every equippable item as a paged grid of tiles, each one rendered on your own character.
 
-The user interface is in German. The plugin is not in the official Dalamud repository; build it yourself and load it as a dev plugin.
+The user interface is in German. The plugin is not in the official Dalamud repository; it comes from this repository's own plugin repository (see [Installation](#installation)).
 
 ## Features
 
@@ -14,6 +14,12 @@ The user interface is in German. The plugin is not in the official Dalamud repos
 - **Wishlist** for items and sets, with the missing pieces grouped by where to get them.
 - **My sets**: build your own outfits with dyes, like in the glamour dresser. Start from scratch, from your current outfit or from a glamour plate, import all glamour plates at once, and transfer a set into the open glamour plate editor.
 - **Render cache** with settings for how many recently shown pages stay rendered and how many are rendered ahead, plus an optional memory line (tile cache, VRAM, RAM).
+
+## Installation
+
+1. In the game, open the Dalamud settings with `/xlsettings` and go to **Experimental**.
+2. Under **Custom Plugin Repositories**, add `https://raw.githubusercontent.com/ShyneeAK/GlamourBrowser/main/repo.json`, tick **Enabled** and save.
+3. Open the plugin installer with `/xlplugins`, search for GlamourBrowser and install it.
 
 ## Usage
 
@@ -28,7 +34,9 @@ dotnet build GlamourBrowser.slnx -c Debug
 dotnet test tests/GlamourBrowser.Core.Tests
 ```
 
-To load it in the game, add `src/GlamourBrowser/bin/Debug/GlamourBrowser.dll` under Dalamud Settings → Experimental → Dev Plugin Locations and enable it in the plugin installer.
+To load your own build in the game, add `src/GlamourBrowser/bin/Debug/GlamourBrowser.dll` under Dalamud Settings → Experimental → Dev Plugin Locations and enable it in the plugin installer. Disable the installed GlamourBrowser first: Dalamud does not load two plugins with the same name.
+
+`tools/release.sh [version]` publishes a release: a Release build, a GitHub release with `latest.zip` and an updated `repo.json`.
 
 ## Project layout
 
