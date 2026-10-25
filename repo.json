@@ -1,0 +1,27 @@
+[
+  {
+    "Author": "ShyneeAK",
+    "Name": "GlamourBrowser",
+    "InternalName": "GlamourBrowser",
+    "AssemblyVersion": "0.1.0.0",
+    "Description": "Zeigt alle ausruestbaren Items als Seiten-Raster mit gerenderten Bildern des eigenen Charakters, filterbar, mit Besitzstatus und Fundort pro Item.",
+    "ApplicableVersion": "any",
+    "RepoUrl": "https://github.com/ShyneeAK/GlamourBrowser",
+    "Tags": [
+      "glamour",
+      "transmog"
+    ],
+    "DalamudApiLevel": 15,
+    "LoadRequiredState": 0,
+    "LoadSync": false,
+    "CanUnloadAsync": false,
+    "LoadPriority": 0,
+    "Punchline": "Glamour-Raster mit gerenderten Charakter-Kacheln.",
+    "AcceptsFeedback": true,
+    "DownloadLinkInstall": "https://github.com/ShyneeAK/GlamourBrowser/releases/download/v0.1.0.0/latest.zip",
+    "DownloadLinkUpdate": "https://github.com/ShyneeAK/GlamourBrowser/releases/download/v0.1.0.0/latest.zip",
+    "DownloadLinkTesting": "https://github.com/ShyneeAK/GlamourBrowser/releases/download/v0.1.0.0/latest.zip",
+    "IsTestingExclusive": false,
+    "LastUpdate": 1792944625
+  }
+]
