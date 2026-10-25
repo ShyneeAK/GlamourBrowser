@@ -9,11 +9,13 @@ namespace GlamourBrowser.UI.Widgets;
 /// <summary>Draws a game icon into a rectangle, or a FontAwesome glyph when the icon is missing.</summary>
 public static class GameIcon
 {
-    public static void DrawAt(ImDrawListPtr drawList, uint iconId, Vector2 min, Vector2 size, FontAwesomeIcon fallback, uint fallbackColor)
+    /// <param name="tint">Multiplies the game icon, e.g. to fade it; the fallback glyph uses <paramref name="fallbackColor"/>.</param>
+    public static void DrawAt(ImDrawListPtr drawList, uint iconId, Vector2 min, Vector2 size, FontAwesomeIcon fallback, uint fallbackColor,
+                              uint tint = 0xFFFFFFFF)
     {
         if (iconId != 0 && Plugin.TextureProvider.GetFromGameIcon(new GameIconLookup(iconId)).TryGetWrap(out var wrap, out _))
         {
-            drawList.AddImage(wrap.Handle, min, min + size);
+            drawList.AddImage(wrap.Handle, min, min + size, Vector2.Zero, Vector2.One, tint);
             return;
         }
 

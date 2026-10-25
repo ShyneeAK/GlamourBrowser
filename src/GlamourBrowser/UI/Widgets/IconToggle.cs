@@ -19,8 +19,9 @@ public static class IconToggle
         var drawList = ImGui.GetWindowDrawList();
         drawList.AddRectFilled(min, min + size, highlight ? colors.CardRaised : colors.Card, 6f);
         var pad = new Vector2(3, 3);
-        // Faded: the glyph at about 40 % alpha.
-        GameIcon.DrawAt(drawList, iconId, min + pad, size - pad * 2, fallback, enabled ? colors.TextMuted : (colors.TextMuted & 0x00FFFFFF) | 0x60000000);
+        // Faded: icon or glyph at about 40 % alpha.
+        GameIcon.DrawAt(drawList, iconId, min + pad, size - pad * 2, fallback, enabled ? colors.TextMuted : (colors.TextMuted & 0x00FFFFFF) | 0x60000000,
+                        enabled ? 0xFFFFFFFF : 0x60FFFFFF);
         if (active)
             drawList.AddRect(min, min + size, colors.Accent, 6f, ImDrawFlags.None, 2f);
         else if (highlight)

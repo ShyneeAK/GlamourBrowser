@@ -171,7 +171,7 @@ public sealed class TileGrid
         }
         if (store.Entries.Count == 0)
         {
-            ImGui.TextDisabled("Noch nichts auf der Wunschliste – Stern in der Item-Karte setzen");
+            ImGui.TextDisabled("Noch nichts auf der Wunschliste – Stern auf einer Kachel oder in der Item-Karte setzen");
             return false;
         }
 
@@ -273,12 +273,20 @@ public sealed class TileGrid
         const float rounding = 8f;
         var colors = theme.Colors;
         var pos = ImGui.GetCursorScreenPos();
-        if (ImGui.InvisibleButton($"##tile{subject.Id.ItemId}-{subject.Id.Set.Kind}{subject.Id.Set.Value}", size))
+        var clicked = ImGui.InvisibleButton($"##tile{subject.Id.ItemId}-{subject.Id.Set.Kind}{subject.Id.Set.Value}", size);
+        var hovered = ImGui.IsItemHovered();
+        // The star in the top-left corner puts the item or set on the wishlist; a click anywhere else selects the tile.
+        var starPos = pos + new Vector2(6, 5);
+        var starSize = WishStarSize();
+        var canWish = wishlist.Current != null;
+        var overStar = hovered && canWish && ImGui.IsMouseHoveringRect(starPos - new Vector2(3), starPos + starSize + new Vector2(3));
+        if (clicked && overStar)
+            wishlist.Toggle(subject);
+        else if (clicked)
         {
             state.Selected = subject;
             live.Select(subject);
         }
-        var hovered = ImGui.IsItemHovered();
 
         var drawList = ImGui.GetWindowDrawList();
         drawList.AddRectFilled(pos, pos + size, hovered ? colors.CardRaised : colors.Card, rounding);
@@ -322,8 +330,16 @@ public sealed class TileGrid
                 DrawTraitIcons(drawList, subject, text, shadeTop + new Vector2(textX, 6 + lineHeight * 2), size.X - 12, iconSize);
         }
 
-        // The star of a wish sits in the top-left corner; a render failure's marker moves right of it.
-        var markerX = wishlist.IsListed(subject) ? 6 + DrawWishStar(drawList, pos + new Vector2(6, 5)) + 3 : 6f;
+        // Amber when listed, faint on a hovered tile to show where to click; a render failure's marker moves right of it.
+        var listed = wishlist.IsListed(subject);
+        var showStar = listed || hovered && canWish;
+        if (showStar)
+        {
+            DrawWishStar(drawList, starPos, listed ? colors.Warning : overStar ? colors.Text : (colors.TextMuted & 0x00FFFFFF) | 0xA0000000);
+            if (overStar)
+                ImGui.SetTooltip(listed ? "Von der Wunschliste nehmen" : "Auf die Wunschliste");
+        }
+        var markerX = showStar ? 6 + starSize.X + 3 : 6f;
         if (pool.Failures.TryGetValue(key, out var error))
         {
             drawList.AddText(pos + new Vector2(markerX, 4), ErrorColor, "!");
@@ -348,16 +364,21 @@ public sealed class TileGrid
 
     private bool IsOwned(uint itemId) => ownership.Current?.IsOwned(itemId) ?? false;
 
-    /// <summary>A small star in the theme's amber with a dark shadow, readable on bright renders too. Returns its width.</summary>
-    private float DrawWishStar(ImDrawListPtr drawList, Vector2 at)
+    /// <summary>The tile's wishlist star with a dark shadow, readable on bright renders too.</summary>
+    private static void DrawWishStar(ImDrawListPtr drawList, Vector2 at, uint color)
     {
         using (UiScale.PushIcons())
         {
             var glyph = FontAwesomeIcon.Star.ToIconString();
             drawList.AddText(at + Vector2.One, 0xC0000000, glyph);
-            drawList.AddText(at, theme.Colors.Warning, glyph);
-            return ImGui.CalcTextSize(glyph).X;
+            drawList.AddText(at, color, glyph);
         }
+    }
+
+    private static Vector2 WishStarSize()
+    {
+        using (UiScale.PushIcons())
+            return ImGui.CalcTextSize(FontAwesomeIcon.Star.ToIconString());
     }
 
     /// <summary>The tile's texts and icons from the per-subject cache, built on the first frame the tile shows.</summary>

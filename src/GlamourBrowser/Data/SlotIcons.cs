@@ -25,6 +25,12 @@ public static class SlotIcons
 
     private static readonly Dictionary<EquipSlot, uint> Cache = new();
 
+    /// <summary>The silver chest among the item category icons, in the style of the slot icons.</summary>
+    public const uint Sets = 60190;
+
+    /// <summary>The copper star of the item categories ("Anderes").</summary>
+    public const uint Wishlist = 60159;
+
     public static uint IconFor(EquipSlot slot)
     {
         if (Cache.TryGetValue(slot, out var icon))
