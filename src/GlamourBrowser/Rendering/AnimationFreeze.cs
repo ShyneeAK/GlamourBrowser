@@ -9,21 +9,35 @@ namespace GlamourBrowser.Rendering;
 /// <summary>
 /// Sets and freezes the moment of a character's animations through the Havok animation controls of its
 /// skeleton (the way GPose tools do it): CharacterBase.Skeleton → PartialSkeletons[i] → animated skeleton → controls.
+/// The character's timelines are stopped as well (TimelineContainer.OverallSpeed, what Brio's animation freeze sets):
+/// paused controls alone let the game start new face animations, so a tile could catch the character blinking.
 /// </summary>
 public static unsafe class AnimationFreeze
 {
-    /// <summary>Puts every animation at its last frame and pauses it (each in its own length).</summary>
+    /// <summary>Puts every animation at its last frame and pauses it (each in its own length), and stops the timelines.</summary>
     /// <returns>False when the character has no animation controls (yet).</returns>
     public static bool FreezeAtEnd(Character* character)
-        => ForEachControl(character, control =>
+    {
+        SetTimelineSpeed(character, 0f);
+        return ForEachControl(character, control =>
         {
             control->hkaAnimationControl.LocalTime = AnimationTiming.LastFrame(Duration(control));
             control->PlaybackSpeed = 0f;
         });
+    }
 
-    /// <summary>Pauses or resumes every animation without moving it.</summary>
+    /// <summary>Pauses or resumes every animation without moving it, the timelines with them.</summary>
     public static bool SetPaused(Character* character, bool paused)
-        => ForEachControl(character, control => control->PlaybackSpeed = paused ? 0f : 1f);
+    {
+        SetTimelineSpeed(character, paused ? 0f : 1f);
+        return ForEachControl(character, control => control->PlaybackSpeed = paused ? 0f : 1f);
+    }
+
+    private static void SetTimelineSpeed(Character* character, float speed)
+    {
+        if (character != null)
+            character->Timeline.OverallSpeed = speed;
+    }
 
     /// <summary>
     /// Body animations (first partial skeleton) that still carry weight: more than one means a blend from the
