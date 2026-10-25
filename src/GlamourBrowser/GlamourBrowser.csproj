@@ -6,7 +6,7 @@
     <Name>GlamourBrowser</Name>
     <Punchline>Glamour-Raster mit gerenderten Charakter-Kacheln.</Punchline>
     <Description>Zeigt alle ausruestbaren Items als Seiten-Raster mit gerenderten Bildern des eigenen Charakters, filterbar, mit Besitzstatus und Fundort pro Item.</Description>
-    <RepoUrl>https://example.invalid/glamourbrowser</RepoUrl>
+    <RepoUrl>https://github.com/ShyneeAK/GlamourBrowser</RepoUrl>
     <Tags>glamour;transmog</Tags>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
