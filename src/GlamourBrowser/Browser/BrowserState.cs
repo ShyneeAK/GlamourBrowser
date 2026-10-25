@@ -38,11 +38,13 @@ public sealed class BrowserState
     private FilterState filter = new();
     private readonly PageMemory pages = new();
     private readonly PageHistory history = new();
+    private readonly TryOnService tryOn;
 
     public BrowserState(IReadOnlyList<GlamourItem> catalog, OwnershipService ownership, AppearanceTracker appearance,
                         TileQueue queue, TileCache<IDalamudTextureWrap> cache, RenderPool pool, Configuration config, SourceService sources, SetCatalog sets,
-                        WishlistService wishlist, JobCatalog jobs, CustomSetService customSets)
+                        WishlistService wishlist, JobCatalog jobs, CustomSetService customSets, TryOnService tryOn)
     {
+        this.tryOn = tryOn;
         this.customSets = customSets;
         parentOf = jobs.ParentOf;
         this.sources = sources;
@@ -58,7 +60,10 @@ public sealed class BrowserState
         // A config edited by hand (or saved by an older version) must not break loading.
         (config.Columns, config.Rows) = PageLayout.ClampGrid(config.Columns, config.Rows);
 
-        appearance.Changed += InvalidateTiles;
+        // Tiles take face and body from the look and their outfit from the try-on, which follows a changed outfit by
+        // itself (TryOnService): new keys render, nothing needs to be thrown away. Race and gender may filter anew.
+        appearance.Changed += Refresh;
+        tryOn.TryOn.Changed += RequestTiles;
         // The pose is part of the tile key: new keys render, the cache drops the old ones; with the standard pose nothing changes.
         appearance.PoseChanged += RequestTiles;
         ownership.Changed += OnOwnershipChanged;
@@ -124,12 +129,19 @@ public sealed class BrowserState
         Refresh();
     }
 
+    /// <summary>The tile mode is the try-on's basis: switching it starts the try-on afresh (which renders the tiles anew).</summary>
     public void SetTileMode(TileMode mode)
     {
         config.TileMode = mode;
         config.Save();
-        RequestTiles();
+        tryOn.Reset();
     }
+
+    /// <summary>The tile dye where it applies: not in the wishlist and custom set modes, which only search.</summary>
+    public byte TileDye => BrowseModes.OnlySearch(filter.Mode) ? (byte)0 : filter.Dye;
+
+    /// <summary>The look part of a tile key: face and body, and the try-on without the slots the tile replaces.</summary>
+    private ulong LookHash(ushort exceptSlots) => appearance.CustomizeHash * 31 + tryOn.TryOn.KeyHash(exceptSlots);
 
     public void SetTileWeaponsDrawn(bool drawn)
     {
@@ -186,11 +198,20 @@ public sealed class BrowserState
 
     public TileKey KeyFor(TileSubject subject) => subject switch
     {
-        SetSubject set => TileKeys.ForSet(set.Set.Id, config.TileMode, appearance.Hash, RenderWidth, IdleStance.Pose, set.Variant),
-        ItemSubject { Item: var item } => new(item.Id, 0, 0, config.TileMode, appearance.Hash, RenderWidth,
-                                              StanceFor(item) is var stance && stance.WeaponDrawn ? TileKey.StandardPose : stance.Pose, stance.WeaponDrawn),
+        SetSubject set => TileKeys.ForSet(set.Set.Id, config.TileMode, LookHash(set.Slots), RenderWidth, IdleStance.Pose, set.Variant,
+                                          set.Set.Id.Kind == SetKind.Custom ? (byte)0 : TileDye),
+        ItemSubject { Item: var item } => ItemKey(item),
         _ => throw new ArgumentOutOfRangeException(nameof(subject)),
     };
+
+    /// <summary>An item tile: the item in the tile dye on its channels, its stance, on the try-on without its slot.</summary>
+    private TileKey ItemKey(GlamourItem item)
+    {
+        var (stain0, stain1) = TileDyes.For(item, TileDye);
+        var stance = StanceFor(item);
+        return new(item.Id, stain0, stain1, config.TileMode, LookHash(SlotMask.Of([item.Slot])), RenderWidth,
+                   stance.WeaponDrawn ? TileKey.StandardPose : stance.Pose, stance.WeaponDrawn);
+    }
 
     /// <summary>The catalog item's subject, the same instance the grid shows (null for an item outside the catalog).</summary>
     public ItemSubject? ItemSubjectFor(uint itemId) => itemSubjects.GetValueOrDefault(itemId);

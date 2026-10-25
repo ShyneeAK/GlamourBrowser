@@ -1,12 +1,16 @@
 using System;
+using System.Collections.Generic;
+using GlamourBrowser.Core.CustomSets;
 using GlamourBrowser.Core.Items;
-using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Rendering;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 
 namespace GlamourBrowser.Rendering;
 
-/// <summary>Live, rotatable view of the selected item on slot 7, borrowed from the render pool.</summary>
+/// <summary>
+/// Live, rotatable view of the try-on (or the set editor's draft) on slot 7, borrowed from the render pool; the selected
+/// item frames it (camera slot) and gets the weapon toggles.
+/// </summary>
 public sealed unsafe class LivePreview : IDisposable
 {
     private const uint Slot = 7;
@@ -22,8 +26,8 @@ public sealed unsafe class LivePreview : IDisposable
     private readonly Func<EquipSlot, CameraPreset?> cameraFor;
     private CharaViewHandle? view;
     private CharaViewHandle? suspended;
-    // The variant is a custom set's content hash: an edited set (or draft) is dressed again.
-    private ((uint ItemId, SetId Set) Subject, uint Variant, TileMode Mode, ulong Hash, CameraPreset? Camera)? applied;
+    // The look's hash with face and body: any change of the try-on, the draft or the character dresses again.
+    private (uint Look, ulong Customize, CameraPreset? Camera)? applied;
     private byte? appliedPose;
     private float rotateX, rotateY, panX, panY, zoom;
     private bool reset;
@@ -37,6 +41,9 @@ public sealed unsafe class LivePreview : IDisposable
     }
 
     public TileSubject? Selected { get; private set; }
+
+    /// <summary>What the character wears: the try-on, or the set editor's draft over the try-on's basis (set in Plugin).</summary>
+    public Func<IReadOnlyList<CustomPiece>> Look { get; set; } = () => [];
 
     /// <summary>Weapon in hand instead of sheathed, toggled from the UI like the game's try-on window.</summary>
     public bool WeaponDrawn { get; set; }
@@ -102,7 +109,7 @@ public sealed unsafe class LivePreview : IDisposable
             suspended = null;
         }
 
-        // Nothing selected: the character in the own outfit, never an empty view.
+        // Nothing selected: the look with the full-body camera, never an empty view.
         var subject = Selected;
         pool.ReserveLiveSlot(true);
         if (view == null)
@@ -124,10 +131,10 @@ public sealed unsafe class LivePreview : IDisposable
         if (!view.IsIdle && view.State != CharaViewHandle.StateReady)
             return;
 
-        // The own outfit gets the full-body camera of sets and is always the current outfit, whatever the tile mode.
+        // The selection only frames the look: its slot's camera, the body's without one (like sets).
+        var look = Look();
         var camera = cameraFor(subject?.CameraSlot ?? EquipSlot.Body);
-        var mode = subject != null ? config.TileMode : TileMode.CurrentOutfit;
-        var wanted = (subject?.Id ?? default, (subject as SetSubject)?.Variant ?? 0, mode, appearance.Hash, camera);
+        var wanted = (Looks.Hash(look), appearance.CustomizeHash, camera);
 
         // The game picks the stance when a weapon is drawn and keeps it for the next weapon loaded into the hand: before
         // another kind of weapon loads, the drawn one is sheathed (only while nothing loads), and drawn anew below.
@@ -155,12 +162,7 @@ public sealed unsafe class LivePreview : IDisposable
 
         if (applied != wanted && view.IsIdle)
         {
-            view.ApplyOutfit(appearance.Outfit, mode, subject?.Slots ?? 0);
-            foreach (var piece in subject?.Wear ?? [])
-            {
-                var (stain0, stain1) = subject is SetSubject set ? set.StainsOf(piece.Slot) : ((byte)0, (byte)0);
-                view.SetItem(piece.Slot, piece.Id, stain0, stain1);
-            }
+            view.ApplyOutfit(look, 0);
             view.ApplyCamera(camera);
             applied = wanted;
             appliedPose = null;

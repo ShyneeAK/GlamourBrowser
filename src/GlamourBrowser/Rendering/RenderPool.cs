@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Threading.Tasks;
 using Dalamud.Interface.Textures;
 using Dalamud.Interface.Textures.TextureWraps;
+using GlamourBrowser.Core.CustomSets;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Rendering;
 
@@ -75,8 +76,8 @@ public sealed unsafe class RenderPool : IDisposable
         public int SheatheFrames { get; set; } = -1;
         public int SheatheRetries { get; set; }
         public string? DrawOutcome { get; set; }
-        /// <summary>What the view wears besides the tile's items: the outfit of this look without these slots (a <see cref="SlotMask"/>).</summary>
-        public (TileMode Mode, ulong Hash, ushort Except)? DressedAs { get; set; }
+        /// <summary>What the view wears besides the tile's items: the look of this key (its try-on part) without these slots (a <see cref="SlotMask"/>).</summary>
+        public (ulong Hash, ushort Except)? DressedAs { get; set; }
         public bool Busy => Key != null;
     }
 
@@ -85,6 +86,7 @@ public sealed unsafe class RenderPool : IDisposable
     private readonly Func<TileKey, TileSubject?> lookup;
     private readonly AppearanceTracker appearance;
     private readonly Func<EquipSlot, CameraPreset?> cameraFor;
+    private readonly Func<IReadOnlyList<CustomPiece>> look;
     private readonly List<Worker> workers = new();
     private readonly List<CharaViewHandle> suspended = new();
     private readonly Dictionary<TileKey, string> failures = new();
@@ -94,8 +96,9 @@ public sealed unsafe class RenderPool : IDisposable
     private bool freezeWarned;
 
     public RenderPool(TileQueue queue, TileCache<IDalamudTextureWrap> cache, Func<TileKey, TileSubject?> lookup,
-                      AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor)
+                      AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor, Func<IReadOnlyList<CustomPiece>> look)
     {
+        this.look = look;
         this.queue = queue;
         this.cache = cache;
         this.lookup = lookup;
@@ -212,16 +215,17 @@ public sealed unsafe class RenderPool : IDisposable
         // Re-dress when the slots change too, otherwise the previous tile's items (e.g. a hat) stay on the
         // character. Sets with the same slots as the previous tile only swap their pieces.
         var except = subject.Slots;
-        var redressed = worker.DressedAs != (key.Mode, key.AppearanceHash, except);
+        // The try-on is the look around the tile's items; the key holds its hash without these slots.
+        var redressed = worker.DressedAs != (key.AppearanceHash, except);
         if (redressed)
         {
-            view.ApplyOutfit(appearance.Outfit, key.Mode, except);
-            worker.DressedAs = (key.Mode, key.AppearanceHash, except);
+            view.ApplyOutfit(look(), except);
+            worker.DressedAs = (key.AppearanceHash, except);
         }
-        // Sets carry their dyes per slot (custom sets; none for detected ones), items the key's dye.
+        // Items carry their dyes in the key; custom sets their own per slot, detected sets the key's tile dye.
         foreach (var piece in subject.Wear)
         {
-            var (stain0, stain1) = subject is SetSubject set ? set.StainsOf(piece.Slot) : (key.Stain0, key.Stain1);
+            var (stain0, stain1) = subject is SetSubject ? TileDyes.Of(subject, piece, key.Dye) : (key.Stain0, key.Stain1);
             view.SetItem(piece.Slot, piece.Id, stain0, stain1);
         }
         // The weapon is drawn or sheathed once the item has loaded (Loading phase), and that has to finish

@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Interface.Textures.TextureWraps;
 using GlamourBrowser.Browser;
+using GlamourBrowser.Core.CustomSets;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Data;
@@ -46,6 +47,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly OwnershipService ownership;
     private readonly WishlistService wishlist;
     private readonly CustomSetService customSets;
+    private readonly TryOnService tryOn;
     private readonly GlamourPlate.GlamourPlateBridge plates;
     private readonly InventoryReader inventoryReader;
     private readonly RetainerReader retainerReader;
@@ -85,19 +87,25 @@ public sealed class Plugin : IDalamudPlugin
         dresserReader = new DresserReader(ownership);
         armoireReader = new ArmoireReader(ownership);
         appearance = new AppearanceTracker();
+        tryOn = new TryOnService(appearance, config);
         var byId = catalog.ToDictionary(i => i.Id);
         // The browser state is created below; the pool asks it only once it ticks.
-        pool = new RenderPool(queue, cache, key => browser?.SubjectFor(key), appearance, CameraFor) { MaxViews = config.ParallelViews };
+        pool = new RenderPool(queue, cache, key => browser?.SubjectFor(key), appearance, CameraFor, () => tryOn.TryOn.Pieces)
+            { MaxViews = config.ParallelViews };
         live = new LivePreview(pool, appearance, config, CameraFor);
         // Variants too: their sources are merged into the base item.
         sources = new SourceService(catalog.Select(i => i.Id).Concat(variants.Keys).ToHashSet());
         var sets = new SetCatalog(byId, variants, sources);
         var jobs = new JobCatalog(DataManager);
         var dyes = new DyeCatalog(DataManager);
-        browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets, wishlist, jobs, customSets);
+        browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets, wishlist, jobs, customSets, tryOn);
         UI.UiScale.Set(config.UiScale);
         var theme = new UI.Theme.Theme(config);
         var editor = new CustomSetEditor(browser, customSets, live, variants, appearance);
+        // The live view wears the try-on; while a set is edited its draft over the try-on's basis (known pieces only).
+        live.Look = () => editor.Draft is { } draft
+            ? Looks.Overlay(tryOn.Basis(), draft.Pieces.Where(p => browser.ItemOf(p.ItemId) != null).ToList())
+            : tryOn.TryOn.Pieces;
         memoryStats = new MemoryStats(cache);
         // Before the main window: its title bar button opens it.
         settingsWindow = new SettingsWindow(config, browser, pool, calibration, theme);
@@ -248,6 +256,7 @@ public sealed class Plugin : IDalamudPlugin
             cache.Dispose();
         }).Wait();
         memoryStats.Dispose();
+        tryOn.Dispose();
         appearance.Dispose();
 
         armoireReader.Dispose();

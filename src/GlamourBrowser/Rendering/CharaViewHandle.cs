@@ -6,6 +6,8 @@ using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using System.Collections.Generic;
+using GlamourBrowser.Core.CustomSets;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Rendering;
 using FrameworkStruct = FFXIVClientStructs.FFXIV.Client.System.Framework.Framework;
@@ -155,11 +157,11 @@ public sealed unsafe class CharaViewHandle : IDisposable
     }
 
     /// <summary>
-    /// Undresses the character completely (weapons included), then dresses every slot except those in
-    /// <paramref name="exceptSlots"/> (a <see cref="SlotMask"/>) from the snapshot; underwear stays empty.
+    /// Undresses the character completely (weapons included), then dresses every piece of the look except in
+    /// <paramref name="exceptSlots"/> (a <see cref="SlotMask"/>); an empty look leaves the underwear.
     /// SetItemSlotData(slot, 0) does not clear a slot, so without UnequipGear items of earlier tiles (or the initial copy) would remain.
     /// </summary>
-    public void ApplyOutfit(OutfitSnapshot outfit, TileMode mode, ushort exceptSlots)
+    public void ApplyOutfit(IReadOnlyList<CustomPiece> look, ushort exceptSlots)
     {
         if (view == null || view->State != StateReady)
             return;
@@ -167,13 +169,10 @@ public sealed unsafe class CharaViewHandle : IDisposable
         // Clears all 14 item entries and marks the view dirty (0x309), like the try-on window's
         // "hide other equipment".
         view->UnequipGear(false, true);
-        if (mode != TileMode.CurrentOutfit)
-            return;
-
-        foreach (var entry in outfit.Entries)
+        foreach (var piece in look)
         {
-            if (!SlotMask.Contains(exceptSlots, entry.Slot))
-                SetItem(entry.Slot, entry.ItemId, entry.Stain0, entry.Stain1);
+            if (!SlotMask.Contains(exceptSlots, piece.Slot))
+                SetItem(piece.Slot, piece.ItemId, piece.Stain0, piece.Stain1);
         }
     }
 

@@ -12,6 +12,8 @@ public sealed unsafe class AppearanceTracker : IDisposable
     private DateTime nextCheck = DateTime.MinValue;
 
     public ulong Hash { get; private set; }
+    /// <summary>The look without the outfit (face, body): tiles take their outfit from the try-on instead.</summary>
+    public ulong CustomizeHash { get; private set; }
     public OutfitSnapshot Outfit { get; private set; } = OutfitSnapshot.Empty;
     public byte Race { get; private set; } = 1;
     public byte Sex { get; private set; }
@@ -58,6 +60,7 @@ public sealed unsafe class AppearanceTracker : IDisposable
         var lookChanged = hash != Hash;
         IdlePose = pose;
         Hash = hash;
+        CustomizeHash = Fnv1a(new ReadOnlySpan<byte>(customize, sizeof(CustomizeData)), OutfitSnapshot.Empty);
         Outfit = outfit;
         Race = customize->Race;
         Sex = customize->Sex;
