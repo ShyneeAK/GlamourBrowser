@@ -44,7 +44,7 @@ public sealed unsafe class RenderPool : IDisposable
     internal const int SheatheTimeoutFrames = 150;
     private const int SheatheRetryFrames = 20;
     private const int MaxSheatheRetries = 5;
-    // The stance of a drawn weapon that is not the tile's own (the outfit's weapon behind an off-hand tile).
+    // The stance key when the look holds no main-hand weapon.
     internal const string OwnWeapon = "own";
     private static readonly TimeSpan IdleRelease = TimeSpan.FromSeconds(5);
 
@@ -55,6 +55,8 @@ public sealed unsafe class RenderPool : IDisposable
         public CharaViewHandle View { get; } = view;
         public Phase Phase { get; set; } = Phase.WaitReady;
         public TileKey? Key { get; set; }
+        /// <summary>The try-on as it was when the key was taken: the key was made for it, so the tile is dressed in it.</summary>
+        public IReadOnlyList<CustomPiece> Look { get; set; } = [];
         public int Frames { get; set; }
         public Stopwatch Stopwatch { get; } = new();
         public Task<IDalamudTextureWrap>? CopyTask { get; set; }
@@ -87,6 +89,7 @@ public sealed unsafe class RenderPool : IDisposable
     private readonly AppearanceTracker appearance;
     private readonly Func<EquipSlot, CameraPreset?> cameraFor;
     private readonly Func<IReadOnlyList<CustomPiece>> look;
+    private readonly Func<uint, GlamourItem?> itemOf;
     private readonly List<Worker> workers = new();
     private readonly List<CharaViewHandle> suspended = new();
     private readonly Dictionary<TileKey, string> failures = new();
@@ -96,8 +99,10 @@ public sealed unsafe class RenderPool : IDisposable
     private bool freezeWarned;
 
     public RenderPool(TileQueue queue, TileCache<IDalamudTextureWrap> cache, Func<TileKey, TileSubject?> lookup,
-                      AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor, Func<IReadOnlyList<CustomPiece>> look)
+                      AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor, Func<IReadOnlyList<CustomPiece>> look,
+                      Func<uint, GlamourItem?> itemOf)
     {
+        this.itemOf = itemOf;
         this.look = look;
         this.queue = queue;
         this.cache = cache;
@@ -208,6 +213,10 @@ public sealed unsafe class RenderPool : IDisposable
         }
     }
 
+    /// <summary>The kind of weapon a tile draws: its own main-hand weapon, else the one its look holds in the main hand.</summary>
+    private string StanceOf(Worker worker)
+        => WeaponStance.Of(worker.Subject) ?? WeaponStance.OfLook(worker.Look, itemOf) ?? OwnWeapon;
+
     /// <summary>Dresses the view for the tile and starts loading it (Loading phase next).</summary>
     private void Dress(Worker worker, TileKey key, TileSubject subject)
     {
@@ -219,7 +228,7 @@ public sealed unsafe class RenderPool : IDisposable
         var redressed = worker.DressedAs != (key.AppearanceHash, except);
         if (redressed)
         {
-            view.ApplyOutfit(look(), except);
+            view.ApplyOutfit(worker.Look, except);
             worker.DressedAs = (key.AppearanceHash, except);
         }
         // Items carry their dyes in the key; custom sets their own per slot, detected sets the key's tile dye.
@@ -274,6 +283,9 @@ public sealed unsafe class RenderPool : IDisposable
 
                 worker.Key = key;
                 worker.Subject = subject;
+                // Taken now, not when dressing: sheathing first can take a while, and a click meanwhile changes the try-on
+                // (the key would then hold another look than the tile shows, and could be shown again later).
+                worker.Look = look();
                 worker.SheatheFrames = -1;
                 worker.SheatheRetries = 0;
                 worker.DrawOutcome = null;
@@ -281,7 +293,7 @@ public sealed unsafe class RenderPool : IDisposable
                 // The game picks the stance when a weapon is drawn and keeps it for the next weapon loaded into the hand:
                 // a weapon of another kind is sheathed first, while nothing loads (a sheathe during a load is ignored),
                 // and drawn anew once the new one has loaded (Loading phase).
-                if (key.WeaponDrawn && view.IsWeaponDrawn() && worker.InHandStance != (WeaponStance.Of(subject) ?? OwnWeapon))
+                if (key.WeaponDrawn && view.IsWeaponDrawn() && worker.InHandStance != StanceOf(worker))
                 {
                     view.SetAnimationPaused(false);
                     worker.Frozen = false;
@@ -359,7 +371,7 @@ public sealed unsafe class RenderPool : IDisposable
                         worker.PoseChanged = true;
                     }
                     worker.WeaponDrawn = wantDrawn;
-                    worker.InHandStance = wantDrawn ? WeaponStance.Of(worker.Subject) ?? OwnWeapon : null;
+                    worker.InHandStance = wantDrawn ? StanceOf(worker) : null;
                     worker.DrawRetries = 0;
                     worker.RetryPending = false;
                     worker.DrawGate = new DrawGate(DrawMinFrames, DrawStableFrames, DrawTimeoutFrames);

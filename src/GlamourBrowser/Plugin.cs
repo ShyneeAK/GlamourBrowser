@@ -90,8 +90,8 @@ public sealed class Plugin : IDalamudPlugin
         tryOn = new TryOnService(appearance, config);
         var byId = catalog.ToDictionary(i => i.Id);
         // The browser state is created below; the pool asks it only once it ticks.
-        pool = new RenderPool(queue, cache, key => browser?.SubjectFor(key), appearance, CameraFor, () => tryOn.TryOn.Pieces)
-            { MaxViews = config.ParallelViews };
+        pool = new RenderPool(queue, cache, key => browser?.SubjectFor(key), appearance, CameraFor, () => tryOn.TryOn.Pieces,
+                              id => browser?.ItemOf(id)) { MaxViews = config.ParallelViews };
         live = new LivePreview(pool, appearance, config, CameraFor);
         // Variants too: their sources are merged into the base item.
         sources = new SourceService(catalog.Select(i => i.Id).Concat(variants.Keys).ToHashSet());
@@ -102,6 +102,7 @@ public sealed class Plugin : IDalamudPlugin
         UI.UiScale.Set(config.UiScale);
         var theme = new UI.Theme.Theme(config);
         var editor = new CustomSetEditor(browser, customSets, live, variants, appearance);
+        live.ItemOf = browser.ItemOf;
         // The live view wears the try-on; while a set is edited its draft over the try-on's basis (known pieces only).
         live.Look = () => editor.Draft is { } draft
             ? Looks.Overlay(tryOn.Basis(), draft.Pieces.Where(p => browser.ItemOf(p.ItemId) != null).ToList())

@@ -45,10 +45,13 @@ public sealed unsafe class LivePreview : IDisposable
     /// <summary>What the character wears: the try-on, or the set editor's draft over the try-on's basis (set in Plugin).</summary>
     public Func<IReadOnlyList<CustomPiece>> Look { get; set; } = () => [];
 
+    /// <summary>The catalog item of an id, for the kind of weapon the look holds (set in Plugin).</summary>
+    public Func<uint, GlamourItem?> ItemOf { get; set; } = _ => null;
+
     /// <summary>Weapon in hand instead of sheathed, toggled from the UI like the game's try-on window.</summary>
     public bool WeaponDrawn { get; set; }
     private bool? appliedWeaponDrawn;
-    // The kind of weapon in hand (WeaponStance, RenderPool.OwnWeapon for the outfit's own); null when sheathed.
+    // The kind of weapon in hand (WeaponStance of the look's main hand, RenderPool.OwnWeapon without one); null when sheathed.
     private string? inHandStance;
     // Frames spent sheathing before another kind of weapon loads; -1 while not sheathing.
     private int sheatheFrames = -1;
@@ -139,7 +142,8 @@ public sealed unsafe class LivePreview : IDisposable
         // The game picks the stance when a weapon is drawn and keeps it for the next weapon loaded into the hand: before
         // another kind of weapon loads, the drawn one is sheathed (only while nothing loads), and drawn anew below.
         var (weaponDrawn, weaponVisible) = LiveWeapons.Effective(subject, WeaponDrawn, WeaponVisible);
-        var stance = WeaponStance.Of(subject) ?? RenderPool.OwnWeapon;
+        // The drawn weapon is the look's main hand, whatever is selected (a hat, or nothing after a reset).
+        var stance = WeaponStance.OfLook(look, ItemOf) ?? RenderPool.OwnWeapon;
         if (applied != wanted && weaponDrawn && appliedWeaponDrawn == true && inHandStance != stance && sheatheFrames < 0 && view.IsIdle
             && !view.IsChangingStance())
         {
