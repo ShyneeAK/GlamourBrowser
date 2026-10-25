@@ -77,13 +77,20 @@ public sealed class TopBar
         }
         DisabledHint(onlySearch);
 
-        // The tile dye: like a filter (it has a chip), but it colours the dyeable tiles instead of hiding any.
-        NextOnLine(ImGui.GetFrameHeight());
+        // The tile dye, one per channel: like a filter (each has a chip), but it colours the dyeable tiles instead of
+        // hiding any.
+        NextOnLine(ImGui.GetFrameHeight() * 2 + ImGui.GetStyle().ItemSpacing.X);
         var dye = state.Filter.Dye;
+        var first = dye.First;
+        var second = dye.Second;
         using (ImRaii.Disabled(onlySearch))
         {
-            if (DyePicker.Draw("##tiledye", ref dye, dyes, theme, enabled: true, label: "Farbe"))
-                state.Filter = state.Filter with { Dye = dye };
+            if (DyePicker.Draw("##tiledye1", ref first, dyes, theme, enabled: true, label: "Farbe 1"))
+                state.Filter = state.Filter with { Dye = dye with { First = first } };
+            DisabledHint(onlySearch);
+            ImGui.SameLine();
+            if (DyePicker.Draw("##tiledye2", ref second, dyes, theme, enabled: true, label: "Farbe 2"))
+                state.Filter = state.Filter with { Dye = dye with { Second = second } };
         }
         DisabledHint(onlySearch);
 

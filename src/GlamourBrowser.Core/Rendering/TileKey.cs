@@ -1,3 +1,4 @@
+using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Sets;
 
 namespace GlamourBrowser.Core.Rendering;
@@ -9,7 +10,7 @@ namespace GlamourBrowser.Core.Rendering;
 /// <param name="Variant">The content hash of a custom set (see <see cref="Items.SetSubject.Variant"/>), 0 otherwise.</param>
 /// <param name="Dye">The tile dye a detected set's pieces render in (see <see cref="TileDyes"/>); items carry theirs as stains.</param>
 public readonly record struct TileKey(uint ItemId, byte Stain0, byte Stain1, TileMode Mode, ulong AppearanceHash, int RenderWidth, byte Pose,
-                                     bool WeaponDrawn = false, SetId Set = default, uint Variant = 0, byte Dye = 0)
+                                     bool WeaponDrawn = false, SetId Set = default, uint Variant = 0, DyePair Dye = default)
 {
     public const byte StandardPose = 255;
 }

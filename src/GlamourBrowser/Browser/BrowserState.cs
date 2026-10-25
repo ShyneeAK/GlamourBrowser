@@ -138,7 +138,7 @@ public sealed class BrowserState
     }
 
     /// <summary>The tile dye where it applies: not in the wishlist and custom set modes, which only search.</summary>
-    public byte TileDye => BrowseModes.OnlySearch(filter.Mode) ? (byte)0 : filter.Dye;
+    public DyePair TileDye => BrowseModes.OnlySearch(filter.Mode) ? default : filter.Dye;
 
     /// <summary>The look part of a tile key: face and body, and the try-on without the slots the tile replaces.</summary>
     private ulong LookHash(ushort exceptSlots) => appearance.CustomizeHash * 31 + tryOn.TryOn.KeyHash(exceptSlots);
@@ -199,7 +199,7 @@ public sealed class BrowserState
     public TileKey KeyFor(TileSubject subject) => subject switch
     {
         SetSubject set => TileKeys.ForSet(set.Set.Id, config.TileMode, LookHash(set.Slots), RenderWidth, IdleStance.Pose, set.Variant,
-                                          set.Set.Id.Kind == SetKind.Custom ? (byte)0 : TileDye),
+                                          set.Set.Id.Kind == SetKind.Custom ? default : TileDye),
         ItemSubject { Item: var item } => ItemKey(item),
         _ => throw new ArgumentOutOfRangeException(nameof(subject)),
     };

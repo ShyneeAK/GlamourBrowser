@@ -1,3 +1,4 @@
+using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Sets;
 
 namespace GlamourBrowser.Core.Rendering;
@@ -9,6 +10,6 @@ public static class TileKeys
     /// the <paramref name="variant"/>; a detected set renders in the tile <paramref name="dye"/>), and the weapon of a set
     /// always stays sheathed.
     /// </summary>
-    public static TileKey ForSet(SetId set, TileMode mode, ulong appearanceHash, int renderWidth, byte idlePose, uint variant = 0, byte dye = 0)
+    public static TileKey ForSet(SetId set, TileMode mode, ulong appearanceHash, int renderWidth, byte idlePose, uint variant = 0, DyePair dye = default)
         => new(0, 0, 0, mode, appearanceHash, renderWidth, idlePose, WeaponDrawn: false, Set: set, Variant: variant, Dye: dye);
 }

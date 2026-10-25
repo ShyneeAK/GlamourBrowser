@@ -39,7 +39,7 @@ public sealed class TryOn
     }
 
     /// <summary>Puts the item on, dyed in <paramref name="dye"/> on the channels it has (as its tile shows it).</summary>
-    public void Put(GlamourItem item, byte dye)
+    public void Put(GlamourItem item, DyePair dye)
     {
         clicked.Put(item, null);
         var slot = clicked.Pieces.Last(p => p.ItemId == item.Id).Slot;
@@ -48,7 +48,7 @@ public sealed class TryOn
     }
 
     /// <summary>Puts every piece of the set on: a custom set with its dyes, a detected one in <paramref name="dye"/>.</summary>
-    public void PutAll(SetSubject set, byte dye)
+    public void PutAll(SetSubject set, DyePair dye)
     {
         clicked.PutAll(set);
         if (set.Set.Id.Kind != SetKind.Custom)
@@ -92,7 +92,7 @@ public sealed class TryOn
     /// <summary>The look's hash without the slots a tile replaces anyway: its part of the tile key.</summary>
     public uint KeyHash(ushort exceptSlots) => Looks.Hash(Pieces, exceptSlots);
 
-    private void Dye(EquipSlot slot, GlamourItem item, byte dye)
+    private void Dye(EquipSlot slot, GlamourItem item, DyePair dye)
     {
         var (stain0, stain1) = TileDyes.For(item, dye);
         clicked.SetStain(slot, 1, stain0, item.DyeCount);

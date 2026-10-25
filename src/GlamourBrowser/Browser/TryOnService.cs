@@ -43,7 +43,7 @@ public sealed class TryOnService : IDisposable
     }
 
     /// <summary>Puts a clicked item or set on, dyed like its tile.</summary>
-    public void Put(TileSubject subject, byte dye)
+    public void Put(TileSubject subject, DyePair dye)
     {
         lock (RenderSync.Lock)
         {

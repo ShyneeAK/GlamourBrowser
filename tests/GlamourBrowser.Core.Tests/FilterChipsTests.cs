@@ -15,18 +15,19 @@ public class FilterChipsTests
     public void NoActiveFilters_NoChips() => Assert.Empty(Chips(new FilterState()));
 
     [Fact]
-    public void Dye_GivesAChipThatRemovesIt()
+    public void Dye_GivesAChipPerChannelThatRemovesOnlyIt()
     {
-        var state = new FilterState { Dye = 81 };
-        var chip = Assert.Single(FilterChips.From(state, SlotName, jobs => JobSelection.Parts(jobs, Jobs, JobName), id => id == 81 ? "Schwarz" : "?"));
+        var state = new FilterState { Dye = new DyePair(81, 82) };
+        var chips = FilterChips.From(state, SlotName, jobs => JobSelection.Parts(jobs, Jobs, JobName), id => id == 81 ? "Schwarz" : "Weiß");
 
-        Assert.Equal("Farbe: Schwarz", chip.Label);
-        Assert.Equal(0, chip.WithoutThis.Dye);
+        Assert.Equal(["Farbe 1: Schwarz", "Farbe 2: Weiß"], chips.Select(c => c.Label));
+        Assert.Equal(new DyePair(0, 82), chips[0].WithoutThis.Dye);
+        Assert.Equal(new DyePair(81, 0), chips[1].WithoutThis.Dye);
     }
 
     [Fact]
     public void Dye_NoChipInTheWishlistMode()
-        => Assert.DoesNotContain(Chips(new FilterState { Dye = 81, Mode = BrowseMode.Wishlist }), c => c.Label.StartsWith("Farbe"));
+        => Assert.DoesNotContain(Chips(new FilterState { Dye = new DyePair(81, 0), Mode = BrowseMode.Wishlist }), c => c.Label.StartsWith("Farbe"));
 
     [Fact]
     public void OneChipPerActiveFilter()

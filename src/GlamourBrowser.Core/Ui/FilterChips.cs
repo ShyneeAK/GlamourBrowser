@@ -41,8 +41,11 @@ public static class FilterChips
         if (state.DyeableOnly)
             chips.Add(new FilterChip("Nur Färbbare", state with { DyeableOnly = false }));
 
-        if (state.Dye != 0)
-            chips.Add(new FilterChip($"Farbe: {dyeName?.Invoke(state.Dye) ?? state.Dye.ToString()}", state with { Dye = 0 }));
+        string Name(byte id) => dyeName?.Invoke(id) ?? id.ToString();
+        if (state.Dye.First != 0)
+            chips.Add(new FilterChip($"Farbe 1: {Name(state.Dye.First)}", state with { Dye = state.Dye with { First = 0 } }));
+        if (state.Dye.Second != 0)
+            chips.Add(new FilterChip($"Farbe 2: {Name(state.Dye.Second)}", state with { Dye = state.Dye with { Second = 0 } }));
 
         if (state.Ownership != OwnershipFilter.All)
             chips.Add(new FilterChip(state.Ownership == OwnershipFilter.Owned ? "Habe ich" : "Fehlt mir", state with { Ownership = OwnershipFilter.All }));
