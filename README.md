@@ -35,7 +35,7 @@ dotnet build GlamourBrowser.slnx -c Debug
 dotnet test tests/GlamourBrowser.Core.Tests
 ```
 
-To load your own build in the game, add `src/GlamourBrowser/bin/Debug/GlamourBrowser.dll` under Dalamud Settings → Experimental → Dev Plugin Locations and enable it in the plugin installer. Disable the installed Shynees Glamour Dresser first: Dalamud does not load two plugins with the same internal name.
+To load your own build in the game, add `src/GlamourBrowser/bin/Debug/ShyneesGlamourDresser.dll` under Dalamud Settings → Experimental → Dev Plugin Locations and enable it in the plugin installer. Disable the installed Shynees Glamour Dresser first: Dalamud does not load two plugins with the same internal name.
 
 `tools/release.sh [version]` publishes a release: a Release build, a GitHub release with `latest.zip` and an updated `repo.json`.
 

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Dalamud.NET.Sdk/15.0.0">
   <PropertyGroup>
+    <!-- The internal name in Dalamud (plugin id, config and data folder) comes from the assembly name; namespaces stay GlamourBrowser. -->
+    <AssemblyName>ShyneesGlamourDresser</AssemblyName>
+    <RootNamespace>GlamourBrowser</RootNamespace>
     <Version>0.2.0.0</Version>
     <Author>ShyneeAK</Author>
     <Name>Shynees Glamour Dresser</Name>

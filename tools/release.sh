@@ -7,7 +7,7 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 project=src/GlamourBrowser/GlamourBrowser.csproj
-out=src/GlamourBrowser/bin/Release/GlamourBrowser
+out=src/GlamourBrowser/bin/Release/ShyneesGlamourDresser
 repo=ShyneeAK/GlamourBrowser
 
 # Git uses the gh login for github.com in these commands only.
@@ -32,7 +32,7 @@ fi
 dotnet build "$project" -c Release -warnaserror
 
 # The packager's manifest plus the download links Dalamud needs.
-python3 - "$out/GlamourBrowser.json" "$repo" "$tag" > repo.json <<'EOF'
+python3 - "$out/ShyneesGlamourDresser.json" "$repo" "$tag" > repo.json <<'EOF'
 import json, sys, time
 manifest = json.load(open(sys.argv[1], encoding="utf-8"))
 link = f"https://github.com/{sys.argv[2]}/releases/download/{sys.argv[3]}/latest.zip"

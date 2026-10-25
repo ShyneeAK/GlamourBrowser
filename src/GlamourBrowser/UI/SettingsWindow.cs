@@ -25,7 +25,7 @@ public sealed class SettingsWindow : Window
     private static readonly string[] AccentNames = ["Blau", "Violett", "Türkis", "Rosé", "Bernstein"];
 
     public SettingsWindow(Configuration config, BrowserState state, RenderPool pool, CalibrationService calibration, Theme.Theme theme)
-        : base("Shynees Glamour Dresser – Einstellungen##GlamourBrowserSettings")
+        : base("Shynees Glamour Dresser – Einstellungen##ShyneesGlamourDresserSettings")
     {
         this.config = config;
         this.state = state;

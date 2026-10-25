@@ -39,11 +39,10 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IChatGui ChatGui { get; private set; } = null!;
     [PluginService] internal static IGameGui GameGui { get; private set; } = null!;
 
-    // The internal name stays GlamourBrowser (settings, sets and wishes are stored under it); only what players see changed.
     private const string CommandName = "/glamourdresser";
     private const string ShortCommandName = "/sgd";
 
-    private readonly WindowSystem windowSystem = new("GlamourBrowser");
+    private readonly WindowSystem windowSystem = new("ShyneesGlamourDresser");
     private readonly MainWindow mainWindow;
     private readonly SettingsWindow settingsWindow;
     private readonly OwnershipService ownership;

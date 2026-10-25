@@ -26,7 +26,7 @@ public sealed class MainWindow : Window
 
     public MainWindow(LivePane livePane, TopBar topBar, FilterColumn filterColumn, TileGrid grid, Theme.Theme theme, Configuration config,
                       Action openSettings)
-        : base("Shynees Glamour Dresser##GlamourBrowser")
+        : base("Shynees Glamour Dresser##ShyneesGlamourDresser")
     {
         this.livePane = livePane;
         this.topBar = topBar;
