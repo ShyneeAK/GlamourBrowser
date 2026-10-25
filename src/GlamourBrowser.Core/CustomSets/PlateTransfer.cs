@@ -26,8 +26,40 @@ public static class PlateSlots
     public static IReadOnlyList<EquipSlot> Order => CustomSetSubjects.Slots;
 }
 
+/// <param name="Notes">Per piece (or empty slot) that needs attention: its name and why.</param>
+public sealed record TransferReport(int Transferred, int Total, IReadOnlyList<(string Name, string Reason)> Notes);
+
 public static class PlateTransfer
 {
+    public const string NotTaken = "vom Spiel nicht übernommen – Kommoden- bzw. Armoire-Liste im Plate-Editor öffnen und erneut übertragen";
+    public const string NotCleared = "vom Spiel nicht geleert – Kommoden- bzw. Armoire-Liste im Plate-Editor öffnen und erneut übertragen";
+    public const string NotDone = "nicht übertragen – Glamour-Plate wurde geschlossen";
+
+    /// <summary>
+    /// What a transfer achieved: the transferred pieces, and a note for every slot that is not as planned (missing
+    /// piece, piece or clear the game did not take, slots left when the editor closed) and for different dyes.
+    /// </summary>
+    /// <param name="done">Slots the editor shows as planned.</param>
+    /// <param name="failed">Slots still wrong after the last try.</param>
+    public static TransferReport Report(IReadOnlyList<PlateSlot> plan, IReadOnlyCollection<EquipSlot> done, IReadOnlyCollection<EquipSlot> failed,
+                                        bool editorClosed, Func<uint, string> nameOf, Func<EquipSlot, string> slotName)
+    {
+        var notes = new List<(string Name, string Reason)>();
+        foreach (var slot in plan)
+        {
+            var name = slot.Piece is { } piece && slot.Source != null ? nameOf(piece.ItemId) : slotName(slot.Slot);
+            if (slot.Missing != null)
+                notes.Add((nameOf(slot.Piece!.Value.ItemId), slot.Missing));
+            if (failed.Contains(slot.Slot))
+                notes.Add((name, slot.Source != null ? NotTaken : NotCleared));
+            else if (!done.Contains(slot.Slot) && editorClosed)
+                notes.Add((name, NotDone));
+            else if (slot.DyeNote != null && done.Contains(slot.Slot))
+                notes.Add((name, slot.DyeNote));
+        }
+        return new TransferReport(plan.Count(s => s.Source != null && done.Contains(s.Slot)), plan.Count(s => s.Piece != null), notes);
+    }
+
     /// <summary>One entry per plate slot: its source (dresser before armoire), else why it is missing; empty set slots clear the plate's slot.</summary>
     /// <param name="placesOf">Where the player keeps an item (container names, best first), for the reason.</param>
     public static IReadOnlyList<PlateSlot> Plan(IReadOnlyList<CustomPiece> pieces, Func<uint, PlateSource?> dresserOf, Func<uint, PlateSource?> armoireOf,

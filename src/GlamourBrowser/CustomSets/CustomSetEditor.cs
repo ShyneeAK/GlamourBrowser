@@ -22,6 +22,8 @@ public sealed class CustomSetEditor
     private readonly IReadOnlyDictionary<uint, uint> variants;
     private readonly AppearanceTracker appearance;
     private Func<CustomSetDraft>? pendingStart;
+    // The store the draft belongs to: another one (a login without logout) means another character.
+    private CustomSetStore? draftStore;
 
     /// <param name="variants">"+N" variants mapped to their base item: start pieces are shown as their base.</param>
     public CustomSetEditor(BrowserState state, CustomSetService customSets, LivePreview live, IReadOnlyDictionary<uint, uint> variants,
@@ -132,6 +134,7 @@ public sealed class CustomSetEditor
     private void Open(CustomSetDraft draft)
     {
         Draft = draft;
+        draftStore = customSets.Current;
         SelectedSlot = null;
         UpdatePreview();
     }
@@ -158,9 +161,18 @@ public sealed class CustomSetEditor
     private void OnSetsChanged()
     {
         if (Draft == null)
+        {
+            // A selected custom set may be another character's now, or changed: it stays selected only while it is the same.
+            var kept = CustomSetSubjects.Reselect(state.Selected, state.SetSubjectFor);
+            if (!ReferenceEquals(kept, state.Selected))
+            {
+                state.Selected = kept;
+                live.Select(kept);
+            }
             return;
-        // Logged out, or the edited set was deleted (only possible from its card): the draft has nothing to go back to.
-        if (customSets.Current == null || Draft.Id is { } id && customSets.Current.Find(id) == null)
+        }
+        // Logged out, another character, or the edited set was deleted (only from its card): the draft has nothing to go back to.
+        if (customSets.Current == null || customSets.Current != draftStore || Draft.Id is { } id && customSets.Current.Find(id) == null)
         {
             Draft = null;
             SelectedSlot = null;

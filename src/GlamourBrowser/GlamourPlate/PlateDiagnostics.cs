@@ -18,6 +18,12 @@ public static unsafe class PlateDiagnostics
 {
     public static void Run(string[] args)
     {
+        // A plate has 12 slots; the game's functions do not check the index.
+        if (args.Length >= 2 && args[0] is "set" or "cabinet" or "clear" && (!int.TryParse(args[1], out var checkedSlot) || checkedSlot is < 0 or > 11))
+        {
+            Log("slot must be 0–11");
+            return;
+        }
         switch (args.FirstOrDefault())
         {
             case null:
@@ -125,8 +131,7 @@ public static unsafe class PlateDiagnostics
         }
     }
 
-    /// <param name="itemId">Another item than the dresser entry's, e.g. one piece of a stored outfit.</param>
-    /// <summary>The armoire row of the first body piece in the armoire (logged), null when the armoire is not loaded.</summary>
+    /// <summary>The armoire row of the first body piece in the armoire, null when the armoire is not loaded (logged).</summary>
     private static uint? FirstBodyInArmoire()
     {
         var cabinet = &UIState.Instance()->Cabinet;
@@ -145,6 +150,7 @@ public static unsafe class PlateDiagnostics
         return null;
     }
 
+    /// <param name="itemId">Another item than the dresser entry's, e.g. one piece of a stored outfit.</param>
     private static void Set(int slot, uint index, byte? stain0, byte? stain1, uint? itemId)
     {
         var agent = OpenData();

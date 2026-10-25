@@ -28,7 +28,6 @@ public sealed record TransferResult(bool EditorClosed, int Transferred, int Tota
 public sealed unsafe class GlamourPlateBridge : IDisposable
 {
     private const int MaxTries = 3;
-    private const string NotTaken = "vom Spiel nicht übernommen – Kommoden- bzw. Armoire-Liste im Plate-Editor öffnen und erneut übertragen";
 
     private readonly IReadOnlyDictionary<uint, uint> variants;
     private readonly OwnershipService ownership;
@@ -182,18 +181,9 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
     private void Finish(Transfer transfer, bool editorClosed)
     {
         running = null;
-        var notes = new List<(string Name, string Reason)>();
-        foreach (var slot in transfer.Plan.Where(s => s.Piece != null))
-        {
-            var name = nameOf(slot.Piece!.Value.ItemId);
-            if (slot.Missing != null)
-                notes.Add((name, slot.Missing));
-            else if (transfer.Failed.Contains(slot))
-                notes.Add((name, NotTaken));
-            else if (slot.DyeNote != null && transfer.Done.Contains(slot))
-                notes.Add((name, slot.DyeNote));
-        }
-        LastResult = new TransferResult(editorClosed, transfer.Done.Count(s => s.Source != null), transfer.Plan.Count(s => s.Piece != null), notes);
+        var report = PlateTransfer.Report(transfer.Plan, transfer.Done.Select(s => s.Slot).ToList(), transfer.Failed.Select(s => s.Slot).ToList(),
+            editorClosed, nameOf, UI.SlotNames.Full);
+        LastResult = new TransferResult(editorClosed, report.Transferred, report.Total, report.Notes);
     }
 
     private Func<uint, PlateSource?> DresserLookup()

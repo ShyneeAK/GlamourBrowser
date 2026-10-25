@@ -61,7 +61,6 @@ public sealed class Plugin : IDalamudPlugin
     private readonly CalibrationService calibration;
     private readonly SourceService sources;
     private bool paused;
-    private TileSubject? selectionBeforePause;
 
     public Plugin()
     {
@@ -160,7 +159,6 @@ public sealed class Plugin : IDalamudPlugin
             if (pause && !paused)
             {
                 paused = true;
-                selectionBeforePause = live.Selected;
                 live.Select(null);
                 live.Tick();
                 pool.Pause();
@@ -169,7 +167,8 @@ public sealed class Plugin : IDalamudPlugin
             {
                 paused = false;
                 pool.Resume();
-                live.Select(selectionBeforePause);
+                // The current selection, not the one from before the pause: a custom set may be gone (logout, other character).
+                live.Select(browser.Selected);
                 browser.Refresh();
             }
 

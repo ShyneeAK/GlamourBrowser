@@ -32,6 +32,15 @@ public static class CustomSetSubjects
     }
 
     /// <summary>
+    /// A selected custom set after the custom sets changed (edited, deleted, another character logged in): the current
+    /// subject when the same id still has the same content, else null; items and detected sets stay as they are.
+    /// </summary>
+    public static TileSubject? Reselect(TileSubject? selected, Func<SetId, SetSubject?> lookup)
+        => selected is SetSubject { Set.Id: { Kind: SetKind.Custom } id } set
+            ? lookup(id) is { } current && current.Variant == set.Variant ? current : null
+            : selected;
+
+    /// <summary>
     /// The set with the pieces the catalog knows, their dyes and <see cref="Hash"/> as variant; a piece is worn in its
     /// set slot (a ring in the left one too). Null when no piece is known.
     /// </summary>

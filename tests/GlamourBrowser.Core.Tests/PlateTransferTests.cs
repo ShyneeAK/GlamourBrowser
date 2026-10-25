@@ -93,4 +93,45 @@ public class PlateTransferTests
                       new CustomPiece(RingRight, 39508, 0, 0), new CustomPiece(RingLeft, 16234, 0, 0)],
             PlateTransfer.Read(ids, stain0, stain1));
     }
+
+    private static string SlotName(Items.EquipSlot slot) => slot.ToString();
+
+    private static string Name(uint id) => $"Item {id}";
+
+    [Fact]
+    public void Report_FailedClear_IsListed()
+    {
+        // The set has no head piece; the game ignored clearing the plate's head slot, so the old piece stays.
+        var plan = Plan([new CustomPiece(Body, 10, 0, 0)], dresser: _ => new PlateSource(PlateSourceKind.Dresser, 6, 10, 0, 0));
+        var report = PlateTransfer.Report(plan, done: [Body], failed: [Head], editorClosed: false, Name, SlotName);
+        Assert.Equal((1, 1), (report.Transferred, report.Total));
+        Assert.Equal([("Head", PlateTransfer.NotCleared)], report.Notes);
+    }
+
+    [Fact]
+    public void Report_MissingPieceNotCleared_SaysBoth()
+    {
+        var plan = Plan([new CustomPiece(Body, 40, 0, 0)]);
+        var report = PlateTransfer.Report(plan, done: [], failed: [Body], editorClosed: false, Name, SlotName);
+        Assert.Equal([("Item 40", "liegt in: Gehilfe Mira"), ("Body", PlateTransfer.NotCleared)], report.Notes);
+    }
+
+    [Fact]
+    public void Report_FailedSet_IsListed_AndDyeNotesOnlyForDone()
+    {
+        var plan = Plan([new CustomPiece(Body, 10, 1, 0), new CustomPiece(Head, 20, 1, 0)], dresser: id => new PlateSource(PlateSourceKind.Dresser, id, id, 0, 0));
+        var report = PlateTransfer.Report(plan, done: [Body], failed: [Head], editorClosed: false, Name, SlotName);
+        Assert.Equal([("Item 20", PlateTransfer.NotTaken), ("Item 10", "im Spiel färben: Schneeweiß")], report.Notes.OrderBy(n => n.Reason == PlateTransfer.NotTaken ? 0 : 1).ToList());
+    }
+
+    [Fact]
+    public void Report_EditorClosed_ListsWhatWasNotDone()
+    {
+        var plan = Plan([new CustomPiece(Body, 10, 0, 0), new CustomPiece(Head, 20, 0, 0)], dresser: id => new PlateSource(PlateSourceKind.Dresser, id, id, 0, 0));
+        var report = PlateTransfer.Report(plan, done: [Body], failed: [], editorClosed: true, Name, SlotName);
+        Assert.Equal((1, 2), (report.Transferred, report.Total));
+        Assert.Contains(("Item 20", PlateTransfer.NotDone), report.Notes);
+        // Empty set slots that were not cleared yet are listed by slot.
+        Assert.Contains(("MainHand", PlateTransfer.NotDone), report.Notes);
+    }
 }

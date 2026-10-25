@@ -75,7 +75,7 @@ public sealed class SetEditorPane
 
         GameIcon.Draw(SlotIcons.IconFor(slot == EquipSlot.RingLeft ? EquipSlot.RingRight : slot), size, FontAwesomeIcon.Tshirt, colors.TextMuted);
         if (ImGui.IsItemHovered())
-            ImGui.SetTooltip(SlotName(slot));
+            ImGui.SetTooltip(SlotNames.Full(slot));
         ImGui.SameLine();
         if (item != null)
             GameIcon.Draw(item.IconId, size, FontAwesomeIcon.Tshirt, colors.TextMuted);
@@ -132,20 +132,4 @@ public sealed class SetEditorPane
         }
         ImGui.EndPopup();
     }
-
-    private static string SlotName(EquipSlot slot) => slot switch
-    {
-        EquipSlot.MainHand => "Waffe",
-        EquipSlot.OffHand => "Nebenhand",
-        EquipSlot.Head => "Kopf",
-        EquipSlot.Body => "Körper",
-        EquipSlot.Hands => "Hände",
-        EquipSlot.Legs => "Beine",
-        EquipSlot.Feet => "Füße",
-        EquipSlot.Ears => "Ohrringe",
-        EquipSlot.Neck => "Halskette",
-        EquipSlot.Wrists => "Armreife",
-        EquipSlot.RingRight => "Ring rechts",
-        _ => "Ring links",
-    };
 }

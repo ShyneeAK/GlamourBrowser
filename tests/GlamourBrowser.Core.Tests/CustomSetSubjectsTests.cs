@@ -84,4 +84,33 @@ public class CustomSetSubjectsTests
         Assert.NotEqual(TileKeys.ForSet(id, TileMode.CurrentOutfit, 1, 256, 0, 1), TileKeys.ForSet(id, TileMode.CurrentOutfit, 1, 256, 0, 2));
         Assert.Equal(0u, TileKeys.ForSet(id, TileMode.CurrentOutfit, 1, 256, 0).Variant);
     }
+
+    [Fact]
+    public void Reselect_KeepsTheSameSet_WithItsCurrentSubject()
+    {
+        var set = Set(new CustomPiece(Body, 10, 1, 0));
+        var selected = CustomSetSubjects.ToSubject(set, ItemOf);
+        var current = CustomSetSubjects.ToSubject(set with { Name = "Umbenannt" }, ItemOf);
+        Assert.Same(current, CustomSetSubjects.Reselect(selected, _ => current));
+    }
+
+    [Fact]
+    public void Reselect_DropsASetWhoseContentDiffers()
+    {
+        // Another character's set with the same id: deleting or editing it from the old card would hit the wrong set.
+        var selected = CustomSetSubjects.ToSubject(Set(new CustomPiece(Body, 10, 1, 0)), ItemOf);
+        var other = CustomSetSubjects.ToSubject(Set(new CustomPiece(Head, 20, 0, 0)), ItemOf);
+        Assert.Null(CustomSetSubjects.Reselect(selected, _ => other));
+        Assert.Null(CustomSetSubjects.Reselect(selected, _ => null));
+    }
+
+    [Fact]
+    public void Reselect_LeavesItemsAndDetectedSets()
+    {
+        TileSubject item = new ItemSubject(Catalog[10]);
+        var detected = new SetSubject(new GlamourSet(new SetId(SetKind.Model, 10), "A-Set", [new SetPiece(10, Body)], 70), [Catalog[10]]);
+        Assert.Same(item, CustomSetSubjects.Reselect(item, _ => null));
+        Assert.Same(detected, CustomSetSubjects.Reselect(detected, _ => null));
+        Assert.Null(CustomSetSubjects.Reselect(null, _ => null));
+    }
 }
