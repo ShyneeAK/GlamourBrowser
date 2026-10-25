@@ -9,6 +9,7 @@ namespace GlamourBrowser.Sources;
 public static class SourceIcons
 {
     private static readonly Dictionary<SourceCategory, uint> Cache = new();
+    private static readonly Dictionary<uint, uint> ItemIcons = new();
 
     public static uint IconFor(SourceCategory category)
     {
@@ -53,7 +54,11 @@ public static class SourceIcons
 
     /// <summary>Icon of any item, cached (used for cost currencies).</summary>
     public static uint ItemIcon(uint itemId)
-        => Plugin.DataManager.GetExcelSheet<Item>().TryGetRow(itemId, out var item) ? item.Icon : 0u;
+    {
+        if (ItemIcons.TryGetValue(itemId, out var icon))
+            return icon;
+        return ItemIcons[itemId] = Plugin.DataManager.GetExcelSheet<Item>().TryGetRow(itemId, out var item) ? item.Icon : 0u;
+    }
 
     private static uint ContentTypeIcon(uint row)
         => Plugin.DataManager.GetExcelSheet<ContentType>().TryGetRow(row, out var type) ? type.Icon : 0u;
