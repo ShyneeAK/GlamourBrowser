@@ -10,8 +10,8 @@ using GlamourBrowser.Data;
 namespace GlamourBrowser.UI.Widgets;
 
 /// <summary>
-/// Row of slot icons: click selects only that slot (again clears), Ctrl+click adds or removes. The last two icons
-/// switch to the set mode ("Ausrüstungs-Sets") and the wishlist mode ("Wunschliste").
+/// Row of slot icons: click selects only that slot (again clears), Ctrl+click adds or removes. The last three icons
+/// switch to the modes "Ausrüstungs-Sets", "Meine Sets" and "Wunschliste".
 /// </summary>
 public static class SlotBar
 {
@@ -19,7 +19,7 @@ public static class SlotBar
     public static bool Draw(string id, ref FilterState filter, Theme.Theme theme, float reserveRight = 0)
     {
         var slots = SlotNames.All;
-        var icons = slots.Length + 2;
+        var icons = slots.Length + 3;
         var spacing = ImGui.GetStyle().ItemSpacing.X;
         var edge = Math.Clamp((ImGui.GetContentRegionAvail().X - reserveRight - spacing * (icons - 1)) / icons, 21f * UiScale.Global, 38f * UiScale.Global);
 
@@ -39,6 +39,12 @@ public static class SlotBar
         if (IconToggle.Draw($"{id}-sets", SlotIcons.Sets, new Vector2(edge), filter.Mode == BrowseMode.Sets, "Ausrüstungs-Sets", theme, FontAwesomeIcon.LayerGroup))
         {
             filter = SlotSelection.ToggleMode(filter, BrowseMode.Sets);
+            changed = true;
+        }
+        ImGui.SameLine();
+        if (IconToggle.Draw($"{id}-mysets", SlotIcons.MySets, new Vector2(edge), filter.Mode == BrowseMode.MySets, "Meine Sets", theme, FontAwesomeIcon.Clone))
+        {
+            filter = SlotSelection.ToggleMode(filter, BrowseMode.MySets);
             changed = true;
         }
         ImGui.SameLine();

@@ -19,6 +19,7 @@ using GlamourBrowser.Ownership;
 using GlamourBrowser.Rendering;
 using GlamourBrowser.UI.Widgets;
 using GlamourBrowser.Wishlist;
+using GlamourBrowser.CustomSets;
 
 namespace GlamourBrowser.UI;
 
@@ -33,16 +34,20 @@ public sealed unsafe class LivePane
     private readonly Theme.Theme theme;
     private readonly SourceService sources;
     private readonly WishlistService wishlist;
+    private readonly CustomSetService customSets;
+    private readonly DyeCatalog dyes;
     private readonly HashSet<(uint Item, SourceCategory Category)> expanded = new();
     // Pieces of the selected set whose sources are open.
     private readonly HashSet<uint> openPieces = new();
     private const int SourcesPerCategory = 3;
 
     public LivePane(BrowserState state, OwnershipService ownership, LivePreview live, CalibrationService calibration, JobCatalog jobs, Theme.Theme theme,
-                    SourceService sources, WishlistService wishlist)
+                    SourceService sources, WishlistService wishlist, CustomSetService customSets, DyeCatalog dyes)
     {
         this.sources = sources;
         this.wishlist = wishlist;
+        this.customSets = customSets;
+        this.dyes = dyes;
         this.state = state;
         this.ownership = ownership;
         this.live = live;
@@ -200,11 +205,17 @@ public sealed unsafe class LivePane
         {
             SetKind.Dresser => "Kommoden-Set",
             SetKind.MogStation => "Mogstation-Set",
+            SetKind.Custom => "Eigenes Set",
             _ => "Ausrüstungs-Set",
         };
         ImGui.TextDisabled($"{progress.Owned}/{progress.Total} · {origin}");
         ImGui.EndGroup();
         DrawWishToggle(set);
+        if (set.Set.Id.Kind == SetKind.Custom)
+        {
+            ImGui.SameLine();
+            DrawDeleteButton(set);
+        }
         ImGui.Separator();
 
         var iconSize = new Vector2(ImGui.GetTextLineHeight());
@@ -224,6 +235,7 @@ public sealed unsafe class LivePane
                 if (!openPieces.Remove(piece.Id))
                     openPieces.Add(piece.Id);
             }
+            DrawDyeDots(set, piece.Slot);
             ImGui.SameLine();
             ImGui.TextDisabled(owned ? WhereOwned(piece) : BestSource(piece));
             if (!open)
@@ -233,6 +245,46 @@ public sealed unsafe class LivePane
                 DrawSources(piece);
             ImGui.Separator();
         }
+    }
+
+    /// <summary>A small dot per dye of the slot (custom sets), the dye's name as tooltip.</summary>
+    private void DrawDyeDots(SetSubject set, EquipSlot slot)
+    {
+        var (stain0, stain1) = set.StainsOf(slot);
+        foreach (var stain in new[] { stain0, stain1 })
+        {
+            if (stain == 0)
+                continue;
+            ImGui.SameLine();
+            var line = ImGui.GetTextLineHeight();
+            var radius = line * 0.35f;
+            var min = ImGui.GetCursorScreenPos();
+            ImGui.Dummy(new Vector2(radius * 2, line));
+            ImGui.GetWindowDrawList().AddCircleFilled(min + new Vector2(radius, line / 2), radius, dyes.Find(stain)?.Color ?? theme.Colors.TextMuted);
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip(dyes.NameOf(stain));
+        }
+    }
+
+    /// <summary>Deletes a custom set after asking.</summary>
+    private void DrawDeleteButton(SetSubject set)
+    {
+        if (IconButton.Draw("##deleteset", 0, FontAwesomeIcon.Trash, "Löschen", theme))
+            ImGui.OpenPopup("##deleteset-confirm");
+        if (!ImGui.BeginPopup("##deleteset-confirm"))
+            return;
+        ImGui.TextUnformatted($"Set „{set.Name}“ löschen?");
+        if (ImGui.Button("Löschen"))
+        {
+            customSets.Current?.Remove(set.Set.Id.Value);
+            state.Selected = null;
+            live.Select(null);
+            ImGui.CloseCurrentPopup();
+        }
+        ImGui.SameLine();
+        if (ImGui.Button("Abbrechen"))
+            ImGui.CloseCurrentPopup();
+        ImGui.EndPopup();
     }
 
     private string WhereOwned(GlamourItem piece) => ownership.Current?.LocationsOf(piece.Id).FirstOrDefault()?.DisplayName ?? "";

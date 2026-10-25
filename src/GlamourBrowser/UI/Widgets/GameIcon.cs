@@ -6,14 +6,19 @@ using Dalamud.Interface.Utility.Raii;
 
 namespace GlamourBrowser.UI.Widgets;
 
-/// <summary>Draws a game icon into a rectangle, or a FontAwesome glyph when the icon is missing.</summary>
+/// <summary>Draws a game icon (or a part of a game texture) into a rectangle, or a FontAwesome glyph when it is missing.</summary>
 public static class GameIcon
 {
     /// <param name="tint">Multiplies the game icon, e.g. to fade it; the fallback glyph uses <paramref name="fallbackColor"/>.</param>
-    public static void DrawAt(ImDrawListPtr drawList, uint iconId, Vector2 min, Vector2 size, FontAwesomeIcon fallback, uint fallbackColor,
+    public static void DrawAt(ImDrawListPtr drawList, UiIcon icon, Vector2 min, Vector2 size, FontAwesomeIcon fallback, uint fallbackColor,
                               uint tint = 0xFFFFFFFF)
     {
-        if (iconId != 0 && Plugin.TextureProvider.GetFromGameIcon(new GameIconLookup(iconId)).TryGetWrap(out var wrap, out _))
+        if (icon.Texture != null && Plugin.TextureProvider.GetFromGame(icon.Texture).TryGetWrap(out var part, out _))
+        {
+            drawList.AddImage(part.Handle, min, min + size, icon.Uv0, icon.Uv1, tint);
+            return;
+        }
+        if (icon.IconId != 0 && Plugin.TextureProvider.GetFromGameIcon(new GameIconLookup(icon.IconId)).TryGetWrap(out var wrap, out _))
         {
             drawList.AddImage(wrap.Handle, min, min + size, Vector2.Zero, Vector2.One, tint);
             return;
@@ -27,10 +32,10 @@ public static class GameIcon
         }
     }
 
-    public static void Draw(uint iconId, Vector2 size, FontAwesomeIcon fallback, uint fallbackColor)
+    public static void Draw(UiIcon icon, Vector2 size, FontAwesomeIcon fallback, uint fallbackColor)
     {
         var min = ImGui.GetCursorScreenPos();
         ImGui.Dummy(size);
-        DrawAt(ImGui.GetWindowDrawList(), iconId, min, size, fallback, fallbackColor);
+        DrawAt(ImGui.GetWindowDrawList(), icon, min, size, fallback, fallbackColor);
     }
 }

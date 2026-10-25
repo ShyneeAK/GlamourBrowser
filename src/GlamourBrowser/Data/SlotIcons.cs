@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Numerics;
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.UI.Widgets;
 using Lumina.Excel.Sheets;
 
 namespace GlamourBrowser.Data;
@@ -30,6 +32,9 @@ public static class SlotIcons
 
     /// <summary>The copper star of the item categories ("Anderes").</summary>
     public const uint Wishlist = 60159;
+
+    /// <summary>The "Projektionsplatte" button of the game's character window.</summary>
+    public static readonly UiIcon MySets = UiIcon.Part("ui/uld/CharacterGearSet_hr1.tex", new Vector2(0, 0.5f), new Vector2(1 / 3f, 1));
 
     public static uint IconFor(EquipSlot slot)
     {

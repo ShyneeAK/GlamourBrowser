@@ -83,16 +83,17 @@ public sealed class Plugin : IDalamudPlugin
         sources = new SourceService(catalog.Select(i => i.Id).Concat(variants.Keys).ToHashSet());
         var sets = new SetCatalog(byId, variants, sources);
         var jobs = new JobCatalog(DataManager);
+        var dyes = new DyeCatalog(DataManager);
         browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets, wishlist, jobs, customSets);
         Framework.Update += OnFrameworkUpdate;
         UI.UiScale.Set(config.UiScale);
         var theme = new UI.Theme.Theme(config);
         mainWindow = new MainWindow(
-            new LivePane(browser, ownership, live, calibration, jobs, theme, sources, wishlist),
+            new LivePane(browser, ownership, live, calibration, jobs, theme, sources, wishlist, customSets, dyes),
             new TopBar(browser, jobs, config, theme),
             new FilterColumn(browser, ownership, config, sources, theme),
             new TileGrid(browser, cache, pool, ownership, live, config, theme, sources, jobs, wishlist,
-                         new WishlistPlanView(browser, ownership, wishlist, sources, live, theme, customSets)),
+                         new WishlistPlanView(browser, ownership, wishlist, sources, live, theme, customSets), customSets),
             theme,
             config);
         settingsWindow = new SettingsWindow(config, browser, pool, calibration, theme);

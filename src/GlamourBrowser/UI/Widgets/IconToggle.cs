@@ -8,7 +8,7 @@ namespace GlamourBrowser.UI.Widgets;
 public static class IconToggle
 {
     /// <param name="enabled">False draws it faded and ignores clicks; the tooltip still shows (to say why).</param>
-    public static bool Draw(string id, uint iconId, Vector2 size, bool active, string tooltip, Theme.Theme theme, FontAwesomeIcon fallback, bool enabled = true)
+    public static bool Draw(string id, UiIcon icon, Vector2 size, bool active, string tooltip, Theme.Theme theme, FontAwesomeIcon fallback, bool enabled = true)
     {
         var colors = theme.Colors;
         var min = ImGui.GetCursorScreenPos();
@@ -20,7 +20,7 @@ public static class IconToggle
         drawList.AddRectFilled(min, min + size, highlight ? colors.CardRaised : colors.Card, 6f);
         var pad = new Vector2(3, 3);
         // Faded: icon or glyph at about 40 % alpha.
-        GameIcon.DrawAt(drawList, iconId, min + pad, size - pad * 2, fallback, enabled ? colors.TextMuted : (colors.TextMuted & 0x00FFFFFF) | 0x60000000,
+        GameIcon.DrawAt(drawList, icon, min + pad, size - pad * 2, fallback, enabled ? colors.TextMuted : (colors.TextMuted & 0x00FFFFFF) | 0x60000000,
                         enabled ? 0xFFFFFFFF : 0x60FFFFFF);
         if (active)
             drawList.AddRect(min, min + size, colors.Accent, 6f, ImDrawFlags.None, 2f);

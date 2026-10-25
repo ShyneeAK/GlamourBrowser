@@ -21,6 +21,7 @@ using GlamourBrowser.Rendering;
 using GlamourBrowser.Sources;
 using GlamourBrowser.UI.Widgets;
 using GlamourBrowser.Wishlist;
+using GlamourBrowser.CustomSets;
 
 namespace GlamourBrowser.UI;
 
@@ -57,17 +58,20 @@ public sealed class TileGrid
     private readonly JobCatalog jobs;
     private readonly WishlistService wishlist;
     private readonly WishlistPlanView planView;
-    private readonly Dictionary<(uint ItemId, SetId Set), TileLabels> labels = new();
+    private readonly CustomSetService customSets;
+    // A custom set keeps its id while it changes: its content hash and name are part of the key.
+    private readonly Dictionary<((uint ItemId, SetId Set) Id, uint Variant, string Name), TileLabels> labels = new();
     private (float Width, float FontSize, int Ownership, bool SourcesReady) labelsFor;
     private int ownershipVersion;
 
     public TileGrid(BrowserState state, TileCache<IDalamudTextureWrap> cache, RenderPool pool, OwnershipService ownership,
                     LivePreview live, Configuration config, Theme.Theme theme, SourceService sources, JobCatalog jobs,
-                    WishlistService wishlist, WishlistPlanView planView)
+                    WishlistService wishlist, WishlistPlanView planView, CustomSetService customSets)
     {
         this.sources = sources;
         this.wishlist = wishlist;
         this.planView = planView;
+        this.customSets = customSets;
         this.jobs = jobs;
         this.theme = theme;
         this.state = state;
@@ -103,6 +107,15 @@ public sealed class TileGrid
 
         if (pool.Status is { } status)
             ImGui.TextColored(new Vector4(1f, 0.8f, 0.3f, 1f), status);
+
+        if (state.Filter.Mode == BrowseMode.MySets && customSets.Current == null)
+        {
+            ImGui.TextDisabled(customSets.LoadFailed ? "Eigene Sets konnten nicht geladen werden" : "Nicht eingeloggt");
+            return;
+        }
+
+        if (state.Filter.Mode == BrowseMode.MySets && !DrawMySetsHeader())
+            return;
 
         if (state.Filter.Mode == BrowseMode.Wishlist && !DrawWishlistHeader())
             return;
@@ -159,6 +172,24 @@ public sealed class TileGrid
             else
                 state.PreviousPage();
         }
+    }
+
+    /// <summary>The custom set mode's hints; false when no grid follows.</summary>
+    private bool DrawMySetsHeader()
+    {
+        if (customSets.Current is not { } store)
+            return false;
+        if (store.Sets.Count == 0)
+        {
+            ImGui.TextDisabled("Noch keine eigenen Sets – „+ Neues Set“ anklicken");
+            return false;
+        }
+        if (state.Results.Count == 0)
+        {
+            ImGui.TextDisabled(state.MySets.Count == 0 ? "Keine Einträge im Katalog gefunden" : "Keine Treffer");
+            return false;
+        }
+        return true;
     }
 
     /// <summary>The wishlist mode's hints, view switch and filter (tiles only), or the plan by source; false when no grid follows.</summary>
@@ -389,9 +420,10 @@ public sealed class TileGrid
     /// <summary>The tile's texts and icons from the per-subject cache, built on the first frame the tile shows.</summary>
     private TileLabels LabelsFor(TileSubject subject, bool owned, float width)
     {
-        if (labels.TryGetValue(subject.Id, out var cached))
+        var key = (subject.Id, (subject as SetSubject)?.Variant ?? 0, subject.Name);
+        if (labels.TryGetValue(key, out var cached))
             return cached;
-        return labels[subject.Id] = subject switch
+        return labels[key] = subject switch
         {
             SetSubject set => SetLabels(set, width),
             ItemSubject { Item: var item } => ItemLabels(item, owned, width),
