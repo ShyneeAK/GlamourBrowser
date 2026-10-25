@@ -95,4 +95,17 @@ public class SourceIndexTests
         Assert.Equal([set], builder.Build().Sets);
         Assert.Empty(SourceIndex.Empty.Sets);
     }
+
+    [Fact]
+    public void MergeVariants_GivesTheBaseTheVariantsSources()
+    {
+        var builder = new SourceIndex.Builder();
+        builder.Add(1, Src(SourceCategory.Dungeon, "Sastasha"));
+        builder.Add(2, Src(SourceCategory.GilVendor, "Krämer"));
+        builder.Add(2, Src(SourceCategory.Dungeon, "Sastasha"));
+        builder.MergeVariants(new Dictionary<uint, uint> { [2] = 1 });
+        var index = builder.Build();
+        Assert.Equal(2, index.SourcesOf(1).Count);
+        Assert.Contains(SourceCategory.GilVendor, index.CategoriesOf(1));
+    }
 }

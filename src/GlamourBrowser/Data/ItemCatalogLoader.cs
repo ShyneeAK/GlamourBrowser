@@ -9,18 +9,22 @@ using Lumina.Excel.Sheets;
 
 namespace GlamourBrowser.Data;
 
-/// <summary>Builds the item catalog from Lumina: every equippable item that has a model.</summary>
+/// <summary>
+/// Builds the item catalog from Lumina: every equippable item that has a model, except "+N" variants that look like
+/// their base item (those are returned separately, mapped to the base).
+/// </summary>
 public static class ItemCatalogLoader
 {
-    public static IReadOnlyList<GlamourItem> Load(IDataManager data)
+    public static (IReadOnlyList<GlamourItem> Items, IReadOnlyDictionary<uint, uint> Variants) Load(IDataManager data)
     {
         var jobsByCategory = ClassJobCategories.JobsByCategory(data.GameData);
+        var variants = VariantSheet.BaseOf(data.GameData);
         var restrictions = new Dictionary<uint, RaceGenderRestriction>();
         var result = new List<GlamourItem>();
 
         foreach (var item in data.GetExcelSheet<Item>())
         {
-            if (item.EquipSlotCategory.RowId == 0 || item.ModelMain == 0 || item.Name.IsEmpty)
+            if (item.EquipSlotCategory.RowId == 0 || item.ModelMain == 0 || item.Name.IsEmpty || variants.ContainsKey(item.RowId))
                 continue;
             if (ItemSlots.SlotOf(item.EquipSlotCategory.Value) is not { } slot)
                 continue;
@@ -38,8 +42,8 @@ public static class ItemCatalogLoader
                 Tradabilities.From(item.IsUntradable, item.ItemSearchCategory.RowId)));
         }
 
-        Plugin.Log.Information($"Item catalog: {result.Count} items");
-        return result;
+        Plugin.Log.Information($"Item catalog: {result.Count} items, {variants.Count} \"+N\" variants merged into their base item");
+        return (result, variants);
     }
 
     private static RaceGenderRestriction RestrictionOf(uint rowId, IDataManager data, Dictionary<uint, RaceGenderRestriction> cache)

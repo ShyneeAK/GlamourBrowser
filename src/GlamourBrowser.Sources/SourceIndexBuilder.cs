@@ -36,6 +36,7 @@ public sealed class SourceIndexBuilder(GameData data, IReadOnlySet<uint> relevan
         Run(builder, "Mogstation", () => MiscSources.AddMogStation(builder, data, relevantItems, log));
         Run(builder, "Sonstiges", () => MiscSources.AddMisc(builder, data, relevantItems, log));
         Run(builder, "Patches", () => MiscSources.AddPatches(builder, data, relevantItems, log));
+        Run(builder, "Varianten", () => builder.MergeVariants(VariantSheet.BaseOf(data)));
         Run(builder, "Serien", () =>
         {
             var (items, dresser, mogStation) = SetSheets.Read(data);

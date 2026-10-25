@@ -49,6 +49,22 @@ public sealed record SetSubject(GlamourSet Set, IReadOnlyList<GlamourItem> Piece
         return pieces.Count < 2 ? null : new SetSubject(set, pieces);
     }
 
+    /// <summary>
+    /// Resolves every set (see <see cref="Resolve"/>) and drops a set whose pieces are the same items as an earlier
+    /// one's, e.g. a "+1" series that maps onto its base series. Earlier sets win (dresser before model before mog station).
+    /// </summary>
+    public static IReadOnlyList<SetSubject> ResolveAll(IEnumerable<GlamourSet> sets, Func<uint, GlamourItem?> itemOf)
+    {
+        var seen = new HashSet<string>();
+        var result = new List<SetSubject>();
+        foreach (var set in sets)
+        {
+            if (Resolve(set, itemOf) is { } resolved && seen.Add(string.Join(",", resolved.Pieces.Select(p => p.Id).Order())))
+                result.Add(resolved);
+        }
+        return result;
+    }
+
     private static IReadOnlySet<uint> CommonJobs(IReadOnlyList<GlamourItem> pieces)
     {
         var armour = pieces.Where(p => Armour.Contains(p.Slot)).ToList();

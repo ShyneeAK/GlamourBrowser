@@ -92,4 +92,15 @@ public class SetSubjectTests
     [Fact]
     public void LiveWeapons_ItemsKeepTheToggles()
         => Assert.Equal((true, false), LiveWeapons.Effective(new ItemSubject(Item(1, MainHand)), drawn: true, visible: false));
+
+    [Fact]
+    public void ResolveAll_DropsSetsWithTheSamePiecesAsAnEarlierOne()
+    {
+        // Set 2 is the "+1" series: its pieces resolve to the base items of set 1.
+        var items = new[] { Item(1, Head), Item(2, Body) };
+        var baseOf = new Dictionary<uint, uint> { [11] = 1, [12] = 2 };
+        var sets = new[] { Set((1, Head), (2, Body)), Set((11, Head), (12, Body)) };
+        var resolved = SetSubject.ResolveAll(sets, id => items.FirstOrDefault(i => i.Id == baseOf.GetValueOrDefault(id, id)));
+        Assert.Equal(new SetId(SetKind.Model, 1), Assert.Single(resolved).Set.Id);
+    }
 }

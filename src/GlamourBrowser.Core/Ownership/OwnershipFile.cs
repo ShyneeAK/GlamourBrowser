@@ -7,9 +7,10 @@ public static class OwnershipFile
 {
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
 
-    public static OwnershipStore Load(string path, ulong contentId)
+    /// <param name="variants">"+N" variants mapped to their base item, see <see cref="OwnershipStore"/>.</param>
+    public static OwnershipStore Load(string path, ulong contentId, IReadOnlyDictionary<uint, uint>? variants = null)
     {
-        var store = new OwnershipStore(contentId);
+        var store = new OwnershipStore(contentId, variants);
         if (!File.Exists(path))
             return store;
 
@@ -24,7 +25,7 @@ public static class OwnershipFile
         catch (Exception e) when (e is JsonException or NotSupportedException)
         {
             File.Move(path, path + ".bak", overwrite: true);
-            return new OwnershipStore(contentId);
+            return new OwnershipStore(contentId, variants);
         }
     }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Dalamud.Plugin.Services;
 using GlamourBrowser.Core.Ownership;
@@ -20,8 +21,12 @@ public sealed class OwnershipService : IDisposable
 
     public event Action? Changed;
 
-    public OwnershipService()
+    private readonly IReadOnlyDictionary<uint, uint> variants;
+
+    /// <param name="variants">"+N" variants mapped to their base item: owning a variant counts for the base.</param>
+    public OwnershipService(IReadOnlyDictionary<uint, uint> variants)
     {
+        this.variants = variants;
         directory = Path.Combine(Plugin.PluginInterface.ConfigDirectory.FullName, "ownership");
         Plugin.ClientState.Login += OnLogin;
         Plugin.ClientState.Logout += OnLogout;
@@ -79,7 +84,7 @@ public sealed class OwnershipService : IDisposable
             return;
 
         path = Path.Combine(directory, $"{contentId}.json");
-        Current = OwnershipFile.Load(path, contentId);
+        Current = OwnershipFile.Load(path, contentId, variants);
         Plugin.Log.Information($"Ownership loaded for {contentId}: {Current.Containers.Count} containers");
         Changed?.Invoke();
     }

@@ -77,6 +77,19 @@ public sealed class SourceIndex
 
         public void SetSets(IReadOnlyList<GlamourSet> value) => sets = value.ToList();
 
+        /// <summary>Gives every base item the sources of its "+N" variants (getting a variant also gets the look).</summary>
+        public void MergeVariants(IReadOnlyDictionary<uint, uint> baseOf)
+        {
+            foreach (var (variant, baseId) in baseOf)
+            {
+                if (sources.TryGetValue(variant, out var list))
+                {
+                    foreach (var source in list.ToList())
+                        Add(baseId, source);
+                }
+            }
+        }
+
         /// <summary>Copies everything, so later changes to the builder do not affect the built index.</summary>
         public SourceIndex Build() => new(
             sources.ToDictionary(kv => kv.Key, kv => (IReadOnlyList<ItemSource>)kv.Value.ToList()),

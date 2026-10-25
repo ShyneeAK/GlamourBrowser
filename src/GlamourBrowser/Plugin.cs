@@ -62,8 +62,8 @@ public sealed class Plugin : IDalamudPlugin
     {
         config = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         calibration = new CalibrationService(config);
-        var catalog = ItemCatalogLoader.Load(DataManager);
-        ownership = new OwnershipService();
+        var (catalog, variants) = ItemCatalogLoader.Load(DataManager);
+        ownership = new OwnershipService(variants);
         inventoryReader = new InventoryReader(ownership);
         retainerReader = new RetainerReader(ownership);
         dresserReader = new DresserReader(ownership);
@@ -73,8 +73,9 @@ public sealed class Plugin : IDalamudPlugin
         // The browser state is created below; the pool asks it only once it ticks.
         pool = new RenderPool(queue, cache, key => browser?.SubjectFor(key), appearance, CameraFor) { MaxViews = config.ParallelViews };
         live = new LivePreview(pool, appearance, config, CameraFor);
-        sources = new SourceService(catalog.Select(i => i.Id).ToHashSet());
-        var sets = new SetCatalog(byId, sources);
+        // Variants too: their sources are merged into the base item.
+        sources = new SourceService(catalog.Select(i => i.Id).Concat(variants.Keys).ToHashSet());
+        var sets = new SetCatalog(byId, variants, sources);
         browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets);
         Framework.Update += OnFrameworkUpdate;
         UI.UiScale.Set(config.UiScale);

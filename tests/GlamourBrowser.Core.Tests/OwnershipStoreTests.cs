@@ -84,4 +84,14 @@ public class OwnershipStoreTests
         store.ReplaceContainer(Snap(ContainerKind.Inventory, "", "Inventar", 1));
         Assert.Equal(1, raised);
     }
+
+    [Fact]
+    public void Variant_CountsForItsBase()
+    {
+        var store = new OwnershipStore(1, new Dictionary<uint, uint> { [12] = 10 });
+        store.ReplaceContainer(Snap(ContainerKind.Dresser, "", "Kommode", 12));
+        Assert.True(store.IsOwned(10));
+        Assert.True(store.IsOwned(12));
+        Assert.Equal("Kommode", Assert.Single(store.LocationsOf(10)).DisplayName);
+    }
 }

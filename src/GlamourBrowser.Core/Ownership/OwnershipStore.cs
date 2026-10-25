@@ -1,7 +1,8 @@
 namespace GlamourBrowser.Core.Ownership;
 
 /// <summary>Last known contents of every container of one character.</summary>
-public sealed class OwnershipStore(ulong contentId)
+/// <param name="variants">"+N" variants mapped to their base item (see <see cref="Items.ItemVariants"/>): a variant counts for its base too.</param>
+public sealed class OwnershipStore(ulong contentId, IReadOnlyDictionary<uint, uint>? variants = null)
 {
     private readonly Dictionary<ContainerId, ContainerSnapshot> containers = new();
     private readonly Dictionary<uint, List<ContainerId>> index = new();
@@ -46,6 +47,15 @@ public sealed class OwnershipStore(ulong contentId)
             .ToList();
     }
 
+    private void Record(uint itemId, ContainerId container)
+    {
+        if (!index.TryGetValue(itemId, out var list))
+            index[itemId] = list = new List<ContainerId>();
+        // A container holding the base item and a variant is still one place.
+        if (!list.Contains(container))
+            list.Add(container);
+    }
+
     private void RebuildIndex()
     {
         index.Clear();
@@ -53,9 +63,9 @@ public sealed class OwnershipStore(ulong contentId)
         {
             foreach (var itemId in container.ItemIds.Distinct())
             {
-                if (!index.TryGetValue(itemId, out var list))
-                    index[itemId] = list = new List<ContainerId>();
-                list.Add(container.Id);
+                Record(itemId, container.Id);
+                if (variants != null && variants.TryGetValue(itemId, out var baseId))
+                    Record(baseId, container.Id);
             }
         }
     }
