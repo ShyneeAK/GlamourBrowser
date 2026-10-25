@@ -96,6 +96,9 @@ public sealed unsafe class LivePane
         if (tryOn.TryOn.SlotOf(item.Id) is not { } slot || tryOn.TryOn.PieceIn(slot) is not { } piece)
             return;
         var (first, second) = DyeBoxes.For(item.DyeCount);
+        // A row of its own: behind the buttons and the calibration text they would be cut off in a narrow pane.
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextDisabled("Farbe");
         var stain0 = piece.Stain0;
         ImGui.SameLine();
         if (DyePicker.Draw("##itemdye1", ref stain0, dyes, theme, first))
@@ -109,14 +112,19 @@ public sealed unsafe class LivePane
     /// <summary>Below the live view: back to the try-on's basis (tile mode), or the whole try-on as a new custom set.</summary>
     private void DrawTryOnButtons()
     {
-        if (ImGui.Button("Zurücksetzen"))
-            tryOn.Reset();
-        if (ImGui.IsItemHovered())
+        using (ImRaii.Disabled(!tryOn.TryOn.HasChanges))
+        {
+            if (ImGui.Button("Zurücksetzen"))
+                tryOn.Reset();
+        }
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip("Zurück auf aktuelles Outfit bzw. Unterwäsche, je nach Kachel-Modus");
 
         ImGui.SameLine();
         var store = customSets.Current;
-        using (ImRaii.Disabled(store == null || tryOn.TryOn.Pieces.Count == 0))
+        // Like the set editor: a set needs a piece the catalog knows, else it would not show under "Meine Sets".
+        var hasKnownPiece = tryOn.TryOn.Pieces.Any(p => state.ItemOf(p.ItemId) != null);
+        using (ImRaii.Disabled(store == null || !hasKnownPiece))
         {
             if (ImGui.Button("Als Set speichern") && store != null)
             {

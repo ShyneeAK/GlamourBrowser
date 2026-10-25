@@ -79,12 +79,15 @@ public sealed class TopBar
 
         // The tile dye, one per channel: like a filter (each has a chip), but it colours the dyeable tiles instead of
         // hiding any.
-        NextOnLine(ImGui.GetFrameHeight() * 2 + ImGui.GetStyle().ItemSpacing.X);
+        NextOnLine(ImGui.CalcTextSize("Farbe").X + ImGui.GetFrameHeight() * 2 + ImGui.GetStyle().ItemSpacing.X * 2);
         var dye = state.Filter.Dye;
         var first = dye.First;
         var second = dye.Second;
         using (ImRaii.Disabled(onlySearch))
         {
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextUnformatted("Farbe");
+            ImGui.SameLine();
             if (DyePicker.Draw("##tiledye1", ref first, dyes, theme, enabled: true, label: "Farbe 1"))
                 state.Filter = state.Filter with { Dye = dye with { First = first } };
             DisabledHint(onlySearch);
