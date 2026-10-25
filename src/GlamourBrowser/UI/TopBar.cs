@@ -25,11 +25,13 @@ public sealed class TopBar
     private readonly Theme.Theme theme;
     // Every job and class with its group, for choosing whole groups and naming the choice.
     private readonly IReadOnlyList<(uint Id, JobGroup Group)> jobGroups;
+    private readonly DyeCatalog dyes;
     private string search = "";
     private bool searchActive;
 
-    public TopBar(BrowserState state, JobCatalog jobs, Configuration config, Theme.Theme theme)
+    public TopBar(BrowserState state, JobCatalog jobs, Configuration config, Theme.Theme theme, DyeCatalog dyes)
     {
+        this.dyes = dyes;
         this.state = state;
         this.jobs = jobs;
         this.config = config;
@@ -75,6 +77,16 @@ public sealed class TopBar
         }
         DisabledHint(onlySearch);
 
+        // The tile dye: like a filter (it has a chip), but it colours the dyeable tiles instead of hiding any.
+        NextOnLine(ImGui.GetFrameHeight());
+        var dye = state.Filter.Dye;
+        using (ImRaii.Disabled(onlySearch))
+        {
+            if (DyePicker.Draw("##tiledye", ref dye, dyes, theme, enabled: true, label: "Farbe"))
+                state.Filter = state.Filter with { Dye = dye };
+        }
+        DisabledHint(onlySearch);
+
         NextOnLine(130 * scale);
         ImGui.SetNextItemWidth(130 * scale);
         var mode = (int)config.TileMode;
@@ -116,7 +128,7 @@ public sealed class TopBar
 
     private void DrawChips()
     {
-        var chips = FilterChips.From(state.Filter, SlotName, JobParts);
+        var chips = FilterChips.From(state.Filter, SlotName, JobParts, dyes.NameOf);
         if (chips.Count == 0)
             return;
 

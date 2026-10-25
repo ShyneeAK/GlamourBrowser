@@ -18,6 +18,7 @@ using GlamourBrowser.Sources;
 using GlamourBrowser.Data;
 using GlamourBrowser.Ownership;
 using GlamourBrowser.Rendering;
+using GlamourBrowser.Core.Ui;
 using GlamourBrowser.UI.Widgets;
 using GlamourBrowser.Wishlist;
 using GlamourBrowser.CustomSets;
@@ -87,6 +88,22 @@ public sealed unsafe class LivePane
             editorPane.Draw();
         else
             DrawItemCard();
+    }
+
+    /// <summary>The item's two dye boxes in the try-on, crossed out where it has no channel; none while it is not worn.</summary>
+    private void DrawDyeBoxes(GlamourItem item)
+    {
+        if (tryOn.TryOn.SlotOf(item.Id) is not { } slot || tryOn.TryOn.PieceIn(slot) is not { } piece)
+            return;
+        var (first, second) = DyeBoxes.For(item.DyeCount);
+        var stain0 = piece.Stain0;
+        ImGui.SameLine();
+        if (DyePicker.Draw("##itemdye1", ref stain0, dyes, theme, first))
+            tryOn.TryOn.SetStain(slot, 1, stain0, item.DyeCount);
+        var stain1 = piece.Stain1;
+        ImGui.SameLine();
+        if (DyePicker.Draw("##itemdye2", ref stain1, dyes, theme, second))
+            tryOn.TryOn.SetStain(slot, 2, stain1, item.DyeCount);
     }
 
     /// <summary>Below the live view: back to the try-on's basis (tile mode), or the whole try-on as a new custom set.</summary>
@@ -233,6 +250,7 @@ public sealed unsafe class LivePane
             live.WeaponVisible = !live.WeaponVisible;
         ImGui.SameLine();
         DrawCalibration(item);
+        DrawDyeBoxes(item);
 
         ImGui.Separator();
         DrawSources(item);

@@ -5,13 +5,17 @@ using GlamourBrowser.Data;
 
 namespace GlamourBrowser.UI.Widgets;
 
-/// <summary>A dye field: the colour (or a slash for none); a click opens all dyes by shade, plus "Keine Farbe".</summary>
+/// <summary>
+/// A dye field: the colour, empty for none, crossed out where the item has no such channel; a click opens all dyes by
+/// shade, plus "Keine Farbe".
+/// </summary>
 public static class DyePicker
 {
     private const int PerRow = 12;
 
-    /// <param name="enabled">False when the item has no such dye channel: faded, no popup.</param>
-    public static bool Draw(string id, ref byte stain, DyeCatalog dyes, Theme.Theme theme, bool enabled)
+    /// <param name="enabled">False when the item has no such dye channel: crossed out, no popup.</param>
+    /// <param name="label">Put before the dye's name in the tooltip (the tile dye: "Farbe").</param>
+    public static bool Draw(string id, ref byte stain, DyeCatalog dyes, Theme.Theme theme, bool enabled, string? label = null)
     {
         var colors = theme.Colors;
         var size = new Vector2(ImGui.GetFrameHeight());
@@ -21,13 +25,16 @@ public static class DyePicker
 
         var drawList = ImGui.GetWindowDrawList();
         var pad = new Vector2(3);
-        if (stain != 0 && dyes.Find(stain) is { } current)
-            drawList.AddRectFilled(min + pad, min + size - pad, enabled ? current.Color : (current.Color & 0x00FFFFFF) | 0x60000000, 4f);
-        else
-            drawList.AddLine(min + pad + new Vector2(0, size.Y - pad.Y * 2), min + new Vector2(size.X - pad.X, pad.Y), enabled ? colors.TextMuted : colors.Border, 1.5f);
+        if (!enabled)
+        {
+            drawList.AddLine(min + pad, min + size - pad, colors.Border, 1.5f);
+            drawList.AddLine(min + new Vector2(size.X - pad.X, pad.Y), min + new Vector2(pad.X, size.Y - pad.Y), colors.Border, 1.5f);
+        }
+        else if (stain != 0 && dyes.Find(stain) is { } current)
+            drawList.AddRectFilled(min + pad, min + size - pad, current.Color, 4f);
         drawList.AddRect(min + pad, min + size - pad, hovered && enabled ? colors.Text : colors.Border, 4f);
         if (hovered)
-            ImGui.SetTooltip(enabled ? dyes.NameOf(stain) : "nicht färbbar");
+            ImGui.SetTooltip(!enabled ? "nicht färbbar" : label != null ? $"{label}: {dyes.NameOf(stain)}" : dyes.NameOf(stain));
 
         var popup = $"{id}-dyes";
         if (clicked)

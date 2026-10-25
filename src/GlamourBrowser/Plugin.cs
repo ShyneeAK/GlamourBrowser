@@ -114,7 +114,7 @@ public sealed class Plugin : IDalamudPlugin
         mainWindow = new MainWindow(
             new LivePane(browser, ownership, live, calibration, jobs, theme, sources, wishlist, customSets, dyes, editor,
                          new SetEditorPane(editor, browser, dyes, theme, plates), plates, tryOn),
-            new TopBar(browser, jobs, config, theme),
+            new TopBar(browser, jobs, config, theme, dyes),
             new FilterColumn(browser, ownership, config, sources, theme),
             new TileGrid(browser, cache, pool, ownership, live, config, theme, sources, jobs, wishlist,
                          new WishlistPlanView(browser, ownership, wishlist, sources, live, theme, customSets, tryOn), customSets, editor, plates,
