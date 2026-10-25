@@ -7,7 +7,9 @@ using GlamourBrowser.Core.Layout;
 using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Sources;
+using GlamourBrowser.Core.CustomSets;
 using GlamourBrowser.Core.Wishlist;
+using GlamourBrowser.CustomSets;
 using GlamourBrowser.Data;
 using GlamourBrowser.Ownership;
 using GlamourBrowser.Rendering;
@@ -28,6 +30,7 @@ public sealed class BrowserState
     private readonly SourceService sources;
     private readonly SetCatalog sets;
     private readonly WishlistService wishlist;
+    private readonly CustomSetService customSets;
     // A job's base class, for the job filter (gear made for one job may list its base class too).
     private readonly Func<uint, uint> parentOf;
     // One subject per catalog item, made once instead of on every refresh.
@@ -37,8 +40,9 @@ public sealed class BrowserState
 
     public BrowserState(IReadOnlyList<GlamourItem> catalog, OwnershipService ownership, AppearanceTracker appearance,
                         TileQueue queue, TileCache<IDalamudTextureWrap> cache, RenderPool pool, Configuration config, SourceService sources, SetCatalog sets,
-                        WishlistService wishlist, JobCatalog jobs)
+                        WishlistService wishlist, JobCatalog jobs, CustomSetService customSets)
     {
+        this.customSets = customSets;
         parentOf = jobs.ParentOf;
         this.sources = sources;
         this.sets = sets;
@@ -58,6 +62,7 @@ public sealed class BrowserState
         appearance.PoseChanged += RequestTiles;
         ownership.Changed += OnOwnershipChanged;
         wishlist.Changed += OnWishlistChanged;
+        customSets.Changed += OnCustomSetsChanged;
         pool.Disrupted += RequestTiles;
         sources.Ready += Refresh;
         Refresh();
@@ -82,6 +87,9 @@ public sealed class BrowserState
     public int PageCount => ItemFilter.PageCount(Results.Count, PageSize);
     public PageLayoutResult Layout { get; private set; }
     public TileSubject? Selected { get; set; }
+
+    /// <summary>The custom sets of the logged-in character that have a known piece, the last changed first.</summary>
+    public IReadOnlyList<SetSubject> MySets { get; private set; } = [];
 
     /// <summary>Every wishlist entry that resolves to an item or set, newest first (sets only once the source index is ready).</summary>
     public IReadOnlyList<TileSubject> WishlistEntries { get; private set; } = [];
@@ -170,7 +178,13 @@ public sealed class BrowserState
     public ItemSubject? ItemSubjectFor(uint itemId) => itemSubjects.GetValueOrDefault(itemId);
 
     /// <summary>The item or set a tile key was made for (the render pool's lookup).</summary>
-    public TileSubject? SubjectFor(TileKey key) => key.Set.IsSet ? sets.Find(key.Set) : itemSubjects.GetValueOrDefault(key.ItemId);
+    public TileSubject? SubjectFor(TileKey key) => key.Set.IsSet ? SetSubjectFor(key.Set) : itemSubjects.GetValueOrDefault(key.ItemId);
+
+    /// <summary>A detected set or one of the custom sets.</summary>
+    public SetSubject? SetSubjectFor(SetId id) => id.Kind == SetKind.Custom ? MySets.FirstOrDefault(s => s.Set.Id == id) : sets.Find(id);
+
+    /// <summary>The catalog item for a custom set piece (null when the catalog does not know it).</summary>
+    public GlamourItem? ItemOf(uint itemId) => itemSubjects.TryGetValue(itemId, out var subject) ? subject.Item : null;
 
     private int RenderWidth => Layout.RenderWidth == 0 ? PageLayout.RenderSteps[0] : Layout.RenderWidth;
 
@@ -195,8 +209,11 @@ public sealed class BrowserState
             var index = sources.IsReady ? sources.Index : null;
             Func<uint, bool> isOwned = id => store?.IsOwned(id) ?? false;
             var sorted = filter with { Sort = config.Sort };
+            MySets = ResolveMySets();
             WishlistEntries = ResolveWishlist();
-            if (filter.Mode == BrowseMode.Wishlist)
+            if (filter.Mode == BrowseMode.MySets)
+                Results = WishResults.Filter(MySets, filter.SearchText, hideDone: false, isOwned);
+            else if (filter.Mode == BrowseMode.Wishlist)
                 Results = WishResults.Filter(WishlistEntries, filter.SearchText, config.HideDoneWishes, isOwned);
             else if (filter.Mode == BrowseMode.Sets)
             {
@@ -271,13 +288,31 @@ public sealed class BrowserState
 
     private IReadOnlyList<TileSubject> ResolveWishlist()
         => wishlist.Current is { } store
-            ? WishResults.Resolve(store.Entries, id => itemSubjects.GetValueOrDefault(id), id => sets.Find(id))
+            ? WishResults.Resolve(store.Entries, id => itemSubjects.GetValueOrDefault(id), SetSubjectFor)
             : [];
+
+    private IReadOnlyList<SetSubject> ResolveMySets()
+        => customSets.Current?.Sets.Select(set => CustomSetSubjects.ToSubject(set, ItemOf)).OfType<SetSubject>().ToList() ?? [];
 
     private void OnOwnershipChanged()
     {
-        if (filter.Ownership != OwnershipFilter.All || filter.Mode == BrowseMode.Wishlist)
+        if (filter.Ownership != OwnershipFilter.All || filter.Mode is BrowseMode.Wishlist or BrowseMode.MySets)
             Refresh();
+    }
+
+    private void OnCustomSetsChanged()
+    {
+        // A custom set on the wishlist changes the wishlist too.
+        if (filter.Mode is BrowseMode.MySets or BrowseMode.Wishlist)
+            Refresh();
+        else
+        {
+            lock (RenderSync.Lock)
+            {
+                MySets = ResolveMySets();
+                WishlistEntries = ResolveWishlist();
+            }
+        }
     }
 
     private void OnWishlistChanged()

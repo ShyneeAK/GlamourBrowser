@@ -12,6 +12,7 @@ using GlamourBrowser.Rendering;
 using GlamourBrowser.Sources;
 using GlamourBrowser.UI.Widgets;
 using GlamourBrowser.Wishlist;
+using GlamourBrowser.CustomSets;
 
 namespace GlamourBrowser.UI;
 
@@ -33,7 +34,7 @@ public sealed class WishlistPlanView
     private int planVersion;
 
     public WishlistPlanView(BrowserState state, OwnershipService ownership, WishlistService wishlist, SourceService sources, LivePreview live,
-                            Theme.Theme theme)
+                            Theme.Theme theme, CustomSetService customSets)
     {
         this.state = state;
         this.ownership = ownership;
@@ -43,6 +44,8 @@ public sealed class WishlistPlanView
         ownership.Changed += () => version++;
         wishlist.Changed += () => version++;
         sources.Ready += () => version++;
+        // A custom set on the wishlist changes the plan with its pieces.
+        customSets.Changed += () => version++;
     }
 
     public void Draw()

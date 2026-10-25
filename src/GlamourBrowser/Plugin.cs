@@ -17,6 +17,7 @@ using GlamourBrowser.Rendering;
 using GlamourBrowser.Sources;
 using GlamourBrowser.UI;
 using GlamourBrowser.Wishlist;
+using GlamourBrowser.CustomSets;
 
 namespace GlamourBrowser;
 
@@ -44,6 +45,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly SettingsWindow settingsWindow;
     private readonly OwnershipService ownership;
     private readonly WishlistService wishlist;
+    private readonly CustomSetService customSets;
     private readonly InventoryReader inventoryReader;
     private readonly RetainerReader retainerReader;
     private readonly DresserReader dresserReader;
@@ -67,6 +69,7 @@ public sealed class Plugin : IDalamudPlugin
         var (catalog, variants) = ItemCatalogLoader.Load(DataManager);
         ownership = new OwnershipService(variants);
         wishlist = new WishlistService(variants);
+        customSets = new CustomSetService(variants);
         inventoryReader = new InventoryReader(ownership);
         retainerReader = new RetainerReader(ownership);
         dresserReader = new DresserReader(ownership);
@@ -80,7 +83,7 @@ public sealed class Plugin : IDalamudPlugin
         sources = new SourceService(catalog.Select(i => i.Id).Concat(variants.Keys).ToHashSet());
         var sets = new SetCatalog(byId, variants, sources);
         var jobs = new JobCatalog(DataManager);
-        browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets, wishlist, jobs);
+        browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets, wishlist, jobs, customSets);
         Framework.Update += OnFrameworkUpdate;
         UI.UiScale.Set(config.UiScale);
         var theme = new UI.Theme.Theme(config);
@@ -89,7 +92,7 @@ public sealed class Plugin : IDalamudPlugin
             new TopBar(browser, jobs, config, theme),
             new FilterColumn(browser, ownership, config, sources, theme),
             new TileGrid(browser, cache, pool, ownership, live, config, theme, sources, jobs, wishlist,
-                         new WishlistPlanView(browser, ownership, wishlist, sources, live, theme)),
+                         new WishlistPlanView(browser, ownership, wishlist, sources, live, theme, customSets)),
             theme,
             config);
         settingsWindow = new SettingsWindow(config, browser, pool, calibration, theme);
@@ -208,6 +211,7 @@ public sealed class Plugin : IDalamudPlugin
         dresserReader.Dispose();
         retainerReader.Dispose();
         inventoryReader.Dispose();
+        customSets.Dispose();
         wishlist.Dispose();
         ownership.Dispose();
     }

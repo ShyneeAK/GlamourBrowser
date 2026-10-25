@@ -28,6 +28,14 @@ public class WishResultsTests
     }
 
     [Fact]
+    public void Resolve_DeletedCustomSet_IsLeftOut()
+    {
+        // A starred custom set that was deleted stays in the wishlist file but does not show.
+        var deleted = new SetId(SetKind.Custom, 3);
+        Assert.Equal([Robe], Resolve(new WishEntry(WishKey.ForItem(1), Now), new WishEntry(WishKey.ForSet(deleted), Now)));
+    }
+
+    [Fact]
     public void Filter_SearchMatchesTheNameOrAPiece()
     {
         IReadOnlyList<TileSubject> all = [Asuran, Robe];
