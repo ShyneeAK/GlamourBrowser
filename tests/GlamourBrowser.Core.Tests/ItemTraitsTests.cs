@@ -65,6 +65,14 @@ public class ItemTraitsTests
     public void Top_SavageBeatsVendor() => Assert.Equal(RaidSavage, SourceRanking.Top(new HashSet<SourceCategory> { GilVendor, RaidSavage }));
 
     [Fact]
+    public void Rank_PutsContentFirst()
+    {
+        Assert.True(SourceRanking.Rank(RaidSavage) < SourceRanking.Rank(Quest));
+        Assert.True(SourceRanking.Rank(Quest) < SourceRanking.Rank(GilVendor));
+        Assert.True(SourceRanking.Rank(Other) < SourceRanking.Rank((SourceCategory)99));
+    }
+
+    [Fact]
     public void JobBadge_ClassAndItsJob_IsTheJob()
     {
         // Conjurer 6 is the base class of White Mage 24 (ClassJobParent of 24 is 6).

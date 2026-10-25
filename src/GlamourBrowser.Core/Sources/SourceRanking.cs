@@ -21,6 +21,15 @@ public static class SourceRanking
         [SourceCategory.GilVendor, SourceCategory.MogStation, SourceCategory.Other],
     ];
 
+    private static readonly SourceCategory[] Ranked = Groups.SelectMany(g => g).ToArray();
+
+    /// <summary>Position in all groups read one after another (content first); a category outside every group comes last.</summary>
+    public static int Rank(SourceCategory category)
+    {
+        var index = Array.IndexOf(Ranked, category);
+        return index < 0 ? Ranked.Length : index;
+    }
+
     public static IReadOnlyList<SourceCategory> Icons(IReadOnlySet<SourceCategory> categories)
     {
         var result = new List<SourceCategory>(Groups.Length);
