@@ -65,6 +65,11 @@ public sealed unsafe class LivePreview : IDisposable
     public bool WeaponVisible { get; set; } = true;
     private bool? appliedWeaponVisible;
 
+    /// <summary>The helmet's visor closed, toggled from the UI like the game's character window; starts as the player has it.</summary>
+    public bool VisorClosed { get; set; }
+    private bool visorTaken;
+    private bool? appliedVisor;
+
     public Texture* Texture => view != null ? view.GetTexture() : null;
 
     public void Select(TileSubject? subject) => Selected = subject;
@@ -125,6 +130,12 @@ public sealed unsafe class LivePreview : IDisposable
                 return;
             view = new CharaViewHandle(Slot);
             view.Create(character, appearance.Race, appearance.Sex);
+            if (!visorTaken)
+            {
+                VisorClosed = character->DrawData.IsVisorToggled;
+                visorTaken = true;
+            }
+            appliedVisor = null;
             applied = null;
             appliedPose = null;
             appliedWeaponDrawn = null;
@@ -179,6 +190,7 @@ public sealed unsafe class LivePreview : IDisposable
             applied = wanted;
             appliedPose = null;
             appliedWeaponVisible = null;
+            appliedVisor = null;
         }
 
         // With the weapon drawn the battle stance is the base animation: an idle pose override would hide it.
@@ -194,6 +206,13 @@ public sealed unsafe class LivePreview : IDisposable
         {
             view.ApplyVisibility(weaponVisible);
             appliedWeaponVisible = weaponVisible;
+        }
+
+        // The visor too: a new helmet loads with it open.
+        if (appliedVisor != VisorClosed && view.IsIdle)
+        {
+            view.SetVisor(VisorClosed);
+            appliedVisor = VisorClosed;
         }
 
         // Drawn or sheathed once the items have loaded and no draw or sheathe is playing (the game drops a toggle meanwhile);

@@ -127,6 +127,14 @@ public sealed unsafe class CharaViewHandle : IDisposable
         }
     }
 
+    /// <summary>Closes or opens the helmet's visor, like the game's "Manually Adjust Visor" (/visor); helmets without one stay as they are.</summary>
+    public void SetVisor(bool closed)
+    {
+        var character = view != null && view->State == StateReady ? view->GetCharacter() : null;
+        if (character != null && character->DrawData.IsVisorToggled != closed)
+            character->DrawData.SetVisor(closed);
+    }
+
     /// <summary>
     /// True when every weapon with a model has a draw object that is actually drawn: hidden bit clear and
     /// DrawObject.Flags bit 0x01 set. Weapons can finish loading after the view reports idle.

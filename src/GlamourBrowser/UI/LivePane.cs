@@ -290,6 +290,9 @@ public sealed unsafe class LivePane
                 live.WeaponVisible ? "Waffe ausblenden" : "Waffe anzeigen", theme))
             live.WeaponVisible = !live.WeaponVisible;
         ImGui.SameLine();
+        if (IconButton.Draw("##visor", 0, FontAwesomeIcon.HardHat, live.VisorClosed ? "Visier öffnen" : "Visier schließen (nur Helme mit Visier)", theme))
+            live.VisorClosed = !live.VisorClosed;
+        ImGui.SameLine();
         DrawCalibration(item);
         DrawDyeBoxes(item);
 
