@@ -16,7 +16,7 @@ public sealed unsafe class LivePreview : IDisposable
     private const uint Slot = 7;
     // A toggle that has not taken after this many ticks (with the character free) was dropped and is sent anew, at most
     // MaxToggleRetries times in a row. Right after a weapon of another kind has loaded the game drops draws for a while
-    // (seen with /gbrowser trace: a draw seconds later takes), so this keeps trying for a few seconds.
+    // (seen with /glamourdresser trace: a draw seconds later takes), so this keeps trying for a few seconds.
     private const int ToggleCheckTicks = 12;
     private const int MaxToggleRetries = 15;
 
@@ -90,7 +90,7 @@ public sealed unsafe class LivePreview : IDisposable
 
     public string DescribeWeapons() => view?.DescribeWeapons() ?? "live: no view";
 
-    /// <summary>Diagnostics for /gbrowser trace: what the preview asked for and the view's state.</summary>
+    /// <summary>Diagnostics for /glamourdresser trace: what the preview asked for and the view's state.</summary>
     public string DescribeTrace()
         => $"want drawn {WeaponDrawn} applied {appliedWeaponDrawn} sheathe {sheatheFrames} stance {inHandStance} | {view?.DescribeTrace() ?? "no view"}";
 

@@ -11,7 +11,7 @@ using ItemSource = FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentMiragePrismMira
 namespace GlamourBrowser.GlamourPlate;
 
 /// <summary>
-/// /gbrowser plate …: logs the glamour plate editor's state and sets single slots, to learn how the game's plate
+/// /glamourdresser plate …: logs the glamour plate editor's state and sets single slots, to learn how the game's plate
 /// agent behaves (slot order, sources, dyes). Call on the framework thread.
 /// </summary>
 public static unsafe class PlateDiagnostics
@@ -56,7 +56,7 @@ public static unsafe class PlateDiagnostics
                 DyeSelected(slot, stain0, stain1);
                 break;
             default:
-                Log("usage: /gbrowser plate [box <name>|armoire <name>|set <slot> <dresserIndex> [stain0 stain1 [itemId]]|cabinet <slot> <cabinetRow>|clear <slot>|dye <slot> <channel 0/1> <stain> [dyeItemId]|dyesel <slot> <stain0> <stain1>]");
+                Log("usage: /glamourdresser plate [box <name>|armoire <name>|set <slot> <dresserIndex> [stain0 stain1 [itemId]]|cabinet <slot> <cabinetRow>|clear <slot>|dye <slot> <channel 0/1> <stain> [dyeItemId]|dyesel <slot> <stain0> <stain1>]");
                 break;
         }
     }

@@ -33,12 +33,12 @@ public sealed unsafe class RenderPool : IDisposable
     private const int DrawStableFrames = 6;
     private const int DrawTimeoutFrames = 240;
     // When the draw has not taken, sheathe and draw again every this many frames, at most MaxDrawRetries times. Right
-    // after a weapon of another kind has loaded the game drops draws for a while (seen with /gbrowser trace: a draw
+    // after a weapon of another kind has loaded the game drops draws for a while (seen with /glamourdresser trace: a draw
     // seconds later takes), so the retries go on for a good part of the timeout.
     private const int DrawRetryFrames = 20;
     private const int MaxDrawRetries = 8;
     // Sheathing a weapon of another kind before the next weapon tile: at least this long, at most until the timeout. The
-    // game drops sheathes as well (seen with /gbrowser trace: the weapon stayed drawn and the next tile kept the old
+    // game drops sheathes as well (seen with /glamourdresser trace: the weapon stayed drawn and the next tile kept the old
     // stance), so one that has not taken is sent again every SheatheRetryFrames, at most MaxSheatheRetries times.
     internal const int SheatheMinFrames = 8;
     internal const int SheatheTimeoutFrames = 150;

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Version>0.1.1.0</Version>
     <Author>ShyneeAK</Author>
-    <Name>GlamourBrowser</Name>
+    <Name>Shynees Glamour Dresser</Name>
     <Punchline>Glamour-Raster mit gerenderten Charakter-Kacheln.</Punchline>
     <Description>Zeigt alle ausruestbaren Items als Seiten-Raster mit gerenderten Bildern des eigenen Charakters, filterbar, mit Besitzstatus und Fundort pro Item.</Description>
     <RepoUrl>https://github.com/ShyneeAK/GlamourBrowser</RepoUrl>

@@ -36,7 +36,7 @@ public sealed unsafe class CharaViewHandle : IDisposable
     /// <summary>
     /// Bit in DrawObjectData.State that keeps a weapon from being drawn in our views (its DrawObject
     /// then lacks Flags bit 0x01). The game's try-on view never has it set; clearing it shows the weapon.
-    /// Found by comparing both views with /gbrowser diag.
+    /// Found by comparing both views with /glamourdresser diag.
     /// </summary>
     private const byte WeaponHiddenStateBit = 0x08;
     private const byte WeaponInHandBit = 0x04;
@@ -80,7 +80,7 @@ public sealed unsafe class CharaViewHandle : IDisposable
     }
 
     /// <summary>
-    /// Gives the view's character no job, like the game's try-on window (seen with /gbrowser diag): a weapon drawn
+    /// Gives the view's character no job, like the game's try-on window (seen with /glamourdresser diag): a weapon drawn
     /// afterwards is held in its own stance instead of the player's job's. Call before drawing.
     /// </summary>
     public void UseTryonJob()
@@ -214,7 +214,7 @@ public sealed unsafe class CharaViewHandle : IDisposable
     /// </summary>
     /// <summary>
     /// True while the character draws or sheathes its weapon: the timeline sequencer's second slot plays that animation
-    /// (1 drawing, 2 sheathing; seen with /gbrowser trace). The game drops a toggle sent meanwhile, and the in-hand bit
+    /// (1 drawing, 2 sheathing; seen with /glamourdresser trace). The game drops a toggle sent meanwhile, and the in-hand bit
     /// clears halfway through sheathing, so this is what tells that the character is free again.
     /// </summary>
     public bool IsChangingStance()
@@ -301,7 +301,7 @@ public sealed unsafe class CharaViewHandle : IDisposable
                + " || " + DescribeModelData(view);
     }
 
-    /// <summary>Diagnostics for /gbrowser trace: loading, weapon and animation state of a view in one short line.</summary>
+    /// <summary>Diagnostics for /glamourdresser trace: loading, weapon and animation state of a view in one short line.</summary>
     public static string DescribeTrace(CharaView* view)
     {
         if (view == null || view->State != StateReady)

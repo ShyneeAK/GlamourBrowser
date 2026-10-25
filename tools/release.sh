@@ -46,7 +46,7 @@ git add "$project" repo.json
 git commit -q -m "release: $tag"
 git tag "$tag"
 git_gh push origin "$tag"
-gh release create "$tag" "$out/latest.zip" --repo "$repo" --verify-tag --title "GlamourBrowser $version" --generate-notes
+gh release create "$tag" "$out/latest.zip" --repo "$repo" --verify-tag --title "Shynees Glamour Dresser $version" --generate-notes
 # Only now: from here on repo.json points at a release that exists.
 git_gh push origin HEAD:main
 echo "Released $tag"

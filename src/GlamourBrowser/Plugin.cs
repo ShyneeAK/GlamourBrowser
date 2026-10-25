@@ -39,7 +39,9 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IChatGui ChatGui { get; private set; } = null!;
     [PluginService] internal static IGameGui GameGui { get; private set; } = null!;
 
-    private const string CommandName = "/gbrowser";
+    // The internal name stays GlamourBrowser (settings, sets and wishes are stored under it); only what players see changed.
+    private const string CommandName = "/glamourdresser";
+    private const string ShortCommandName = "/sgd";
 
     private readonly WindowSystem windowSystem = new("GlamourBrowser");
     private readonly MainWindow mainWindow;
@@ -64,7 +66,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly SourceService sources;
     private readonly MemoryStats memoryStats;
     private bool paused;
-    // Frames left of a /gbrowser trace (live view and the game's try-on window, every third frame).
+    // Frames left of a /glamourdresser trace (live view and the game's try-on window, every third frame).
     private int traceFrames;
 
     public Plugin()
@@ -139,7 +141,12 @@ public sealed class Plugin : IDalamudPlugin
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
-            HelpMessage = "Öffnet den GlamourBrowser. /gbrowser diag schreibt den Waffenzustand aller Ansichten ins Log, /gbrowser plate den Zustand des Glamour-Plate-Editors.",
+            HelpMessage = "Öffnet Shynees Glamour Dresser (kurz: /sgd).",
+        });
+        CommandManager.AddHandler(ShortCommandName, new CommandInfo(OnCommand)
+        {
+            HelpMessage = "Öffnet Shynees Glamour Dresser.",
+            ShowInHelp = false,
         });
 
         // Only now: the framework handler uses the windows and everything above (a tick during construction would find them null).
@@ -254,6 +261,7 @@ public sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.OpenConfigUi -= settingsWindow.Toggle;
         windowSystem.RemoveAllWindows();
         CommandManager.RemoveHandler(CommandName);
+        CommandManager.RemoveHandler(ShortCommandName);
         UI.UiScale.Dispose();
 
         Framework.Update -= OnFrameworkUpdate;

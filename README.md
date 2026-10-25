@@ -1,4 +1,4 @@
-# GlamourBrowser
+# Shynees Glamour Dresser
 
 A [Dalamud](https://github.com/goatcorp/Dalamud) plugin for Final Fantasy XIV that shows every equippable item as a paged grid of tiles, each one rendered on your own character.
 
@@ -7,7 +7,8 @@ The user interface is in German. The plugin is not in the official Dalamud repos
 ## Features
 
 - **Tile grid** of all equippable items, rendered on your character in your current outfit or in underwear, with adjustable columns and rows.
-- **Live preview** of the selected item or set: rotate, pan and zoom, with a camera position you can calibrate per slot and character.
+- **Live try-on**: every item or set you click is put on, so an outfit builds up piece by piece. Rotate, pan and zoom, with a camera position you can calibrate per slot and character; reset it or save it as a set. The tiles show their items on this outfit.
+- **Dye preview**: two tile dyes (channel 1 and 2) render every dyeable tile in them and come along when you click a tile; two dye boxes recolour the selected item.
 - **Filters** by slot, level, ownership, source (shops, quests, duties and more), jobs (gear only certain jobs can wear, several at once or whole groups such as all crafters) and dyeability.
 - **Ownership** across inventory, retainers, glamour dresser and armoire, including where an item is stored.
 - **Gear sets** detected from the game data, shown as one tile.
@@ -19,11 +20,11 @@ The user interface is in German. The plugin is not in the official Dalamud repos
 
 1. In the game, open the Dalamud settings with `/xlsettings` and go to **Experimental**.
 2. Under **Custom Plugin Repositories**, add `https://raw.githubusercontent.com/ShyneeAK/GlamourBrowser/main/repo.json`, tick **Enabled** and save.
-3. Open the plugin installer with `/xlplugins`, search for GlamourBrowser and install it.
+3. Open the plugin installer with `/xlplugins`, search for Shynees Glamour Dresser and install it.
 
 ## Usage
 
-`/gbrowser` opens or closes the main window.
+`/glamourdresser` (short: `/sgd`) opens or closes the main window.
 
 ## Building
 
@@ -34,7 +35,7 @@ dotnet build GlamourBrowser.slnx -c Debug
 dotnet test tests/GlamourBrowser.Core.Tests
 ```
 
-To load your own build in the game, add `src/GlamourBrowser/bin/Debug/GlamourBrowser.dll` under Dalamud Settings → Experimental → Dev Plugin Locations and enable it in the plugin installer. Disable the installed GlamourBrowser first: Dalamud does not load two plugins with the same name.
+To load your own build in the game, add `src/GlamourBrowser/bin/Debug/GlamourBrowser.dll` under Dalamud Settings → Experimental → Dev Plugin Locations and enable it in the plugin installer. Disable the installed Shynees Glamour Dresser first: Dalamud does not load two plugins with the same internal name.
 
 `tools/release.sh [version]` publishes a release: a Release build, a GitHub release with `latest.zip` and an updated `repo.json`.
 

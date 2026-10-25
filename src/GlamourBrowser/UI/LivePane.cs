@@ -246,7 +246,7 @@ public sealed unsafe class LivePane
         ImGui.SameLine();
         if (IconButton.Draw("##chatlink", 0, FontAwesomeIcon.CommentDots, "Chat-Link: schreibt einen Item-Link in deinen eigenen Chat und kopiert den Namen.", theme))
         {
-            Plugin.ChatGui.Print(new SeStringBuilder().AddText("GlamourBrowser: ").AddItemLink(item.Id, false).Build());
+            Plugin.ChatGui.Print(new SeStringBuilder().AddText("Shynees Glamour Dresser: ").AddItemLink(item.Id, false).Build());
             ImGui.SetClipboardText(item.Name);
         }
         ImGui.SameLine();
