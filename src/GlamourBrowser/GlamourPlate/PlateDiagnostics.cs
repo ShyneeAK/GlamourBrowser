@@ -19,7 +19,7 @@ public static unsafe class PlateDiagnostics
     public static void Run(string[] args)
     {
         // A plate has 12 slots; the game's functions do not check the index.
-        if (args.Length >= 2 && args[0] is "set" or "cabinet" or "clear" && (!int.TryParse(args[1], out var checkedSlot) || checkedSlot is < 0 or > 11))
+        if (args.Length >= 2 && args[0] is "set" or "cabinet" or "clear" or "dye" or "dyesel" && (!int.TryParse(args[1], out var checkedSlot) || checkedSlot is < 0 or > 11))
         {
             Log("slot must be 0–11");
             return;
@@ -49,8 +49,14 @@ public static unsafe class PlateDiagnostics
             case "clear" when args.Length >= 2 && int.TryParse(args[1], out var slot):
                 Clear(slot);
                 break;
+            case "dye" when args.Length >= 4 && int.TryParse(args[1], out var slot) && int.TryParse(args[2], out var channel) && byte.TryParse(args[3], out var stain):
+                DyeItem(slot, channel, stain);
+                break;
+            case "dyesel" when args.Length >= 4 && int.TryParse(args[1], out var slot) && byte.TryParse(args[2], out var stain0) && byte.TryParse(args[3], out var stain1):
+                DyeSelected(slot, stain0, stain1);
+                break;
             default:
-                Log("usage: /gbrowser plate [box <name>|armoire <name>|set <slot> <dresserIndex> [stain0 stain1 [itemId]]|cabinet <slot> <cabinetRow>|clear <slot>]");
+                Log("usage: /gbrowser plate [box <name>|armoire <name>|set <slot> <dresserIndex> [stain0 stain1 [itemId]]|cabinet <slot> <cabinetRow>|clear <slot>|dye <slot> <channel 0/1> <stain>|dyesel <slot> <stain0> <stain1>]");
                 break;
         }
     }
@@ -196,6 +202,55 @@ public static unsafe class PlateDiagnostics
         agent->Data->SelectedItemIndex = (uint)slot;
         agent->SetSelectedItemData(ItemSource.Cabinet, row, itemId, 0, 0);
         Dump();
+    }
+
+    /// <summary>Marks a dye on one channel of a slot with SetItemStain, taking "Einfacher Farbstoff" (or the remover for 0) from the inventory.</summary>
+    private static void DyeItem(int slot, int channel, byte stain)
+    {
+        var agent = OpenData();
+        if (agent == null)
+            return;
+        var dyeItemId = stain == 0 ? 5728u : 52254u;
+        var item = FindInInventory(dyeItemId);
+        Log($"dye slot {slot} channel {channel} stain {stain} via {dyeItemId} inv {(item != null ? "yes" : "no")} (SetItemStain)");
+        agent->SetItemStain((uint)slot, stain, item, dyeItemId, channel);
+        Dump();
+    }
+
+    /// <summary>Marks both dyes of a slot with SetSelectedItemStains after selecting it.</summary>
+    private static void DyeSelected(int slot, byte stain0, byte stain1)
+    {
+        var agent = OpenData();
+        if (agent == null)
+            return;
+        var id0 = stain0 == 0 ? 0u : 52254u;
+        var id1 = stain1 == 0 ? 0u : 52254u;
+        var item0 = id0 != 0 ? FindInInventory(id0) : null;
+        var item1 = id1 != 0 ? FindInInventory(id1) : null;
+        Log($"dyesel slot {slot} stains {stain0}/{stain1} (SetSelectedItemStains)");
+        agent->Data->SelectedItemIndex = (uint)slot;
+        agent->SetSelectedItemStains(item0, stain0, id0, item1, stain1, id1);
+        Dump();
+    }
+
+    private static InventoryItem* FindInInventory(uint itemId)
+    {
+        var manager = InventoryManager.Instance();
+        if (manager == null)
+            return null;
+        foreach (var type in new[] { InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3, InventoryType.Inventory4 })
+        {
+            var container = manager->GetInventoryContainer(type);
+            if (container == null || !container->IsLoaded)
+                continue;
+            for (var i = 0; i < container->Size; i++)
+            {
+                var item = container->GetInventorySlot(i);
+                if (item != null && item->ItemId == itemId)
+                    return item;
+            }
+        }
+        return null;
     }
 
     private static void Clear(int slot)

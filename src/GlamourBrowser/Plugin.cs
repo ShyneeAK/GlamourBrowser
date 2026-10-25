@@ -85,11 +85,11 @@ public sealed class Plugin : IDalamudPlugin
         var jobs = new JobCatalog(DataManager);
         var dyes = new DyeCatalog(DataManager);
         browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets, wishlist, jobs, customSets);
-        Framework.Update += OnFrameworkUpdate;
         UI.UiScale.Set(config.UiScale);
         var theme = new UI.Theme.Theme(config);
         var editor = new CustomSetEditor(browser, customSets, live, variants, appearance);
-        plates = new GlamourPlate.GlamourPlateBridge(variants, ownership, dyes, id => browser.ItemOf(id)?.Name ?? $"Item {id}");
+        plates = new GlamourPlate.GlamourPlateBridge(variants, ownership, dyes, id => browser.ItemOf(id)?.Name ?? $"Item {id}",
+            id => browser.ItemOf(id)?.DyeCount ?? 0);
         mainWindow = new MainWindow(
             new LivePane(browser, ownership, live, calibration, jobs, theme, sources, wishlist, customSets, dyes, editor,
                          new SetEditorPane(editor, browser, dyes, theme, plates), plates),
@@ -108,6 +108,8 @@ public sealed class Plugin : IDalamudPlugin
             HelpMessage = "Öffnet den GlamourBrowser. /gbrowser diag schreibt den Waffenzustand aller Ansichten ins Log, /gbrowser plate den Zustand des Glamour-Plate-Editors.",
         });
 
+        // Only now: the framework handler uses the windows and everything above (a tick during construction would find them null).
+        Framework.Update += OnFrameworkUpdate;
         PluginInterface.UiBuilder.Draw += windowSystem.Draw;
         PluginInterface.UiBuilder.OpenMainUi += mainWindow.Toggle;
         PluginInterface.UiBuilder.OpenConfigUi += settingsWindow.Toggle;

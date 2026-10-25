@@ -36,6 +36,7 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
     private readonly OwnershipService ownership;
     private readonly DyeCatalog dyes;
     private readonly Func<uint, string> nameOf;
+    private readonly Func<uint, int> dyeCountOf;
     private readonly Dictionary<uint, IReadOnlyList<uint>> outfitSets;
     private Transfer? running;
 
@@ -52,8 +53,11 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
     }
 
     /// <param name="nameOf">The item's name for the result list.</param>
-    public GlamourPlateBridge(IReadOnlyDictionary<uint, uint> variants, OwnershipService ownership, DyeCatalog dyes, Func<uint, string> nameOf)
+    /// <param name="dyeCountOf">The item's dye channels (0–2).</param>
+    public GlamourPlateBridge(IReadOnlyDictionary<uint, uint> variants, OwnershipService ownership, DyeCatalog dyes, Func<uint, string> nameOf,
+                              Func<uint, int> dyeCountOf)
     {
+        this.dyeCountOf = dyeCountOf;
         this.variants = variants;
         this.ownership = ownership;
         this.dyes = dyes;
@@ -189,21 +193,36 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
             return (Normalize(agent->Data->CurrentItems[index].ItemId) == 0, true);
         }
 
-        agent->SetSelectedItemData(source.Kind == PlateSourceKind.Dresser ? ItemSource.PrismBox : ItemSource.Cabinet, source.Id, source.ItemId,
-            source.Stain0, source.Stain1);
+        // The dresser holds values that are no dyes for some pieces (e.g. 232 on a necklace): only real dyes of existing channels go along.
+        var piece = slot.Piece!.Value;
+        var dyeCount = dyeCountOf(piece.ItemId);
+        var (base0, base1) = PlateDyes.BaseStains(source, dyeCount, IsDye);
+        agent->SetSelectedItemData(source.Kind == PlateSourceKind.Dresser ? ItemSource.PrismBox : ItemSource.Cabinet, source.Id, source.ItemId, base0, base1);
         if (Normalize(agent->Data->CurrentItems[index].ItemId) != Expected(slot))
             return (false, false);
 
-        var (first, second) = PlateDyes.Changes(slot.Piece!.Value, source, dyes.ItemsOf);
+        var (first, second) = PlateDyes.Changes(piece, source, dyeCount, IsDye, dyes.ItemsOf);
         if (first == null && second == null)
             return (true, true);
 
+        // SetItemStain addresses the slot itself (SetSelectedItemStains takes the slot clicked in the editor, see the dye spike).
         var item0 = DyeItem(first, out var id0);
         var item1 = DyeItem(second, out var id1);
-        agent->SetSelectedItemStains(item0, first?.Stain ?? 0, id0, item1, second?.Stain ?? 0, id1);
+        if (first is { } dye0)
+            agent->SetItemStain((uint)index, dye0.Stain, item0, id0, 0);
+        if (second is { } dye1)
+            agent->SetItemStain((uint)index, dye1.Stain, item1, id1, 1);
         ref var shown = ref agent->Data->CurrentItems[index];
         var marked = (first == null || shown.PendingStainIds[0] == first.Value.Stain && shown.PendingStainItemIds[0] != 0)
                      && (second == null || shown.PendingStainIds[1] == second.Value.Stain && shown.PendingStainItemIds[1] != 0);
+        // Diagnostics for the dye transfer (see the C spec, dye spike); to be removed once it is confirmed in game.
+        Plugin.Log.Information($"[plate-transfer] slot {index} item {piece.ItemId} source {source.Kind} {source.Id} raw {source.ItemId} channels {dyeCount} "
+            + $"stored {source.Stain0}/{source.Stain1} base {base0}/{base1} wanted {piece.Stain0}/{piece.Stain1} "
+            + $"| ch1 {(first is { } f ? $"{f.Stain} via {id0} inv {(item0 != null ? "yes" : "no")}" : "-")} "
+            + $"| ch2 {(second is { } g ? $"{g.Stain} via {id1} inv {(item1 != null ? "yes" : "no")}" : "-")} "
+            + $"| after: stains {shown.StainIds[0]}/{shown.StainIds[1]} pending {shown.PendingStainIds[0]}/{shown.PendingStainIds[1]} "
+            + $"items {shown.PendingStainItemIds[0]}/{shown.PendingStainItemIds[1]} fromInv {shown.IsPendingStainFromInventoryItem[0]}/{shown.IsPendingStainFromInventoryItem[1]} "
+            + $"fromId {shown.IsPendingStainFromItemId[0]}/{shown.IsPendingStainFromItemId[1]} state {shown.StainState} selected {agent->Data->SelectedItemIndex} -> marked {marked}");
         return (true, marked);
     }
 
@@ -238,6 +257,9 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
         itemId = wanted.ItemIds[0];
         return null;
     }
+
+    /// <summary>"No dye" or a dye of the Stain sheet.</summary>
+    private bool IsDye(byte stain) => stain == 0 || dyes.Find(stain) != null;
 
     private static uint Expected(PlateSlot slot) => slot.Source is { } source ? Normalize(source.ItemId) : 0;
 
