@@ -30,10 +30,12 @@ public sealed unsafe class RenderPool : IDisposable
     // Drawing a weapon: wait at least this long if no timeline change is seen, until the timelines are stable, at most the timeout.
     private const int DrawMinFrames = 8;
     private const int DrawStableFrames = 6;
-    private const int DrawTimeoutFrames = 120;
-    // When the weapon is still not in hand, sheathe and draw again every this many frames, at most MaxDrawRetries times.
+    private const int DrawTimeoutFrames = 240;
+    // When the draw has not taken, sheathe and draw again every this many frames, at most MaxDrawRetries times. Right
+    // after a weapon of another kind has loaded the game drops draws for a while (seen with /gbrowser trace: a draw
+    // seconds later takes), so the retries go on for a good part of the timeout.
     private const int DrawRetryFrames = 20;
-    private const int MaxDrawRetries = 2;
+    private const int MaxDrawRetries = 8;
     // Sheathing a weapon of another kind before the next weapon tile: at least this long, at most until the timeout.
     internal const int SheatheMinFrames = 8;
     internal const int SheatheTimeoutFrames = 90;

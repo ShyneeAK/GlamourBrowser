@@ -11,9 +11,10 @@ public sealed unsafe class LivePreview : IDisposable
 {
     private const uint Slot = 7;
     // A toggle that has not taken after this many ticks (with the character free) was dropped and is sent anew, at most
-    // MaxToggleRetries times in a row.
-    private const int ToggleCheckTicks = 10;
-    private const int MaxToggleRetries = 2;
+    // MaxToggleRetries times in a row. Right after a weapon of another kind has loaded the game drops draws for a while
+    // (seen with /gbrowser trace: a draw seconds later takes), so this keeps trying for a few seconds.
+    private const int ToggleCheckTicks = 12;
+    private const int MaxToggleRetries = 15;
 
     private readonly RenderPool pool;
     private readonly AppearanceTracker appearance;
