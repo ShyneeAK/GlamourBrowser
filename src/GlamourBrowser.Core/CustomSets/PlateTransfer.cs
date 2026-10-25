@@ -27,25 +27,29 @@ public static class PlateDyes
     /// <summary>Terebinthe-Öl: what the game itself takes to remove a dye in the plate editor (seen in the dye spike).</summary>
     public const uint RemoverItemId = 5728;
 
-    /// <summary>
-    /// The dye to put on each channel so the plate gets the set's dyes; null for a channel that already has it or that
-    /// the item does not have. A stored value that is no dye (the dresser holds some, e.g. 232) counts as unknown: then
-    /// the set's dye is marked even when it is "none".
-    /// </summary>
+    /// <summary>The dye to put on each channel so the plate gets the set's dyes; null for a channel that already has it or that the item does not have.</summary>
     /// <param name="dyeCount">The item's dye channels (0–2).</param>
-    /// <param name="isDye">Whether a stored value is a real dye (Stain sheet).</param>
+    /// <param name="isDye">Whether a stored value is a dye (Stain sheet, or 0 for none).</param>
     /// <param name="dyeItemsOf">The items that give a dye (Stain sheet), e.g. "Einfacher Farbstoff".</param>
     public static (PlateDye? Channel1, PlateDye? Channel2) Changes(CustomPiece piece, PlateSource source, int dyeCount, Func<byte, bool> isDye,
                                                                    Func<byte, IReadOnlyList<uint>> dyeItemsOf)
     {
+        var (stored0, stored1) = BaseStains(source, dyeCount, isDye);
         PlateDye? Change(int channel, byte want, byte stored)
-            => channel > dyeCount || isDye(stored) && want == stored ? null : new PlateDye(want, want == 0 ? [RemoverItemId] : dyeItemsOf(want));
-        return (Change(1, piece.Stain0, source.Stain0), Change(2, piece.Stain1, source.Stain1));
+            => channel > dyeCount || want == stored ? null : new PlateDye(want, want == 0 ? [RemoverItemId] : dyeItemsOf(want));
+        return (Change(1, piece.Stain0, stored0), Change(2, piece.Stain1, stored1));
     }
 
-    /// <summary>The stored dyes to hand over with the item: only real dyes of channels the item has, else none.</summary>
+    /// <summary>
+    /// The dyes the piece really has in the dresser, for the channels it has. A first value that is no dye (the dresser
+    /// holds e.g. 128/7 or 232/4) marks an undyed piece: picked by hand, the game shows such a piece without dye.
+    /// </summary>
     public static (byte Stain0, byte Stain1) BaseStains(PlateSource source, int dyeCount, Func<byte, bool> isDye)
-        => (dyeCount >= 1 && isDye(source.Stain0) ? source.Stain0 : (byte)0, dyeCount >= 2 && isDye(source.Stain1) ? source.Stain1 : (byte)0);
+    {
+        if (!isDye(source.Stain0))
+            return (0, 0);
+        return (dyeCount >= 1 ? source.Stain0 : (byte)0, dyeCount >= 2 && isDye(source.Stain1) ? source.Stain1 : (byte)0);
+    }
 }
 
 public static class PlateSlots

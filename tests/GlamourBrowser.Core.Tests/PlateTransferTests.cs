@@ -77,20 +77,23 @@ public class PlateTransferTests
     }
 
     [Fact]
-    public void Dyes_UnknownStoredValue_MarksTheSetDyeExplicitly()
+    public void Dyes_StoredValueThatIsNoDye_MeansUndyed()
     {
-        // 128 is no dye: the base is unknown, so the set's dye (even "none") is marked.
-        var (first, second) = PlateDyes.Changes(new CustomPiece(Feet, 32650, 1, 0), new PlateSource(PlateSourceKind.Dresser, 279, 32650, 128, 0), 2, IsDye, DyeItems);
+        // Trugbild-Stiefel lie in the dresser as 128/7; picked by hand, the game shows them undyed (0/0).
+        var boots = new PlateSource(PlateSourceKind.Dresser, 279, 32650, 128, 7);
+        var (first, second) = PlateDyes.Changes(new CustomPiece(Feet, 32650, 1, 0), boots, 2, IsDye, DyeItems);
         Assert.Equal((byte)1, first!.Value.Stain);
         Assert.Null(second);
-        Assert.Equal((byte)0, PlateDyes.Changes(new CustomPiece(Feet, 32650, 0, 0), new PlateSource(PlateSourceKind.Dresser, 279, 32650, 128, 0), 2, IsDye, DyeItems).Channel1!.Value.Stain);
+        Assert.Equal((null, null), PlateDyes.Changes(new CustomPiece(Feet, 32650, 0, 0), boots, 2, IsDye, DyeItems));
     }
 
     [Fact]
     public void BaseStains_KeepOnlyRealDyesOfExistingChannels()
     {
         Assert.Equal(((byte)8, (byte)0), PlateDyes.BaseStains(new PlateSource(PlateSourceKind.Dresser, 1, 1, 8, 7), 1, IsDye));
-        Assert.Equal(((byte)0, (byte)7), PlateDyes.BaseStains(new PlateSource(PlateSourceKind.Dresser, 1, 1, 128, 7), 2, IsDye));
+        Assert.Equal(((byte)8, (byte)7), PlateDyes.BaseStains(new PlateSource(PlateSourceKind.Dresser, 1, 1, 8, 7), 2, IsDye));
+        // A first value that is no dye: the whole entry is undyed.
+        Assert.Equal(((byte)0, (byte)0), PlateDyes.BaseStains(new PlateSource(PlateSourceKind.Dresser, 1, 1, 128, 7), 2, IsDye));
         Assert.Equal(((byte)0, (byte)0), PlateDyes.BaseStains(new PlateSource(PlateSourceKind.Dresser, 1, 1, 232, 4), 0, IsDye));
     }
 
