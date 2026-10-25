@@ -29,6 +29,9 @@ if git rev-parse -q --verify "refs/tags/$tag" >/dev/null || gh release view "$ta
   exit 1
 fi
 
+# The packager zips the whole output folder: leftovers of earlier builds (old manifests, the last latest.zip) would
+# end up in the release.
+rm -rf src/GlamourBrowser/bin/Release
 dotnet build "$project" -c Release -warnaserror
 
 # The packager's manifest plus the download links Dalamud needs.
