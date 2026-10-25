@@ -16,7 +16,7 @@ using GlamourBrowser.UI.Widgets;
 
 namespace GlamourBrowser.UI;
 
-/// <summary>Collapsible filter sections next to the grid: level, dyes, ownership and the captured containers.</summary>
+/// <summary>Filters next to the grid: collapsible sections for level, ownership, sources, expansions and the captured containers, plus the dye switch.</summary>
 public sealed class FilterColumn
 {
     private readonly BrowserState state;
@@ -73,21 +73,16 @@ public sealed class FilterColumn
             Section.End();
         }
 
-        if (Section.Begin("dye", "Färbbar", config))
+        // One switch instead of a section: whether an item can be dyed at all is what matters.
+        var dyeable = f.DyeableOnly;
+        using (ImRaii.Disabled(f.Sets))
         {
-            if (f.Sets)
-                ImGui.TextDisabled("gilt nur für einzelne Items");
-            using (ImRaii.Disabled(f.Sets))
-            {
-                foreach (var (count, label) in new[] { (0, "nicht färbbar"), (1, "1 Kanal"), (2, "2 Kanäle") })
-                {
-                    var on = f.DyeCounts.Contains(count);
-                    if (ImGui.Checkbox(label, ref on))
-                        state.Filter = f with { DyeCounts = Toggle(f.DyeCounts, count, on) };
-                }
-            }
-            Section.End();
+            if (ImGui.Checkbox("Färbbar", ref dyeable))
+                state.Filter = f with { DyeableOnly = dyeable };
         }
+        if (f.Sets && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip("gilt nur für einzelne Items");
+        ImGui.Spacing();
 
         if (Section.Begin("ownership", "Besitz", config))
         {

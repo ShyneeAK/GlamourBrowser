@@ -36,8 +36,8 @@ public static class FilterChips
         if (state.MinLevel != defaults.MinLevel || state.MaxLevel != defaults.MaxLevel)
             chips.Add(new FilterChip($"Level {state.MinLevel}–{state.MaxLevel}", state with { MinLevel = defaults.MinLevel, MaxLevel = defaults.MaxLevel }));
 
-        foreach (var count in state.DyeCounts.Order())
-            chips.Add(new FilterChip(DyeLabel(count), state with { DyeCounts = state.DyeCounts.Where(c => c != count).ToHashSet() }));
+        if (state.DyeableOnly)
+            chips.Add(new FilterChip("Färbbar", state with { DyeableOnly = false }));
 
         if (state.Ownership != OwnershipFilter.All)
             chips.Add(new FilterChip(state.Ownership == OwnershipFilter.Owned ? "Habe ich" : "Fehlt mir", state with { Ownership = OwnershipFilter.All }));
@@ -53,11 +53,4 @@ public static class FilterChips
 
         return chips;
     }
-
-    private static string DyeLabel(int count) => count switch
-    {
-        0 => "nicht färbbar",
-        1 => "1 Kanal",
-        _ => $"{count} Kanäle",
-    };
 }

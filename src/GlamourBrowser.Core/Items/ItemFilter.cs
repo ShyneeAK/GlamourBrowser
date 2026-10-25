@@ -35,7 +35,7 @@ public static class ItemFilter
             .Where(i => filter.Slots.Count == 0 || filter.Slots.Contains(i.Slot))
             .Where(i => filter.ClassJobId is not { } job || i.ClassJobIds.Contains(job))
             .Where(i => i.LevelEquip >= filter.MinLevel && i.LevelEquip <= filter.MaxLevel)
-            .Where(i => filter.DyeCounts.Count == 0 || filter.DyeCounts.Contains(i.DyeCount))
+            .Where(i => !filter.DyeableOnly || i.DyeCount > 0)
             .Where(i => filter.Ownership switch
             {
                 OwnershipFilter.Owned => isOwned(i.Id),

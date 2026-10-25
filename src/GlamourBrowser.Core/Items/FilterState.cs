@@ -23,7 +23,8 @@ public sealed record FilterState
     public uint? ClassJobId { get; init; }
     public int MinLevel { get; init; } = 1;
     public int MaxLevel { get; init; } = 100;
-    public IReadOnlySet<int> DyeCounts { get; init; } = new HashSet<int>();
+    /// <summary>Only items with at least one dye channel ("Färbbar").</summary>
+    public bool DyeableOnly { get; init; }
     public OwnershipFilter Ownership { get; init; } = OwnershipFilter.All;
     public bool WearableOnly { get; init; } = true;
     public IReadOnlySet<SourceCategory> Categories { get; init; } = new HashSet<SourceCategory>();

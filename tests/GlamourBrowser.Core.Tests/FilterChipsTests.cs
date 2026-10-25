@@ -23,14 +23,18 @@ public class FilterChipsTests
             ClassJobId = 19,
             MinLevel = 50,
             MaxLevel = 70,
-            DyeCounts = new HashSet<int> { 2 },
+            DyeableOnly = true,
             Ownership = OwnershipFilter.Owned,
             WearableOnly = false,
         };
 
-        Assert.Equal(["Suche: robe", "Kopf", "Füße", "PLD", "Level 50–70", "2 Kanäle", "Habe ich", "Auch nicht tragbare"],
+        Assert.Equal(["Suche: robe", "Kopf", "Füße", "PLD", "Level 50–70", "Färbbar", "Habe ich", "Auch nicht tragbare"],
             Chips(state).Select(c => c.Label));
     }
+
+    [Fact]
+    public void DyeChip_RemovesTheDyeFilter()
+        => Assert.False(Assert.Single(Chips(new FilterState { DyeableOnly = true })).WithoutThis.DyeableOnly);
 
     [Fact]
     public void Chips_RemoveSlot()

@@ -45,10 +45,11 @@ public class ItemFilterTests
     }
 
     [Fact]
-    public void DyeCounts_FilterExactChannelCount()
+    public void DyeableOnly_KeepsItemsWithAnyChannel()
     {
         var items = new[] { Item(1, "A", EquipSlot.Body, dyes: 0), Item(2, "B", EquipSlot.Body, dyes: 1), Item(3, "C", EquipSlot.Body, dyes: 2) };
-        Assert.Equal([3u], Ids(Apply(items, new FilterState { DyeCounts = new HashSet<int> { 2 } })));
+        Assert.Equal([2u, 3u], Ids(Apply(items, new FilterState { DyeableOnly = true })).Order().ToArray());
+        Assert.Equal(3, Apply(items, new FilterState()).Count);
     }
 
     [Fact]

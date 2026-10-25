@@ -34,7 +34,7 @@ public sealed class Configuration : IPluginConfiguration
     public bool FilterColumnVisible { get; set; } = true;
     /// <summary>Replace, not merge, on load: otherwise a closed default section would reopen after a restart.</summary>
     [JsonProperty(ObjectCreationHandling = ObjectCreationHandling.Replace)]
-    public HashSet<string> OpenSections { get; set; } = ["level", "dye", "ownership"];
+    public HashSet<string> OpenSections { get; set; } = ["level", "ownership"];
 
     public float RotateSensitivity { get; set; } = 0.5f;
     public float PanSensitivity { get; set; } = 0.5f;

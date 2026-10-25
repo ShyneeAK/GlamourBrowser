@@ -92,7 +92,7 @@ public class SetFilterTests
 
     [Fact]
     public void DyeAndSlots_AreIgnored()
-        => Assert.Equal(2, Apply(new FilterState { DyeCounts = new HashSet<int> { 0 }, Slots = new HashSet<EquipSlot> { Feet } }).Results.Count);
+        => Assert.Equal(2, Apply(new FilterState { DyeableOnly = true, Slots = new HashSet<EquipSlot> { Feet } }).Results.Count);
 
     [Fact]
     public void EmptyInput_GivesEmptyResults()
