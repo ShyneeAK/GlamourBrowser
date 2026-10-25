@@ -205,30 +205,29 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
         if (first == null && second == null)
             return (true, true);
 
-        // SetItemStain addresses the slot itself (SetSelectedItemStains takes the slot clicked in the editor, see the dye spike).
+        // SetSelectedItemStains dyes the item of the editor's context menu, not SelectedItemIndex (dye spike: it dyed the
+        // body while slot 4 was selected); both channels go in one call, an unchanged one keeps its stain without an item.
+        // The channel flags are set first, as Glamaholic does: a freshly set item may not have them yet.
         var item0 = DyeItem(first, out var id0);
         var item1 = DyeItem(second, out var id1);
-        if (first is { } dye0)
-            agent->SetItemStain((uint)index, dye0.Stain, item0, id0, 0);
-        if (second is { } dye1)
-            agent->SetItemStain((uint)index, dye1.Stain, item1, id1, 1);
         ref var shown = ref agent->Data->CurrentItems[index];
+        if (dyeCount >= 1)
+            shown.Flags |= AgentMiragePrismMiragePlateData.ItemFlag.HasStain0;
+        if (dyeCount >= 2)
+            shown.Flags |= AgentMiragePrismMiragePlateData.ItemFlag.HasStain1;
+        var contextBefore = agent->Data->ContextMenuItemIndex;
+        agent->Data->ContextMenuItemIndex = (uint)index;
+        agent->SetSelectedItemStains(item0, first?.Stain ?? base0, id0, item1, second?.Stain ?? base1, id1);
+        agent->Data->ContextMenuItemIndex = contextBefore;
         var marked = (first == null || shown.PendingStainIds[0] == first.Value.Stain && shown.PendingStainItemIds[0] != 0)
                      && (second == null || shown.PendingStainIds[1] == second.Value.Stain && shown.PendingStainItemIds[1] != 0);
-        // Diagnostics for the dye transfer (see the C spec, dye spike); to be removed once it is confirmed in game.
-        Plugin.Log.Information($"[plate-transfer] slot {index} item {piece.ItemId} source {source.Kind} {source.Id} raw {source.ItemId} channels {dyeCount} "
-            + $"stored {source.Stain0}/{source.Stain1} base {base0}/{base1} wanted {piece.Stain0}/{piece.Stain1} "
-            + $"| ch1 {(first is { } f ? $"{f.Stain} via {id0} inv {(item0 != null ? "yes" : "no")}" : "-")} "
-            + $"| ch2 {(second is { } g ? $"{g.Stain} via {id1} inv {(item1 != null ? "yes" : "no")}" : "-")} "
-            + $"| after: stains {shown.StainIds[0]}/{shown.StainIds[1]} pending {shown.PendingStainIds[0]}/{shown.PendingStainIds[1]} "
-            + $"items {shown.PendingStainItemIds[0]}/{shown.PendingStainItemIds[1]} fromInv {shown.IsPendingStainFromInventoryItem[0]}/{shown.IsPendingStainFromInventoryItem[1]} "
-            + $"fromId {shown.IsPendingStainFromItemId[0]}/{shown.IsPendingStainFromItemId[1]} state {shown.StainState} selected {agent->Data->SelectedItemIndex} -> marked {marked}");
         return (true, marked);
     }
 
     /// <summary>
-    /// The dye item to take: a stack in the inventory like the editor does by hand; without one, only its id (the game
-    /// then asks for it when the plate is saved). Null and id 0 leave the channel as it is.
+    /// The dye item to take: a stack in the inventory like the editor does by hand. Without one only its id goes along;
+    /// the editor then marks the dye "from item id" and the player gets the dye before saving, as when dyeing by hand.
+    /// Null and id 0 leave the channel as it is.
     /// </summary>
     private static InventoryItem* DyeItem(PlateDye? dye, out uint itemId)
     {

@@ -50,13 +50,13 @@ public static unsafe class PlateDiagnostics
                 Clear(slot);
                 break;
             case "dye" when args.Length >= 4 && int.TryParse(args[1], out var slot) && int.TryParse(args[2], out var channel) && byte.TryParse(args[3], out var stain):
-                DyeItem(slot, channel, stain);
+                DyeItem(slot, channel, stain, args.Length >= 5 && uint.TryParse(args[4], out var dyeItem) ? dyeItem : null);
                 break;
             case "dyesel" when args.Length >= 4 && int.TryParse(args[1], out var slot) && byte.TryParse(args[2], out var stain0) && byte.TryParse(args[3], out var stain1):
                 DyeSelected(slot, stain0, stain1);
                 break;
             default:
-                Log("usage: /gbrowser plate [box <name>|armoire <name>|set <slot> <dresserIndex> [stain0 stain1 [itemId]]|cabinet <slot> <cabinetRow>|clear <slot>|dye <slot> <channel 0/1> <stain>|dyesel <slot> <stain0> <stain1>]");
+                Log("usage: /gbrowser plate [box <name>|armoire <name>|set <slot> <dresserIndex> [stain0 stain1 [itemId]]|cabinet <slot> <cabinetRow>|clear <slot>|dye <slot> <channel 0/1> <stain> [dyeItemId]|dyesel <slot> <stain0> <stain1>]");
                 break;
         }
     }
@@ -205,12 +205,12 @@ public static unsafe class PlateDiagnostics
     }
 
     /// <summary>Marks a dye on one channel of a slot with SetItemStain, taking "Einfacher Farbstoff" (or the remover for 0) from the inventory.</summary>
-    private static void DyeItem(int slot, int channel, byte stain)
+    private static void DyeItem(int slot, int channel, byte stain, uint? dyeItem)
     {
         var agent = OpenData();
         if (agent == null)
             return;
-        var dyeItemId = stain == 0 ? 5728u : 52254u;
+        var dyeItemId = dyeItem ?? (stain == 0 ? 5728u : 52254u);
         var item = FindInInventory(dyeItemId);
         Log($"dye slot {slot} channel {channel} stain {stain} via {dyeItemId} inv {(item != null ? "yes" : "no")} (SetItemStain)");
         agent->SetItemStain((uint)slot, stain, item, dyeItemId, channel);
