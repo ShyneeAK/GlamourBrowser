@@ -44,22 +44,47 @@ public class WishPlannerTests
 
         Assert.Equal(2, plan.Groups.Count);
         Assert.Equal(Sastasha, plan.Groups[0].Source);
-        Assert.Equal([1u, 2u], plan.Groups[0].Pieces.Select(p => p.Id));
+        Assert.Equal([1u, 2u], plan.Groups[0].Pieces.Select(p => p.Item.Id));
         Assert.Equal(Vendor, plan.Groups[1].Source);
-        Assert.Equal([3u], plan.Groups[1].Pieces.Select(p => p.Id));
+        Assert.Equal([3u], plan.Groups[1].Pieces.Select(p => p.Item.Id));
     }
 
     [Fact]
-    public void SameKey_KeepsTheFirstSourcesAction()
+    public void Group_KeepsEachPiecesOwnSource()
     {
-        // Two items name the same vendor; the group takes action and cost of the first source.
-        var other = Vendor with { Action = null, CostAmount = 900 };
+        // One vendor, two prices: each piece keeps its own cost, the shared map flag goes to the group.
+        var dearer = Vendor with { CostAmount = 900 };
         var plan = Plan([new ItemSubject(Item(1, Head)), new ItemSubject(Item(2, Body))], NothingOwned,
-            new() { [1] = [Vendor], [2] = [other] });
+            new() { [1] = [Vendor], [2] = [dearer] });
 
         var group = Assert.Single(plan.Groups);
         Assert.Equal(Vendor, group.Source);
-        Assert.Equal(2, group.Pieces.Count);
+        Assert.Equal([500u, 900u], group.Pieces.Select(p => p.Source!.CostAmount));
+        Assert.Equal(Vendor.Action, group.SharedAction);
+    }
+
+    [Fact]
+    public void SharedAction_OnlyWhenEveryPieceHasTheSame()
+    {
+        // Same crafter and level, but one recipe per piece: no button for the whole group.
+        var weaverA = new ItemSource(SourceCategory.Crafting, "Weber", "Lv. 90", new OpenRecipe(31));
+        var weaverB = weaverA with { Action = new OpenRecipe(32) };
+        var plan = Plan([new ItemSubject(Item(1, Head)), new ItemSubject(Item(2, Body)), new ItemSubject(Item(3, Hands)), new ItemSubject(Item(4, Legs))],
+            NothingOwned, new() { [1] = [weaverA], [2] = [weaverB], [3] = [Sastasha], [4] = [Sastasha with { }] });
+
+        var crafting = plan.Groups.Single(g => g.Source!.Category == SourceCategory.Crafting);
+        Assert.Null(crafting.SharedAction);
+        Assert.Equal([new OpenRecipe(31), new OpenRecipe(32)], crafting.Pieces.Select(p => p.Source!.Action));
+        Assert.Equal(new DutyFinder(4), plan.Groups.Single(g => g.Source!.Category == SourceCategory.Dungeon).SharedAction);
+    }
+
+    [Fact]
+    public void UnknownSourcePieces_HaveNoSource()
+    {
+        var group = Assert.Single(Plan([new ItemSubject(Item(1, Head))], NothingOwned, new()).Groups);
+        Assert.Null(group.Source);
+        Assert.Null(group.SharedAction);
+        Assert.Null(Assert.Single(group.Pieces).Source);
     }
 
     [Fact]
@@ -68,7 +93,7 @@ public class WishPlannerTests
         var plan = Plan([new ItemSubject(Item(1, Head))], NothingOwned, new() { [1] = [Sastasha, Vendor] });
 
         Assert.Equal([Sastasha, Vendor], plan.Groups.Select(g => g.Source));
-        Assert.All(plan.Groups, g => Assert.Equal([1u], g.Pieces.Select(p => p.Id)));
+        Assert.All(plan.Groups, g => Assert.Equal([1u], g.Pieces.Select(p => p.Item.Id)));
         Assert.Equal(1, plan.Missing);
     }
 
@@ -78,7 +103,7 @@ public class WishPlannerTests
         var plan = Plan([Set(Item(1, Head), Item(2, Body), Item(3, Feet))], id => id == 2,
             new() { [1] = [Sastasha], [2] = [Sastasha], [3] = [Sastasha] });
 
-        Assert.Equal([1u, 3u], Assert.Single(plan.Groups).Pieces.Select(p => p.Id));
+        Assert.Equal([1u, 3u], Assert.Single(plan.Groups).Pieces.Select(p => p.Item.Id));
         Assert.Equal(2, plan.Missing);
         Assert.Equal(3, plan.Total);
     }
@@ -92,7 +117,7 @@ public class WishPlannerTests
 
         Assert.Equal(2, plan.Missing);
         Assert.Equal(2, plan.Total);
-        Assert.Equal([1u, 2u], Assert.Single(plan.Groups).Pieces.Select(p => p.Id));
+        Assert.Equal([1u, 2u], Assert.Single(plan.Groups).Pieces.Select(p => p.Item.Id));
     }
 
     [Fact]
@@ -115,7 +140,7 @@ public class WishPlannerTests
             new() { [3] = [Vendor] });
 
         Assert.Equal([Vendor, null], plan.Groups.Select(g => g.Source));
-        Assert.Equal([1u, 2u], plan.Groups[1].Pieces.Select(p => p.Id));
+        Assert.Equal([1u, 2u], plan.Groups[1].Pieces.Select(p => p.Item.Id));
     }
 
     [Fact]
@@ -127,7 +152,7 @@ public class WishPlannerTests
 
         Assert.Equal(2, plan.Missing);
         Assert.Equal(4, plan.Total);
-        Assert.Equal([1u, 4u], Assert.Single(plan.Groups).Pieces.Select(p => p.Id));
+        Assert.Equal([1u, 4u], Assert.Single(plan.Groups).Pieces.Select(p => p.Item.Id));
     }
 
     [Fact]

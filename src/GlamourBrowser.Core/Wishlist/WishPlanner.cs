@@ -15,9 +15,13 @@ public static class WishStatus
     };
 }
 
-/// <param name="Source">The first source with this category, title and detail (its action and cost); null for "Quelle unbekannt".</param>
+/// <param name="Source">The piece's own source in its group: cost and action can differ per piece (price, recipe, store product); null for "Quelle unbekannt".</param>
+public sealed record WishPiece(GlamourItem Item, ItemSource? Source);
+
+/// <param name="Source">The first source with this category, title and detail (for the header); null for "Quelle unbekannt".</param>
 /// <param name="Pieces">The missing pieces this source gives, by slot, then name.</param>
-public sealed record WishGroup(ItemSource? Source, IReadOnlyList<GlamourItem> Pieces);
+/// <param name="SharedAction">The action every piece has (one map flag, one duty); null when they differ, then each piece has its own.</param>
+public sealed record WishGroup(ItemSource? Source, IReadOnlyList<WishPiece> Pieces, SourceAction? SharedAction);
 
 /// <param name="Missing">Different pieces not owned yet.</param>
 /// <param name="Total">Different pieces of all entries, done ones included.</param>
@@ -34,21 +38,21 @@ public static class WishPlanner
             pieces.TryAdd(piece.Id, piece);
         var missing = pieces.Values.Where(p => !isOwned(p.Id)).ToList();
 
-        var groups = new Dictionary<(SourceCategory, string, string), (ItemSource Source, List<GlamourItem> Pieces)>();
-        var unknown = new List<GlamourItem>();
+        var groups = new Dictionary<(SourceCategory, string, string), (ItemSource Source, List<WishPiece> Pieces)>();
+        var unknown = new List<WishPiece>();
         foreach (var piece in missing)
         {
             var sources = sourcesOf(piece.Id);
             if (sources.Count == 0)
-                unknown.Add(piece);
+                unknown.Add(new WishPiece(piece, null));
             foreach (var source in sources)
             {
                 var key = (source.Category, source.Title, source.Detail);
                 if (!groups.TryGetValue(key, out var group))
-                    groups[key] = group = (source, new List<GlamourItem>());
-                // Two sources of one piece with the same key put it in the group once.
-                if (group.Pieces.Count == 0 || group.Pieces[^1].Id != piece.Id)
-                    group.Pieces.Add(piece);
+                    groups[key] = group = (source, new List<WishPiece>());
+                // Two sources of one piece with the same key put it in the group once, with the first of them.
+                if (group.Pieces.Count == 0 || group.Pieces[^1].Item.Id != piece.Id)
+                    group.Pieces.Add(new WishPiece(piece, source));
             }
         }
 
@@ -57,13 +61,19 @@ public static class WishPlanner
             .ThenBy(g => SourceRanking.Rank(g.Source.Category))
             .ThenBy(g => g.Source.Title, StringComparer.OrdinalIgnoreCase)
             .ThenBy(g => g.Source.Detail, StringComparer.OrdinalIgnoreCase)
-            .Select(g => new WishGroup(g.Source, Ordered(g.Pieces)))
+            .Select(g => new WishGroup(g.Source, Ordered(g.Pieces), SharedAction(g.Pieces)))
             .ToList();
         if (unknown.Count > 0)
-            result.Add(new WishGroup(null, Ordered(unknown)));
+            result.Add(new WishGroup(null, Ordered(unknown), null));
         return new WishPlan(missing.Count, pieces.Count, result);
     }
 
-    private static IReadOnlyList<GlamourItem> Ordered(IEnumerable<GlamourItem> pieces)
-        => pieces.OrderBy(p => p.Slot).ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase).ToList();
+    private static SourceAction? SharedAction(List<WishPiece> pieces)
+    {
+        var first = pieces[0].Source!.Action;
+        return pieces.All(p => Equals(p.Source!.Action, first)) ? first : null;
+    }
+
+    private static IReadOnlyList<WishPiece> Ordered(IEnumerable<WishPiece> pieces)
+        => pieces.OrderBy(p => p.Item.Slot).ThenBy(p => p.Item.Name, StringComparer.OrdinalIgnoreCase).ToList();
 }

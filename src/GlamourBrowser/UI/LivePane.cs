@@ -298,26 +298,30 @@ public sealed unsafe class LivePane
         ImGui.TextUnformatted(source.Title);
         ImGui.SameLine();
         ImGui.TextDisabled(source.Detail);
-        DrawCostAndAction(source, id, theme);
+        DrawCost(source, theme);
+        DrawAction(source.Action, id, theme);
     }
 
-    /// <summary>The source's cost (currency icon and amount) and its action button, each on the current line when there is one.</summary>
-    public static void DrawCostAndAction(ItemSource source, string id, Theme.Theme theme)
+    /// <summary>The source's cost (currency icon and amount) on the current line, when it has one.</summary>
+    public static void DrawCost(ItemSource source, Theme.Theme theme)
     {
-        if (source.CostItemId != 0 && source.CostAmount > 0)
-        {
-            ImGui.SameLine();
-            var costIcon = SpecialShopCost.IsExactCurrency(source.CostItemId) ? SourceIcons.ItemIcon(source.CostItemId) : SourceIcons.IconFor(SourceCategory.Scrips);
-            GameIcon.Draw(costIcon, new Vector2(ImGui.GetTextLineHeight()), FontAwesomeIcon.Coins, theme.Colors.TextMuted);
-            ImGui.SameLine(0, 2);
-            ImGui.TextUnformatted(source.CostAmount.ToString("N0"));
-        }
+        if (source.CostItemId == 0 || source.CostAmount == 0)
+            return;
+        ImGui.SameLine();
+        var costIcon = SpecialShopCost.IsExactCurrency(source.CostItemId) ? SourceIcons.ItemIcon(source.CostItemId) : SourceIcons.IconFor(SourceCategory.Scrips);
+        GameIcon.Draw(costIcon, new Vector2(ImGui.GetTextLineHeight()), FontAwesomeIcon.Coins, theme.Colors.TextMuted);
+        ImGui.SameLine(0, 2);
+        ImGui.TextUnformatted(source.CostAmount.ToString("N0"));
+    }
 
-        if (SourceActions.ButtonFor(source.Action) is not { } b)
+    /// <summary>The action's button (map, duty finder, recipe, mog station) on the current line, when there is an action.</summary>
+    public static void DrawAction(SourceAction? action, string id, Theme.Theme theme)
+    {
+        if (action == null || SourceActions.ButtonFor(action) is not { } b)
             return;
         ImGui.SameLine();
         if (IconButton.Draw($"##action{id}", b.Icon, b.Fallback, b.Tooltip, theme, ImGui.GetTextLineHeight() + 4))
-            SourceActions.Run(source.Action!);
+            SourceActions.Run(action);
     }
 
     /// <summary>The star that puts the item or set on the wishlist (accent frame while listed); grayed out while logged out.</summary>

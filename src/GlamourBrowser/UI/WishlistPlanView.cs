@@ -16,8 +16,9 @@ using GlamourBrowser.Wishlist;
 namespace GlamourBrowser.UI;
 
 /// <summary>
-/// The wishlist's missing pieces grouped by source ("Nach Quelle"), to see where a run pays off; each group with the
-/// source's action, a click on a piece shows it in the live preview and the item card.
+/// The wishlist's missing pieces grouped by source ("Nach Quelle"), to see where a run pays off. A group's action sits in
+/// its header when all pieces share it, otherwise (recipes, store products) on each piece next to its cost; a click on a
+/// piece shows it in the live preview and the item card.
 /// </summary>
 public sealed class WishlistPlanView
 {
@@ -74,14 +75,14 @@ public sealed class WishlistPlanView
             using (ImRaii.PushIndent(iconSize.X + ImGui.GetStyle().ItemSpacing.X))
             {
                 foreach (var piece in group.Pieces)
-                    DrawPiece(piece, iconSize);
+                    DrawPiece(piece, group.SharedAction == null, iconSize);
             }
         }
     }
 
     private bool IsOwned(uint itemId) => ownership.Current?.IsOwned(itemId) ?? false;
 
-    /// <summary>Icon, "Kategorie · Titel · Detail", the number of pieces, cost and action; the unknown group has no icon and no action.</summary>
+    /// <summary>Icon, "Kategorie · Titel · Detail", the number of pieces and the shared action; the unknown group has no icon and no action.</summary>
     private void DrawHeader(WishGroup group, Vector2 iconSize)
     {
         var count = group.Pieces.Count == 1 ? "1 Teil" : $"{group.Pieces.Count} Teile";
@@ -100,18 +101,28 @@ public sealed class WishlistPlanView
         ImGui.TextUnformatted(string.Join(" · ", new[] { SourceCategories.DisplayName(source.Category), source.Title, source.Detail }.Where(t => t.Length > 0)));
         ImGui.SameLine();
         ImGui.TextDisabled(count);
-        LivePane.DrawCostAndAction(source, "group", theme);
+        LivePane.DrawAction(group.SharedAction, "group", theme);
     }
 
-    private void DrawPiece(GlamourItem piece, Vector2 iconSize)
+    /// <summary>Icon and name (a click selects it), then the piece's own cost and, when the group has no shared one, its action.</summary>
+    private void DrawPiece(WishPiece piece, bool ownAction, Vector2 iconSize)
     {
-        GameIcon.Draw(piece.IconId, iconSize, FontAwesomeIcon.Tshirt, theme.Colors.TextMuted);
+        var item = piece.Item;
+        GameIcon.Draw(item.IconId, iconSize, FontAwesomeIcon.Tshirt, theme.Colors.TextMuted);
         ImGui.SameLine();
-        var selected = state.Selected is ItemSubject { Item.Id: var selectedId } && selectedId == piece.Id;
-        if (ImGui.Selectable($"{piece.Name}##piece{piece.Id}", selected) && state.ItemSubjectFor(piece.Id) is { } subject)
+        var selected = state.Selected is ItemSubject { Item.Id: var selectedId } && selectedId == item.Id;
+        // As wide as the name only, so cost and action fit behind it.
+        if (ImGui.Selectable($"{item.Name}##piece{item.Id}", selected, ImGuiSelectableFlags.None, new Vector2(ImGui.CalcTextSize(item.Name).X, 0))
+            && state.ItemSubjectFor(item.Id) is { } subject)
         {
             state.Selected = subject;
             live.Select(subject);
         }
+
+        if (piece.Source is not { } source)
+            return;
+        LivePane.DrawCost(source, theme);
+        if (ownAction)
+            LivePane.DrawAction(source.Action, $"piece{item.Id}", theme);
     }
 }
