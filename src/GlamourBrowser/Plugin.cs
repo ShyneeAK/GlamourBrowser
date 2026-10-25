@@ -173,8 +173,7 @@ public sealed class Plugin : IDalamudPlugin
             if (pause && !paused)
             {
                 paused = true;
-                live.Select(null);
-                live.Tick();
+                live.Release();
                 pool.Pause();
             }
             else if (!pause && paused)

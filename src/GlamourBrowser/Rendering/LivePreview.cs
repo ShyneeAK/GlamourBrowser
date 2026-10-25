@@ -87,12 +87,8 @@ public sealed unsafe class LivePreview : IDisposable
             suspended = null;
         }
 
-        if (Selected is not { } subject)
-        {
-            ReleaseView();
-            return;
-        }
-
+        // Nothing selected: the character in the own outfit, never an empty view.
+        var subject = Selected;
         pool.ReserveLiveSlot(true);
         if (view == null)
         {
@@ -111,12 +107,14 @@ public sealed unsafe class LivePreview : IDisposable
         if (!view.IsIdle && view.State != CharaViewHandle.StateReady)
             return;
 
-        var camera = cameraFor(subject.CameraSlot);
-        var wanted = (subject.Id, (subject as SetSubject)?.Variant ?? 0, config.TileMode, appearance.Hash, camera);
+        // The own outfit gets the full-body camera of sets and is always the current outfit, whatever the tile mode.
+        var camera = cameraFor(subject?.CameraSlot ?? EquipSlot.Body);
+        var mode = subject != null ? config.TileMode : TileMode.CurrentOutfit;
+        var wanted = (subject?.Id ?? default, (subject as SetSubject)?.Variant ?? 0, mode, appearance.Hash, camera);
         if (applied != wanted && view.IsIdle)
         {
-            view.ApplyOutfit(appearance.Outfit, config.TileMode, subject.Slots);
-            foreach (var piece in subject.Wear)
+            view.ApplyOutfit(appearance.Outfit, mode, subject?.Slots ?? 0);
+            foreach (var piece in subject?.Wear ?? [])
             {
                 var (stain0, stain1) = subject is SetSubject set ? set.StainsOf(piece.Slot) : ((byte)0, (byte)0);
                 view.SetItem(piece.Slot, piece.Id, stain0, stain1);
@@ -167,6 +165,13 @@ public sealed unsafe class LivePreview : IDisposable
 
         rotateX = rotateY = panX = panY = zoom = 0;
         reset = false;
+    }
+
+    /// <summary>Gives the view back (window closed, logged out); the next tick after a new selection creates it again.</summary>
+    public void Release()
+    {
+        Selected = null;
+        ReleaseView();
     }
 
     private void ReleaseView()

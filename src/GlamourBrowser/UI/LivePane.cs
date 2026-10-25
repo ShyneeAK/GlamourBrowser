@@ -88,11 +88,12 @@ public sealed unsafe class LivePane
         var drawList = ImGui.GetWindowDrawList();
         var texture = live.Texture;
 
-        if (state.Selected == null || texture == null || texture->D3D11ShaderResourceView == null)
+        // Without a selection the view shows the own outfit, so only a view still being created is empty.
+        if (texture == null || texture->D3D11ShaderResourceView == null)
         {
             ImGui.Dummy(area);
             drawList.AddRectFilled(origin, origin + area, colors.Card, 8f);
-            var hint = state.Selected == null ? "Item im Raster wählen" : "Live-Ansicht wird vorbereitet …";
+            const string hint = "Live-Ansicht wird vorbereitet …";
             drawList.AddText(origin + (area - ImGui.CalcTextSize(hint)) / 2, colors.TextMuted, hint);
             return;
         }
