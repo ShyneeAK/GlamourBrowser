@@ -10,6 +10,10 @@ namespace GlamourBrowser.Rendering;
 public sealed unsafe class LivePreview : IDisposable
 {
     private const uint Slot = 7;
+    // A toggle that has not taken after this many ticks (with the character free) was dropped and is sent anew, at most
+    // MaxToggleRetries times in a row.
+    private const int ToggleCheckTicks = 10;
+    private const int MaxToggleRetries = 2;
 
     private readonly RenderPool pool;
     private readonly AppearanceTracker appearance;
@@ -40,6 +44,8 @@ public sealed unsafe class LivePreview : IDisposable
     private string? inHandStance;
     // Frames spent sheathing before another kind of weapon loads; -1 while not sheathing.
     private int sheatheFrames = -1;
+    private int toggleTicks;
+    private int toggleRetries;
 
     /// <summary>Weapon shown or hidden, toggled from the UI like the game's try-on window.</summary>
     public bool WeaponVisible { get; set; } = true;
@@ -126,7 +132,8 @@ public sealed unsafe class LivePreview : IDisposable
         // another kind of weapon loads, the drawn one is sheathed (only while nothing loads), and drawn anew below.
         var (weaponDrawn, weaponVisible) = LiveWeapons.Effective(subject, WeaponDrawn, WeaponVisible);
         var stance = WeaponStance.Of(subject) ?? RenderPool.OwnWeapon;
-        if (applied != wanted && weaponDrawn && appliedWeaponDrawn == true && inHandStance != stance && sheatheFrames < 0 && view.IsIdle)
+        if (applied != wanted && weaponDrawn && appliedWeaponDrawn == true && inHandStance != stance && sheatheFrames < 0 && view.IsIdle
+            && !view.IsChangingStance())
         {
             view.SetWeaponDrawn(false);
             appliedWeaponDrawn = false;
@@ -135,8 +142,9 @@ public sealed unsafe class LivePreview : IDisposable
         }
         if (sheatheFrames >= 0)
         {
-            // On the back, or given up after the timeout (the weapon then keeps the old stance).
-            if (++sheatheFrames < RenderPool.SheatheMinFrames || view.IsWeaponInHand() && sheatheFrames < RenderPool.SheatheTimeoutFrames || !view.IsIdle)
+            // Sheathed to the end of its animation, or given up after the timeout (the weapon then keeps the old stance).
+            if (++sheatheFrames < RenderPool.SheatheMinFrames
+                || (view.IsWeaponInHand() || view.IsChangingStance()) && sheatheFrames < RenderPool.SheatheTimeoutFrames || !view.IsIdle)
             {
                 ApplyCameraInput(view);
                 return;
@@ -173,9 +181,9 @@ public sealed unsafe class LivePreview : IDisposable
             appliedWeaponVisible = weaponVisible;
         }
 
-        // Drawn or sheathed once the items have loaded (a toggle during a load is ignored); drawn without a job like the
-        // game's try-on window, so the weapon is held in its own stance.
-        if (appliedWeaponDrawn != weaponDrawn && view.IsIdle)
+        // Drawn or sheathed once the items have loaded and no draw or sheathe is playing (the game drops a toggle meanwhile);
+        // drawn without a job like the game's try-on window, so the weapon is held in its own stance.
+        if (appliedWeaponDrawn != weaponDrawn && view.IsIdle && !view.IsChangingStance())
         {
             if (weaponDrawn)
                 view.UseTryonJob();
@@ -183,6 +191,23 @@ public sealed unsafe class LivePreview : IDisposable
             appliedWeaponDrawn = weaponDrawn;
             inHandStance = weaponDrawn ? stance : null;
             appliedWeaponVisible = null;
+            toggleTicks = 0;
+        }
+        else if (appliedWeaponDrawn is { } sent && view.IsWeaponDrawn() != sent && view.IsIdle && !view.IsChangingStance())
+        {
+            // Not taken: the same toggle again does nothing, so toggle the other way now and back on the next tick (above).
+            if (++toggleTicks >= ToggleCheckTicks && toggleRetries < MaxToggleRetries)
+            {
+                view.SetWeaponDrawn(!sent);
+                appliedWeaponDrawn = !sent;
+                toggleRetries++;
+                toggleTicks = 0;
+            }
+        }
+        else if (appliedWeaponDrawn == view.IsWeaponDrawn())
+        {
+            toggleTicks = 0;
+            toggleRetries = 0;
         }
 
         ApplyCameraInput(view);

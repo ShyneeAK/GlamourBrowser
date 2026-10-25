@@ -264,7 +264,7 @@ public sealed unsafe class RenderPool : IDisposable
                 // The game picks the stance when a weapon is drawn and keeps it for the next weapon loaded into the hand:
                 // a weapon of another kind is sheathed first, while nothing loads (a sheathe during a load is ignored),
                 // and drawn anew once the new one has loaded (Loading phase).
-                if (key.WeaponDrawn && view.IsWeaponInHand() && worker.InHandStance != (WeaponStance.Of(subject) ?? OwnWeapon))
+                if (key.WeaponDrawn && view.IsWeaponDrawn() && worker.InHandStance != (WeaponStance.Of(subject) ?? OwnWeapon))
                 {
                     view.SetAnimationPaused(false);
                     worker.Frozen = false;
@@ -280,8 +280,10 @@ public sealed unsafe class RenderPool : IDisposable
 
             case Phase.Sheathe:
                 worker.Frames++;
-                // On the back (no item loading), or given up after the timeout: the tile then keeps the old stance.
-                if (worker.Frames < SheatheMinFrames || view.IsWeaponInHand() && worker.Frames < SheatheTimeoutFrames || !view.IsIdle)
+                // Sheathed to the end of its animation (no item loading), or given up after the timeout: the tile then keeps
+                // the old stance.
+                if (worker.Frames < SheatheMinFrames || (view.IsWeaponInHand() || view.IsChangingStance()) && worker.Frames < SheatheTimeoutFrames
+                    || !view.IsIdle)
                     return;
                 Dress(worker, worker.Key!.Value, worker.Subject!);
                 break;
@@ -298,6 +300,13 @@ public sealed unsafe class RenderPool : IDisposable
                 // Draw or sheathe now that the item has loaded (a toggle sent while an item loads is ignored). Judged by
                 // the character itself, not only by what this worker did last time: the game keeps a drawn weapon drawn
                 // across item loads, and a toggle can be dropped. The DrawGate waits for the stance to settle.
+                // A toggle during a draw or sheathe animation is dropped: let that end first.
+                if (view.IsChangingStance())
+                {
+                    if (worker.Frames > TimeoutFrames)
+                        Fail(worker, "Zeitüberschreitung beim Laden");
+                    return;
+                }
                 var wantDrawn = worker.Key!.Value.WeaponDrawn;
                 var inHand = view.IsWeaponInHand();
                 if (wantDrawn)
@@ -357,12 +366,11 @@ public sealed unsafe class RenderPool : IDisposable
                     worker.RetryPending = false;
                     worker.DrawRetries++;
                 }
-                else if (worker.DrawGate != null && view.IsWeaponInHand() != tileDrawn && worker.DrawRetries < MaxDrawRetries
-                         && (worker.DrawGate.Frames + 1) % DrawRetryFrames == 0 && (tileDrawn || !worker.DrawGate.Changed))
+                else if (worker.DrawGate != null && view.IsWeaponDrawn() != tileDrawn && !view.IsChangingStance()
+                         && worker.DrawRetries < MaxDrawRetries && (worker.DrawGate.Frames + 1) % DrawRetryFrames == 0)
                 {
-                    // The toggle did not take, and the same toggle again does nothing: toggle the other way on this
-                    // frame, back on the next. A sheathe that took may keep the weapon in hand for a while, so
-                    // sheathing is only retried while no animation has started.
+                    // The toggle did not take (IsWeaponDrawn follows a toggle that took at once), and the same toggle
+                    // again does nothing: toggle the other way on this frame, back on the next.
                     view.SetWeaponDrawn(!tileDrawn);
                     worker.RetryPending = true;
                 }

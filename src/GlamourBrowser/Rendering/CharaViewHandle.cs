@@ -213,6 +213,24 @@ public sealed unsafe class CharaViewHandle : IDisposable
     /// Whether the weapon is really in hand: DrawData.Flags2 bit 0x04 (set in the game's try-on window with a drawn
     /// weapon). Character.IsWeaponDrawn turns true earlier, while the weapon still hangs on the back.
     /// </summary>
+    /// <summary>
+    /// True while the character draws or sheathes its weapon: the timeline sequencer's second slot plays that animation
+    /// (1 drawing, 2 sheathing; seen with /gbrowser trace). The game drops a toggle sent meanwhile, and the in-hand bit
+    /// clears halfway through sheathing, so this is what tells that the character is free again.
+    /// </summary>
+    public bool IsChangingStance()
+    {
+        var character = view != null ? view->GetCharacter() : null;
+        return character != null && character->Timeline.TimelineSequencer.TimelineIds[1] != 0;
+    }
+
+    /// <summary>Whether the last draw or sheathe took: Character.IsWeaponDrawn follows it at once, unlike the in-hand bit.</summary>
+    public bool IsWeaponDrawn()
+    {
+        var character = view != null ? view->GetCharacter() : null;
+        return character != null && character->IsWeaponDrawn;
+    }
+
     public bool IsWeaponInHand()
     {
         var character = view != null ? view->GetCharacter() : null;
