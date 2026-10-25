@@ -198,8 +198,9 @@ public sealed unsafe class LivePane
 
         drawList.AddRectFilled(origin, origin + area, colors.Card, 8f);
         ImGui.SetCursorScreenPos(pos);
-        // The invisible button captures mouse drags so the window does not move.
+        // The invisible button captures mouse drags so the window does not move; the visor button drawn over it takes its clicks.
         ImGui.InvisibleButton("##liveview", size, ImGuiButtonFlags.MouseButtonLeft | ImGuiButtonFlags.MouseButtonRight);
+        ImGui.SetItemAllowOverlap();
         drawList.AddImageRounded(new ImTextureID(texture->D3D11ShaderResourceView), pos, pos + size, Vector2.Zero, uv1, 0xFFFFFFFF, 8f);
 
         var io = ImGui.GetIO();
@@ -219,6 +220,11 @@ public sealed unsafe class LivePane
         }
 
         DrawHelpIcon(drawList, origin + new Vector2(area.X, 0));
+
+        // In the view's top-left corner, like the game's character window: works on the helmet whatever is selected.
+        ImGui.SetCursorScreenPos(pos + new Vector2(8, 8));
+        if (IconButton.Draw("##visor", 0, FontAwesomeIcon.HardHat, live.VisorClosed ? "Visier öffnen" : "Visier schließen (nur Helme mit Visier)", theme))
+            live.VisorClosed = !live.VisorClosed;
         ImGui.SetCursorScreenPos(origin + new Vector2(0, area.Y + ImGui.GetStyle().ItemSpacing.Y));
     }
 
@@ -289,9 +295,6 @@ public sealed unsafe class LivePane
         if (IconButton.Draw("##weaponvisible", 0, live.WeaponVisible ? FontAwesomeIcon.EyeSlash : FontAwesomeIcon.Eye,
                 live.WeaponVisible ? "Waffe ausblenden" : "Waffe anzeigen", theme))
             live.WeaponVisible = !live.WeaponVisible;
-        ImGui.SameLine();
-        if (IconButton.Draw("##visor", 0, FontAwesomeIcon.HardHat, live.VisorClosed ? "Visier öffnen" : "Visier schließen (nur Helme mit Visier)", theme))
-            live.VisorClosed = !live.VisorClosed;
         ImGui.SameLine();
         DrawCalibration(item);
         DrawDyeBoxes(item);
