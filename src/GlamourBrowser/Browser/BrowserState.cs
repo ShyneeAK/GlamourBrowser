@@ -104,8 +104,12 @@ public sealed class BrowserState
 
     public void SetGrid(int columns, int rows)
     {
+        // The page's first item stays in view; remembered pages of other slots no longer match the page size.
+        var first = PageIndex * PageSize;
         (config.Columns, config.Rows) = PageLayout.ClampGrid(columns, rows);
         config.Save();
+        pages.Forget();
+        PageIndex = first / PageSize;
         Refresh();
     }
 
@@ -146,8 +150,11 @@ public sealed class BrowserState
 
     public void SetSort(SortOrder sort)
     {
+        // Another order is another list: from its start, and remembered pages no longer apply.
         config.Sort = sort;
         config.Save();
+        pages.Forget();
+        PageIndex = 0;
         Refresh();
     }
 

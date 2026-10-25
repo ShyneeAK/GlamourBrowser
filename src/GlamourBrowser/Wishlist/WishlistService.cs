@@ -24,6 +24,9 @@ public sealed class WishlistService : IDisposable
 
     public WishlistStore? Current { get; private set; }
 
+    /// <summary>The logged-in character's file could not be read; it is left alone and the browser says so.</summary>
+    public bool LoadFailed { get; private set; }
+
     /// <summary>Login, logout and every change of the list.</summary>
     public event Action? Changed;
 
@@ -102,7 +105,19 @@ public sealed class WishlistService : IDisposable
             Flush(retry: true);
             Release();
             path = Path.Combine(directory, $"{contentId}.json");
-            Current = WishlistFile.Load(path, contentId, variants);
+            try
+            {
+                Current = WishlistFile.Load(path, contentId, variants);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // No empty list in its place: its first save would overwrite the real file.
+                Plugin.Log.Warning(e, $"Loading wishlist file {path} failed");
+                path = null;
+                LoadFailed = true;
+                Changed?.Invoke();
+                return;
+            }
             Current.Changed += OnStoreChanged;
             Plugin.Log.Information($"Wishlist loaded for {contentId}: {Current.Entries.Count} entries");
             Changed?.Invoke();
@@ -126,6 +141,7 @@ public sealed class WishlistService : IDisposable
         Current = null;
         path = null;
         unsaved = false;
+        LoadFailed = false;
     }
 
     public void Dispose()

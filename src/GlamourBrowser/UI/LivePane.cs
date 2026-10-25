@@ -331,7 +331,8 @@ public sealed unsafe class LivePane
             return;
         var loggedIn = wishlist.Current != null;
         var listed = wishlist.IsListed(subject);
-        var tooltip = !loggedIn ? "Nicht eingeloggt" : listed ? "Von der Wunschliste nehmen" : "Auf die Wunschliste";
+        var tooltip = !loggedIn ? wishlist.LoadFailed ? "Wunschliste konnte nicht geladen werden" : "Nicht eingeloggt"
+                    : listed ? "Von der Wunschliste nehmen" : "Auf die Wunschliste";
         if (IconToggle.Draw("##wish", SlotIcons.Wishlist, new Vector2(ImGui.GetFrameHeight()), listed, tooltip, theme, FontAwesomeIcon.Star, enabled: loggedIn))
             wishlist.Toggle(subject);
     }

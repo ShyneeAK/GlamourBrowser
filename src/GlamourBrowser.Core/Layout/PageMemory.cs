@@ -13,14 +13,15 @@ public sealed class PageMemory
 
     /// <returns>
     /// The page to show after the filter changed: the remembered page of the new view (the first one for a new view);
-    /// the current page when the view stayed or another filter changed (then all remembered pages are forgotten).
+    /// the current page when only the view stayed; the first page when another filter changed, which also forgets
+    /// every remembered page (they belonged to another list).
     /// </returns>
     public int Switch(FilterState from, int page, FilterState to)
     {
         if (Rest(from) != Rest(to))
         {
             pages.Clear();
-            return page;
+            return 0;
         }
 
         var (fromView, toView) = (View(from), View(to));
@@ -29,6 +30,9 @@ public sealed class PageMemory
         pages[fromView] = page;
         return pages.GetValueOrDefault(toView);
     }
+
+    /// <summary>For a new grid size or sort order: the remembered page numbers would point at other items.</summary>
+    public void Forget() => pages.Clear();
 
     private static (string, bool, bool) View(FilterState f) => (string.Join(",", f.Slots.Order()), f.Sets, f.Wishlist);
 

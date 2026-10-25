@@ -91,7 +91,7 @@ public sealed class TileGrid
         // Logged out the render pool pauses too; the wishlist mode says why it is empty.
         if (state.Filter.Wishlist && wishlist.Current == null)
         {
-            ImGui.TextDisabled("Nicht eingeloggt");
+            ImGui.TextDisabled(wishlist.LoadFailed ? "Wunschliste konnte nicht geladen werden" : "Nicht eingeloggt");
             return;
         }
 
@@ -166,7 +166,7 @@ public sealed class TileGrid
     {
         if (wishlist.Current is not { } store)
         {
-            ImGui.TextDisabled("Nicht eingeloggt");
+            ImGui.TextDisabled(wishlist.LoadFailed ? "Wunschliste konnte nicht geladen werden" : "Nicht eingeloggt");
             return false;
         }
         if (store.Entries.Count == 0)
@@ -190,8 +190,8 @@ public sealed class TileGrid
                 state.SetHideDoneWishes(hideDone);
         }
 
-        // Set entries resolve only once the source index is there.
-        if (state.WishlistEntries.Count < store.Entries.Count && !sources.IsReady)
+        // Set entries resolve only once the source index is there (the plan says it loads on its own).
+        if (!bySource && state.WishlistEntries.Count < store.Entries.Count && !sources.IsReady)
             ImGui.TextDisabled("Ausrüstungs-Sets werden geladen …");
         if (bySource)
         {
@@ -279,8 +279,12 @@ public sealed class TileGrid
         var starPos = pos + new Vector2(6, 5);
         var starSize = WishStarSize();
         var canWish = wishlist.Current != null;
-        var overStar = hovered && canWish && ImGui.IsMouseHoveringRect(starPos - new Vector2(3), starPos + starSize + new Vector2(3));
-        if (clicked && overStar)
+        var (starMin, starMax) = (starPos - new Vector2(3), starPos + starSize + new Vector2(3));
+        var overStar = hovered && canWish && ImGui.IsMouseHoveringRect(starMin, starMax);
+        // Decided where the button went down: a press on the star toggles the wish wherever it is released on the tile.
+        var pressed = ImGui.GetIO().MouseClickedPos[0];
+        var pressedOnStar = canWish && pressed.X >= starMin.X && pressed.Y >= starMin.Y && pressed.X <= starMax.X && pressed.Y <= starMax.Y;
+        if (clicked && pressedOnStar)
             wishlist.Toggle(subject);
         else if (clicked)
         {
@@ -339,7 +343,8 @@ public sealed class TileGrid
             if (overStar)
                 ImGui.SetTooltip(listed ? "Von der Wunschliste nehmen" : "Auf die Wunschliste");
         }
-        var markerX = showStar ? 6 + starSize.X + 3 : 6f;
+        // The star's place stays reserved while it can show, so the marker does not jump when the tile is hovered.
+        var markerX = showStar || canWish ? 6 + starSize.X + 3 : 6f;
         if (pool.Failures.TryGetValue(key, out var error))
         {
             drawList.AddText(pos + new Vector2(markerX, 4), ErrorColor, "!");
@@ -347,7 +352,7 @@ public sealed class TileGrid
             var label = Truncate("Renderfehler", size.X - 12);
             drawList.AddText(labelPos, ErrorColor, label);
             // Like the trait icons, only the marker itself shows a tooltip: the reason of the failure.
-            if (hovered && ImGui.IsMouseHoveringRect(pos, labelPos + ImGui.CalcTextSize(label)))
+            if (hovered && !overStar && ImGui.IsMouseHoveringRect(pos, labelPos + ImGui.CalcTextSize(label)))
                 ImGui.SetTooltip($"Renderfehler: {error}");
         }
         drawList.PopClipRect();

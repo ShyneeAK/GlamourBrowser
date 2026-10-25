@@ -36,13 +36,23 @@ public class PageMemoryTests
         => Assert.Equal(5, new PageMemory().Switch(Head, 5, Head with { Sort = Head.Sort }));
 
     [Fact]
-    public void OtherFilterChange_KeepsThePage_AndForgetsTheOthers()
+    public void OtherFilterChange_StartsAtTheFirstPage_AndForgetsTheOthers()
     {
-        // Pages remembered for another search would point into a different list.
+        // Another search is another list: its first page, and pages remembered for the old list no longer apply.
         var memory = new PageMemory();
         memory.Switch(Head, 4, Body);
         var searched = Body with { SearchText = "robe" };
-        Assert.Equal(2, memory.Switch(Body, 2, searched));
+        Assert.Equal(0, memory.Switch(Body, 2, searched));
         Assert.Equal(0, memory.Switch(searched, 2, SlotSelection.SelectSlot(searched, EquipSlot.Head, additive: false)));
+    }
+
+    [Fact]
+    public void Forget_DropsTheRememberedPages()
+    {
+        // Another grid size or sort order: the remembered page numbers point at other items.
+        var memory = new PageMemory();
+        memory.Switch(Head, 4, Body);
+        memory.Forget();
+        Assert.Equal(0, memory.Switch(Body, 2, Head));
     }
 }

@@ -49,7 +49,37 @@ public class PickerMathTests
     [InlineData(40f, 50f, 50f, false)]
     [InlineData(60f, 50f, 50f, true)]
     public void RangeTrack_TheNearerHandleMoves(float x, float minX, float maxX, bool upper)
-        => Assert.Equal(upper, RangeTrack.GrabsUpper(x, minX, maxX));
+        => Assert.Equal(upper, RangeTrack.GrabsUpper(x, minX, maxX, upperAtEnd: false, lowerAtStart: false));
+
+    [Theory]
+    // Both handles at the end (100–100): only the lower one can move, from either side of the knob.
+    [InlineData(115f, true, false, false)]
+    [InlineData(105f, true, false, false)]
+    // Both at the start (1–1): only the upper one can move.
+    [InlineData(5f, false, true, true)]
+    [InlineData(15f, false, true, true)]
+    public void RangeTrack_HandlesOnOneSpotAtAnEnd_TheMovableOneMoves(float x, bool upperAtEnd, bool lowerAtStart, bool upper)
+        => Assert.Equal(upper, RangeTrack.GrabsUpper(x, 10f, 10f, upperAtEnd, lowerAtStart));
+
+    [Theory]
+    // A press on the knob keeps its distance to the knob's centre, so a click without moving changes nothing.
+    [InlineData(52f, 50f, 6f, -2f)]
+    [InlineData(47f, 50f, 6f, 3f)]
+    // A press on the track beside it lets the handle jump there.
+    [InlineData(70f, 50f, 6f, 0f)]
+    public void RangeTrack_GrabOffset(float pressX, float handleX, float radius, float expected)
+        => Assert.Equal(expected, RangeTrack.GrabOffset(pressX, handleX, radius));
+
+    [Theory]
+    // A typed value pushes the other bound instead of stopping at it.
+    [InlineData(false, 60, 60, 60)]
+    [InlineData(false, 10, 10, 50)]
+    [InlineData(true, 5, 5, 5)]
+    [InlineData(true, 80, 20, 80)]
+    [InlineData(true, 500, 20, 100)]
+    [InlineData(false, -3, 1, 50)]
+    public void RangeTrack_Typed(bool upper, int typed, int expectedMin, int expectedMax)
+        => Assert.Equal((expectedMin, expectedMax), RangeTrack.Typed(20, 50, upper, typed, 1, 100));
 
     [Theory]
     [InlineData(false, 70, 70, 90)]

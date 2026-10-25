@@ -30,9 +30,32 @@ public static class RangeTrack
     public static float PositionOf(int value, float trackMin, float trackWidth, int lo, int hi)
         => hi == lo ? trackMin : trackMin + (float)(value - lo) / (hi - lo) * trackWidth;
 
-    /// <summary>Whether a click at <paramref name="x"/> takes the upper handle: the nearer one; on one spot the side decides.</summary>
-    public static bool GrabsUpper(float x, float minX, float maxX)
-        => minX == maxX ? x > maxX : MathF.Abs(x - maxX) < MathF.Abs(x - minX);
+    /// <summary>
+    /// Whether a press at <paramref name="x"/> takes the upper handle: the nearer one. On one spot the one that can move
+    /// (both at the end: the lower one; both at the start: the upper one), otherwise the side of the press decides.
+    /// </summary>
+    public static bool GrabsUpper(float x, float minX, float maxX, bool upperAtEnd, bool lowerAtStart)
+    {
+        if (minX != maxX)
+            return MathF.Abs(x - maxX) < MathF.Abs(x - minX);
+        if (upperAtEnd)
+            return false;
+        return lowerAtStart || x > maxX;
+    }
+
+    /// <summary>
+    /// How far the grabbed handle's centre is from the press: a press on the knob keeps that distance while dragging,
+    /// so a click without moving changes nothing; a press on the track beside it makes the handle jump there (0).
+    /// </summary>
+    public static float GrabOffset(float pressX, float handleX, float radius)
+        => MathF.Abs(handleX - pressX) <= radius ? handleX - pressX : 0f;
+
+    /// <summary>A typed bound, clamped to <paramref name="lo"/>–<paramref name="hi"/>; it pushes the other bound along instead of stopping at it.</summary>
+    public static (int Min, int Max) Typed(int min, int max, bool upper, int typed, int lo, int hi)
+    {
+        var value = Math.Clamp(typed, lo, hi);
+        return upper ? (Math.Min(min, value), value) : (value, Math.Max(max, value));
+    }
 
     /// <summary>Moves one handle to <paramref name="value"/>; it stops at the other one instead of crossing it.</summary>
     public static (int Min, int Max) Drag(int min, int max, bool upper, int value)
