@@ -44,6 +44,10 @@ To load it in the game, add `src/GlamourBrowser/bin/Debug/GlamourBrowser.dll` un
 
 Built on [Dalamud](https://github.com/goatcorp/Dalamud), [FFXIVClientStructs](https://github.com/aers/FFXIVClientStructs) and [Lumina](https://github.com/NotAdam/Lumina). Additional item source data comes from [LuminaSupplemental](https://github.com/Critical-Impact/LuminaSupplemental).
 
+## AI disclosure
+
+This plugin was developed with AI assistance. Large parts of the code, the tests and this README were written by Anthropic's Claude through [Claude Code](https://claude.com/claude-code). The author decided on the features and the design, reviewed the changes and tested every version in the game.
+
 ## License
 
 MIT, see [LICENSE](LICENSE).
