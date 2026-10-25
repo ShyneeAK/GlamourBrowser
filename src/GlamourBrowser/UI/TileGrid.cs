@@ -201,7 +201,7 @@ public sealed class TileGrid
         if (ImGui.InvisibleButton($"##tile{item.Id}", size))
         {
             state.Selected = subject;
-            live.Select(item);
+            live.Select(subject);
         }
         var hovered = ImGui.IsItemHovered();
 

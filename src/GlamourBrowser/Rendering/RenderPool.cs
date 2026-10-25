@@ -57,13 +57,14 @@ public sealed unsafe class RenderPool : IDisposable
         public int DrawRetries { get; set; }
         /// <summary>A retry toggled the weapon the other way last frame; this frame toggles it back.</summary>
         public bool RetryPending { get; set; }
-        public (TileMode Mode, ulong Hash, EquipSlot Slot)? DressedAs { get; set; }
+        /// <summary>What the view wears besides the tile's items: the outfit of this look without these slots (a <see cref="SlotMask"/>).</summary>
+        public (TileMode Mode, ulong Hash, ushort Except)? DressedAs { get; set; }
         public bool Busy => Key != null;
     }
 
     private readonly TileQueue queue;
     private readonly TileCache<IDalamudTextureWrap> cache;
-    private readonly Func<uint, GlamourItem?> lookup;
+    private readonly Func<TileKey, TileSubject?> lookup;
     private readonly AppearanceTracker appearance;
     private readonly Func<EquipSlot, CameraPreset?> cameraFor;
     private readonly List<Worker> workers = new();
@@ -74,7 +75,7 @@ public sealed unsafe class RenderPool : IDisposable
     private bool poseWarned;
     private bool freezeWarned;
 
-    public RenderPool(TileQueue queue, TileCache<IDalamudTextureWrap> cache, Func<uint, GlamourItem?> lookup,
+    public RenderPool(TileQueue queue, TileCache<IDalamudTextureWrap> cache, Func<TileKey, TileSubject?> lookup,
                       AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor)
     {
         this.queue = queue;
@@ -199,7 +200,7 @@ public sealed unsafe class RenderPool : IDisposable
             case Phase.Apply:
                 if (!view.IsIdle || !queue.TryDequeue(out var key, out _))
                     return;
-                if (lookup(key.ItemId) is not { } item)
+                if (lookup(key) is not { } subject)
                 {
                     failures[key] = "Unbekanntes Item";
                     return;
@@ -207,18 +208,21 @@ public sealed unsafe class RenderPool : IDisposable
 
                 worker.Key = key;
                 worker.Stopwatch.Restart();
-                // Re-dress when the slot changes too, otherwise the previous tile's item (e.g. a hat)
-                // stays on the character.
-                var redressed = worker.DressedAs != (key.Mode, key.AppearanceHash, item.Slot);
+                // Re-dress when the slots change too, otherwise the previous tile's items (e.g. a hat) stay on the
+                // character. Sets with the same slots as the previous tile only swap their pieces.
+                var except = subject.Slots;
+                var redressed = worker.DressedAs != (key.Mode, key.AppearanceHash, except);
                 if (redressed)
                 {
-                    view.ApplyOutfit(appearance.Outfit, key.Mode, item.Slot);
-                    worker.DressedAs = (key.Mode, key.AppearanceHash, item.Slot);
+                    view.ApplyOutfit(appearance.Outfit, key.Mode, except);
+                    worker.DressedAs = (key.Mode, key.AppearanceHash, except);
                 }
-                view.SetItem(item.Slot, key.ItemId, key.Stain0, key.Stain1);
+                // Set keys carry no dye.
+                foreach (var piece in subject.Wear)
+                    view.SetItem(piece.Slot, piece.Id, key.Stain0, key.Stain1);
                 // The weapon is drawn or sheathed once the item has loaded (Loading phase), and that has to finish
                 // first (DrawGate in the Pose phase).
-                view.ApplyCamera(cameraFor(item.Slot));
+                view.ApplyCamera(cameraFor(subject.CameraSlot));
                 // A view keeps its pose and frozen moment from tile to tile; only a change (or a re-dress, which may
                 // rebuild the character) lets the animation run again and waits for it in the Pose phase.
                 // Weapon tiles always let the animation run: the weapon is attached to the hand by the animation.
@@ -394,7 +398,7 @@ public sealed unsafe class RenderPool : IDisposable
                 }
 
                 var done = worker.Key!.Value;
-                if (WeaponDiagnosticsBudget > 0 && lookup(done.ItemId)?.Slot is EquipSlot.MainHand or EquipSlot.OffHand)
+                if (WeaponDiagnosticsBudget > 0 && lookup(done) is ItemSubject { Item.Slot: EquipSlot.MainHand or EquipSlot.OffHand })
                 {
                     WeaponDiagnosticsBudget--;
                     Plugin.Log.Information($"[diag] tile {done.ItemId}: {view.DescribeWeapons()}");

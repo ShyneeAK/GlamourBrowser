@@ -144,11 +144,11 @@ public sealed unsafe class CharaViewHandle : IDisposable
     }
 
     /// <summary>
-    /// Undresses the character completely (weapons included), then dresses every slot except
-    /// <paramref name="except"/> from the snapshot; underwear stays empty. SetItemSlotData(slot, 0) does not
-    /// clear a slot, so without UnequipGear items of earlier tiles (or the initial copy) would remain.
+    /// Undresses the character completely (weapons included), then dresses every slot except those in
+    /// <paramref name="exceptSlots"/> (a <see cref="SlotMask"/>) from the snapshot; underwear stays empty.
+    /// SetItemSlotData(slot, 0) does not clear a slot, so without UnequipGear items of earlier tiles (or the initial copy) would remain.
     /// </summary>
-    public void ApplyOutfit(OutfitSnapshot outfit, TileMode mode, EquipSlot except)
+    public void ApplyOutfit(OutfitSnapshot outfit, TileMode mode, ushort exceptSlots)
     {
         if (view == null || view->State != StateReady)
             return;
@@ -161,7 +161,7 @@ public sealed unsafe class CharaViewHandle : IDisposable
 
         foreach (var entry in outfit.Entries)
         {
-            if (entry.Slot != except)
+            if (!SlotMask.Contains(exceptSlots, entry.Slot))
                 SetItem(entry.Slot, entry.ItemId, entry.Stain0, entry.Stain1);
         }
     }

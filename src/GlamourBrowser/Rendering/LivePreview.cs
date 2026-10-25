@@ -1,5 +1,6 @@
 using System;
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Rendering;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 
@@ -16,7 +17,7 @@ public sealed unsafe class LivePreview : IDisposable
     private readonly Func<EquipSlot, CameraPreset?> cameraFor;
     private CharaViewHandle? view;
     private CharaViewHandle? suspended;
-    private (uint ItemId, TileMode Mode, ulong Hash, CameraPreset? Camera)? applied;
+    private ((uint ItemId, SetId Set) Subject, TileMode Mode, ulong Hash, CameraPreset? Camera)? applied;
     private byte? appliedPose;
     private float rotateX, rotateY, panX, panY, zoom;
     private bool reset;
@@ -29,7 +30,7 @@ public sealed unsafe class LivePreview : IDisposable
         this.cameraFor = cameraFor;
     }
 
-    public GlamourItem? Selected { get; private set; }
+    public TileSubject? Selected { get; private set; }
 
     /// <summary>Weapon in hand instead of sheathed, toggled from the UI like the game's try-on window.</summary>
     public bool WeaponDrawn { get; set; }
@@ -41,7 +42,7 @@ public sealed unsafe class LivePreview : IDisposable
 
     public Texture* Texture => view != null ? view.GetTexture() : null;
 
-    public void Select(GlamourItem? item) => Selected = item;
+    public void Select(TileSubject? subject) => Selected = subject;
 
     public void QueueRotate(float dx, float dy)
     {
@@ -85,7 +86,7 @@ public sealed unsafe class LivePreview : IDisposable
             suspended = null;
         }
 
-        if (Selected is not { } item)
+        if (Selected is not { } subject)
         {
             ReleaseView();
             return;
@@ -109,12 +110,13 @@ public sealed unsafe class LivePreview : IDisposable
         if (!view.IsIdle && view.State != CharaViewHandle.StateReady)
             return;
 
-        var camera = cameraFor(item.Slot);
-        var wanted = (item.Id, config.TileMode, appearance.Hash, camera);
+        var camera = cameraFor(subject.CameraSlot);
+        var wanted = (subject.Id, config.TileMode, appearance.Hash, camera);
         if (applied != wanted && view.IsIdle)
         {
-            view.ApplyOutfit(appearance.Outfit, config.TileMode, item.Slot);
-            view.SetItem(item.Slot, item.Id, 0, 0);
+            view.ApplyOutfit(appearance.Outfit, config.TileMode, subject.Slots);
+            foreach (var piece in subject.Wear)
+                view.SetItem(piece.Slot, piece.Id, 0, 0);
             view.ApplyCamera(camera);
             applied = wanted;
             appliedPose = null;

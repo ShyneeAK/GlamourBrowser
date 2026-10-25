@@ -56,7 +56,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly CalibrationService calibration;
     private readonly SourceService sources;
     private bool paused;
-    private GlamourItem? selectionBeforePause;
+    private TileSubject? selectionBeforePause;
 
     public Plugin()
     {
@@ -70,7 +70,8 @@ public sealed class Plugin : IDalamudPlugin
         armoireReader = new ArmoireReader(ownership);
         appearance = new AppearanceTracker();
         var byId = catalog.ToDictionary(i => i.Id);
-        pool = new RenderPool(queue, cache, id => byId.GetValueOrDefault(id), appearance, CameraFor) { MaxViews = config.ParallelViews };
+        // The browser state is created below; the pool asks it only once it ticks.
+        pool = new RenderPool(queue, cache, key => browser?.SubjectFor(key), appearance, CameraFor) { MaxViews = config.ParallelViews };
         live = new LivePreview(pool, appearance, config, CameraFor);
         sources = new SourceService(catalog.Select(i => i.Id).ToHashSet());
         var sets = new SetCatalog(byId, sources);
