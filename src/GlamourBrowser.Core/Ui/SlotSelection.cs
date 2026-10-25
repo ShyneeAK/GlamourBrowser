@@ -18,4 +18,12 @@ public static class SlotSelection
             result.Add(slot);
         return result;
     }
+
+    /// <summary>A click on a slot of the slot bar: <see cref="Toggle"/>, and the set mode ends.</summary>
+    public static FilterState SelectSlot(FilterState filter, EquipSlot slot, bool additive)
+        => filter with { Slots = Toggle(filter.Slots, slot, additive), Sets = false };
+
+    /// <summary>A click on "Serien": switches the set mode; switching it on clears the slots, which do not apply to sets.</summary>
+    public static FilterState ToggleSets(FilterState filter)
+        => filter.Sets ? filter with { Sets = false } : filter with { Sets = true, Slots = new HashSet<EquipSlot>() };
 }

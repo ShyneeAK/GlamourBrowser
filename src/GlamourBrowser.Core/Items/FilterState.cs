@@ -14,6 +14,9 @@ public sealed record FilterState
 {
     public string SearchText { get; init; } = "";
     public IReadOnlySet<EquipSlot> Slots { get; init; } = new HashSet<EquipSlot>();
+
+    /// <summary>The grid shows whole sets instead of single items (the "Serien" entry of the slot bar).</summary>
+    public bool Sets { get; init; }
     public uint? ClassJobId { get; init; }
     public int MinLevel { get; init; } = 1;
     public int MaxLevel { get; init; } = 100;

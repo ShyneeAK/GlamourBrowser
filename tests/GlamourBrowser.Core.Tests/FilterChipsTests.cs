@@ -68,4 +68,12 @@ public class FilterChipsTests
         Assert.Empty(without.Categories);
         Assert.Equal(new HashSet<Expansion> { Expansion.Dawntrail }, without.Expansions);
     }
+
+    [Fact]
+    public void SetsChip_RemovesSetMode()
+    {
+        var chip = Assert.Single(Chips(new FilterState { Sets = true }));
+        Assert.Equal("Serien", chip.Label);
+        Assert.False(chip.WithoutThis.Sets);
+    }
 }

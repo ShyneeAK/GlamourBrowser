@@ -22,4 +22,21 @@ public class SlotSelectionTests
         Assert.Equal(Set(EquipSlot.Head, EquipSlot.Feet), both);
         Assert.Equal(Set(EquipSlot.Feet), SlotSelection.Toggle(both, EquipSlot.Head, additive: true));
     }
+
+    [Fact]
+    public void ToggleSets_TurnsOnAndClearsSlots()
+    {
+        var on = SlotSelection.ToggleSets(new FilterState { Slots = Set(EquipSlot.Head) });
+        Assert.True(on.Sets);
+        Assert.Empty(on.Slots);
+        Assert.False(SlotSelection.ToggleSets(on).Sets);
+    }
+
+    [Fact]
+    public void SelectSlot_LeavesSetMode()
+    {
+        var state = SlotSelection.SelectSlot(new FilterState { Sets = true }, EquipSlot.Head, additive: false);
+        Assert.False(state.Sets);
+        Assert.Equal(Set(EquipSlot.Head), state.Slots);
+    }
 }

@@ -17,6 +17,9 @@ public static class FilterChips
         if (state.SearchText.Trim().Length > 0)
             chips.Add(new FilterChip($"Suche: {state.SearchText.Trim()}", state with { SearchText = "" }));
 
+        if (state.Sets)
+            chips.Add(new FilterChip("Serien", state with { Sets = false }));
+
         foreach (var slot in Enum.GetValues<EquipSlot>().Where(state.Slots.Contains))
             chips.Add(new FilterChip(slotName(slot), state with { Slots = state.Slots.Where(s => s != slot).ToHashSet() }));
 
