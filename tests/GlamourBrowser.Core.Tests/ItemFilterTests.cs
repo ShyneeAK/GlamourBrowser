@@ -10,8 +10,11 @@ public class ItemFilterTests
     private static GlamourItem Item(uint id, string name, EquipSlot slot, int level = 50, int dyes = 0, uint[]? jobs = null, RaceGenderRestriction? r = null)
         => new(id, name, 0, slot, new HashSet<uint>(jobs ?? []), level, dyes, r ?? RaceGenderRestriction.None);
 
+    // Gladiator 1 is the base class of Paladin 19 (ClassJobParent); every other id is its own parent.
+    private static uint ParentOf(uint job) => job == 19 ? 1u : job;
+
     private static IReadOnlyList<GlamourItem> Apply(IEnumerable<GlamourItem> items, FilterState filter, Func<uint, bool>? isOwned = null)
-        => ItemFilter.Apply(items, filter, isOwned ?? (_ => false), Miqote, Female);
+        => ItemFilter.Apply(items, filter, isOwned ?? (_ => false), Miqote, Female, parentOf: ParentOf);
 
     private static uint[] Ids(IEnumerable<GlamourItem> items) => items.Select(i => i.Id).ToArray();
 
@@ -31,10 +34,16 @@ public class ItemFilterTests
     }
 
     [Fact]
-    public void ClassJob_MatchesItemsContainingJob()
+    public void ClassJob_OnlyGearMadeForThatJob()
     {
-        var items = new[] { Item(1, "A", EquipSlot.Body, jobs: [19, 21]), Item(2, "B", EquipSlot.Body, jobs: [24]) };
-        Assert.Equal([1u], Ids(Apply(items, new FilterState { ClassJobId = 19 })));
+        // Every job can wear everything as glamour: the filter finds gear for the job alone, its base class may be listed.
+        var items = new[]
+        {
+            Item(1, "Tank", EquipSlot.Body, jobs: [19, 21]), Item(2, "GLA PLD", EquipSlot.Body, jobs: [1, 19]), Item(3, "PLD", EquipSlot.Body, jobs: [19]),
+            Item(4, "WHM", EquipSlot.Body, jobs: [24]), Item(5, "GLA", EquipSlot.Body, jobs: [1]), Item(6, "Alle", EquipSlot.Body, jobs: [1, 19, 21, 24]),
+        };
+        Assert.Equal([2u, 3u], Ids(Apply(items, new FilterState { ClassJobId = 19 })).Order().ToArray());
+        Assert.Equal([4u], Ids(Apply(items, new FilterState { ClassJobId = 24 })));
     }
 
     [Fact]

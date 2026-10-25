@@ -6,9 +6,11 @@ public static class ItemFilter
 {
     /// <param name="categoriesOf">Source categories per item; null while the source index is not ready (category filter ignored).</param>
     /// <param name="patchOf">Patch per item (0 = unknown); null ignores the expansion filter and sorts by level.</param>
+    /// <param name="parentOf">A job's base class (ClassJob.ClassJobParent) for the job filter; null treats every id as its own.</param>
     public static IReadOnlyList<GlamourItem> Apply(IEnumerable<GlamourItem> items, FilterState filter, Func<uint, bool> isOwned, byte race, byte sex,
-                                                   Func<uint, IReadOnlySet<SourceCategory>>? categoriesOf = null, Func<uint, float>? patchOf = null)
-        => Sort(Matching(items, filter, isOwned, race, sex, patchOf).Where(i => InCategories(i, filter, categoriesOf)), filter.Sort, patchOf);
+                                                   Func<uint, IReadOnlySet<SourceCategory>>? categoriesOf = null, Func<uint, float>? patchOf = null,
+                                                   Func<uint, uint>? parentOf = null)
+        => Sort(Matching(items, filter, isOwned, race, sex, patchOf, parentOf).Where(i => InCategories(i, filter, categoriesOf)), filter.Sort, patchOf);
 
     /// <summary>
     /// <see cref="Apply"/> plus the items that pass every filter except the source categories (the base of the
@@ -16,9 +18,9 @@ public static class ItemFilter
     /// </summary>
     public static (IReadOnlyList<GlamourItem> Results, IReadOnlyList<GlamourItem> WithoutCategories) ApplyWithCategoryBase(
         IEnumerable<GlamourItem> items, FilterState filter, Func<uint, bool> isOwned, byte race, byte sex,
-        Func<uint, IReadOnlySet<SourceCategory>>? categoriesOf = null, Func<uint, float>? patchOf = null)
+        Func<uint, IReadOnlySet<SourceCategory>>? categoriesOf = null, Func<uint, float>? patchOf = null, Func<uint, uint>? parentOf = null)
     {
-        var withoutCategories = Matching(items, filter, isOwned, race, sex, patchOf).ToList();
+        var withoutCategories = Matching(items, filter, isOwned, race, sex, patchOf, parentOf).ToList();
         return (Sort(withoutCategories.Where(i => InCategories(i, filter, categoriesOf)), filter.Sort, patchOf), withoutCategories);
     }
 
@@ -27,13 +29,14 @@ public static class ItemFilter
 
     /// <summary>Every filter except the source categories, unsorted.</summary>
     private static IEnumerable<GlamourItem> Matching(IEnumerable<GlamourItem> items, FilterState filter, Func<uint, bool> isOwned, byte race, byte sex,
-                                                     Func<uint, float>? patchOf)
+                                                     Func<uint, float>? patchOf, Func<uint, uint>? parentOf)
     {
         var search = filter.SearchText.Trim();
+        parentOf ??= job => job;
         return items
             .Where(i => search.Length == 0 || i.Name.Contains(search, StringComparison.OrdinalIgnoreCase))
             .Where(i => filter.Slots.Count == 0 || filter.Slots.Contains(i.Slot))
-            .Where(i => filter.ClassJobId is not { } job || i.ClassJobIds.Contains(job))
+            .Where(i => filter.ClassJobId is not { } job || JobFilter.OnlyFor(i.ClassJobIds, job, parentOf))
             .Where(i => i.LevelEquip >= filter.MinLevel && i.LevelEquip <= filter.MaxLevel)
             .Where(i => !filter.DyeableOnly || i.DyeCount > 0)
             .Where(i => filter.Ownership switch

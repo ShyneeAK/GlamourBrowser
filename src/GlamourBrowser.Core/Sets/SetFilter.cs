@@ -4,7 +4,7 @@ using GlamourBrowser.Core.Sources;
 namespace GlamourBrowser.Core.Sets;
 
 /// <summary>
-/// The filters of the set mode: like <see cref="ItemFilter"/>, but a set matches a job when every armour piece fits it,
+/// The filters of the set mode: like <see cref="ItemFilter"/>, but a set matches a job when every armour piece is made for it,
 /// counts as owned only when complete, has the categories of all its pieces and the patch of its newest piece.
 /// Slots and dye channels do not apply to sets.
 /// </summary>
@@ -13,13 +13,14 @@ public static class SetFilter
     /// <returns>The sorted results, and every set that passes all filters except the source categories (for the counts).</returns>
     public static (IReadOnlyList<SetSubject> Results, IReadOnlyList<SetSubject> WithoutCategories) Apply(
         IEnumerable<SetSubject> sets, FilterState filter, Func<uint, bool> isOwned, byte race, byte sex,
-        Func<uint, IReadOnlySet<SourceCategory>>? categoriesOf = null, Func<uint, float>? patchOf = null)
+        Func<uint, IReadOnlySet<SourceCategory>>? categoriesOf = null, Func<uint, float>? patchOf = null, Func<uint, uint>? parentOf = null)
     {
         var search = filter.SearchText.Trim();
+        parentOf ??= job => job;
         var withoutCategories = sets
             .Where(s => search.Length == 0 || s.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
                         || s.Pieces.Any(p => p.Name.Contains(search, StringComparison.OrdinalIgnoreCase)))
-            .Where(s => filter.ClassJobId is not { } job || s.ArmourJobs.Contains(job))
+            .Where(s => filter.ClassJobId is not { } job || s.JobPieces.All(p => JobFilter.OnlyFor(p.ClassJobIds, job, parentOf)))
             .Where(s => s.Set.Level >= filter.MinLevel && s.Set.Level <= filter.MaxLevel)
             .Where(s => filter.Ownership switch
             {

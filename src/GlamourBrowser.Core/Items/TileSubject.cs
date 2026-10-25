@@ -37,8 +37,11 @@ public sealed record SetSubject(GlamourSet Set, IReadOnlyList<GlamourItem> Piece
     public override IReadOnlyList<GlamourItem> Wear => Pieces;
     public override EquipSlot CameraSlot => EquipSlot.Body;
 
+    /// <summary>The pieces that decide the jobs: the armour, or every piece when the set has no armour.</summary>
+    public IReadOnlyList<GlamourItem> JobPieces { get; } = ArmourOrAll(Pieces);
+
     /// <summary>Jobs that can wear every armour piece (every piece when the set has no armour).</summary>
-    public IReadOnlySet<uint> ArmourJobs { get; } = CommonJobs(Pieces);
+    public IReadOnlySet<uint> ArmourJobs { get; } = CommonJobs(ArmourOrAll(Pieces));
 
     public bool Allows(byte race, byte sex) => Pieces.All(p => p.Restriction.Allows(race, sex));
 
@@ -65,12 +68,16 @@ public sealed record SetSubject(GlamourSet Set, IReadOnlyList<GlamourItem> Piece
         return result;
     }
 
-    private static IReadOnlySet<uint> CommonJobs(IReadOnlyList<GlamourItem> pieces)
+    private static IReadOnlyList<GlamourItem> ArmourOrAll(IReadOnlyList<GlamourItem> pieces)
     {
         var armour = pieces.Where(p => Armour.Contains(p.Slot)).ToList();
-        var source = armour.Count > 0 ? armour : pieces.ToList();
-        var jobs = new HashSet<uint>(source.Count > 0 ? source[0].ClassJobIds : []);
-        foreach (var piece in source.Skip(1))
+        return armour.Count > 0 ? armour : pieces.ToList();
+    }
+
+    private static IReadOnlySet<uint> CommonJobs(IReadOnlyList<GlamourItem> pieces)
+    {
+        var jobs = new HashSet<uint>(pieces.Count > 0 ? pieces[0].ClassJobIds : []);
+        foreach (var piece in pieces.Skip(1))
             jobs.IntersectWith(piece.ClassJobIds);
         return jobs;
     }

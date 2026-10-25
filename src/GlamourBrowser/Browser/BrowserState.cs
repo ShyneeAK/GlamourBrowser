@@ -8,6 +8,7 @@ using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Sources;
 using GlamourBrowser.Core.Wishlist;
+using GlamourBrowser.Data;
 using GlamourBrowser.Ownership;
 using GlamourBrowser.Rendering;
 using GlamourBrowser.Sources;
@@ -27,6 +28,8 @@ public sealed class BrowserState
     private readonly SourceService sources;
     private readonly SetCatalog sets;
     private readonly WishlistService wishlist;
+    // A job's base class, for the job filter (gear made for one job may list its base class too).
+    private readonly Func<uint, uint> parentOf;
     // One subject per catalog item, made once instead of on every refresh.
     private readonly IReadOnlyDictionary<uint, ItemSubject> itemSubjects;
     private FilterState filter = new();
@@ -34,8 +37,9 @@ public sealed class BrowserState
 
     public BrowserState(IReadOnlyList<GlamourItem> catalog, OwnershipService ownership, AppearanceTracker appearance,
                         TileQueue queue, TileCache<IDalamudTextureWrap> cache, RenderPool pool, Configuration config, SourceService sources, SetCatalog sets,
-                        WishlistService wishlist)
+                        WishlistService wishlist, JobCatalog jobs)
     {
+        parentOf = jobs.ParentOf;
         this.sources = sources;
         this.sets = sets;
         this.wishlist = wishlist;
@@ -191,18 +195,18 @@ public sealed class BrowserState
             {
                 // Without the index there are no sets yet (the grid says so).
                 var (setResults, withoutCategories) = SetFilter.Apply(index == null ? [] : sets.All, sorted, isOwned, appearance.Race, appearance.Sex,
-                    index == null ? null : index.CategoriesOf, index == null ? null : index.PatchOf);
+                    index == null ? null : index.CategoriesOf, index == null ? null : index.PatchOf, parentOf);
                 Results = setResults;
                 if (index != null)
                     CountsWithoutCategories = SetFilter.Counts(withoutCategories, index.CategoriesOf);
             }
             else if (index == null)
-                Results = Subjects(ItemFilter.Apply(catalog, sorted, isOwned, appearance.Race, appearance.Sex));
+                Results = Subjects(ItemFilter.Apply(catalog, sorted, isOwned, appearance.Race, appearance.Sex, parentOf: parentOf));
             else
             {
                 // One pass for both: the numbers behind the category checkboxes ignore the categories themselves.
                 var (items, withoutCategories) = ItemFilter.ApplyWithCategoryBase(catalog, sorted, isOwned,
-                    appearance.Race, appearance.Sex, index.CategoriesOf, index.PatchOf);
+                    appearance.Race, appearance.Sex, index.CategoriesOf, index.PatchOf, parentOf);
                 Results = Subjects(items);
                 CountsWithoutCategories = index.Counts(withoutCategories.Select(i => i.Id));
             }

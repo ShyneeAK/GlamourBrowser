@@ -79,11 +79,11 @@ public sealed class Plugin : IDalamudPlugin
         // Variants too: their sources are merged into the base item.
         sources = new SourceService(catalog.Select(i => i.Id).Concat(variants.Keys).ToHashSet());
         var sets = new SetCatalog(byId, variants, sources);
-        browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets, wishlist);
+        var jobs = new JobCatalog(DataManager);
+        browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets, wishlist, jobs);
         Framework.Update += OnFrameworkUpdate;
         UI.UiScale.Set(config.UiScale);
         var theme = new UI.Theme.Theme(config);
-        var jobs = new JobCatalog(DataManager);
         mainWindow = new MainWindow(
             new LivePane(browser, ownership, live, calibration, jobs, theme, sources, wishlist),
             new TopBar(browser, jobs, config, theme),

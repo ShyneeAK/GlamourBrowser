@@ -25,7 +25,7 @@ public class SetFilterTests
     private static (IReadOnlyList<SetSubject> Results, IReadOnlyList<SetSubject> WithoutCategories) Apply(
         FilterState filter, Func<uint, bool>? owned = null, Func<uint, IReadOnlySet<SourceCategory>>? categories = null,
         Func<uint, float>? patch = null, byte sex = 1, IEnumerable<SetSubject>? sets = null)
-        => SetFilter.Apply(sets ?? [A, B], filter with { Sets = true }, owned ?? (_ => false), 4, sex, categories, patch);
+        => SetFilter.Apply(sets ?? [A, B], filter with { Sets = true }, owned ?? (_ => false), 4, sex, categories, patch, job => job == 19 ? 1u : job);
 
     [Fact]
     public void Search_MatchesSetOrPieceName()
@@ -35,10 +35,13 @@ public class SetFilterTests
     }
 
     [Fact]
-    public void Job_RequiresAllArmour()
+    public void Job_EveryArmourPieceMadeForThatJob()
     {
-        Assert.Empty(Apply(new FilterState { ClassJobId = 21 }).Results);
-        Assert.Equal([2u], Ids(Apply(new FilterState { ClassJobId = 19 }).Results));
+        // B's helmet fits two jobs: not job gear. C is: the accessory does not count while there is armour.
+        var c = Set(3, "Paladin-Set", 90, Item(31, "Paladin-Helm", Head, [19]), Item(32, "Paladin-Panzer", Body, [1, 19]),
+                    Item(33, "Ohrringe", Ears, [19, 21, 30]));
+        Assert.Equal([3u], Ids(Apply(new FilterState { ClassJobId = 19 }, sets: [A, B, c]).Results));
+        Assert.Empty(Apply(new FilterState { ClassJobId = 21 }, sets: [A, B, c]).Results);
     }
 
     [Fact]
