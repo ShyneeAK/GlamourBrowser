@@ -87,7 +87,8 @@ public static class SetDetection
 
             var body = armour.FirstOrDefault(p => p.Slot == Body) ?? armour.OrderBy(p => p.Slot).First();
             var name = SetNames.FromCommonStart(names) ?? SetNames.Fallback(body.Name);
-            yield return Create(new SetId(SetKind.Model, pieces.Min(p => p.ItemId)), name, pieces);
+            // Armour belongs to exactly one series, accessories may join several: the id comes from the armour.
+            yield return Create(new SetId(SetKind.Model, armour.Min(p => p.ItemId)), name, pieces);
         }
     }
 

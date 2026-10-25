@@ -142,4 +142,14 @@ public class SetDetectionTests
         var accessories = RoleAccessories(Ears, 10).Where(a => a.ItemId != 11);
         Assert.Equal([1u, 2u, 3u], Ids(Assert.Single(Build([.. Asuran(), .. accessories]))));
     }
+
+    [Fact]
+    public void Model_IdsStayUnique_WhenSeriesShareAnAccessory()
+    {
+        // Two variants of the same series; the shared earring has the lowest id of all pieces.
+        var sets = Build([.. Asuran(), Candidate(6, "Asuran-Hachigane des Spähens", Head, variant: 2), Candidate(7, "Asuran-Togi des Spähens", Body, variant: 2),
+                          Candidate(8, "Asuran-Sune-Ate des Spähens", Feet, variant: 2), Candidate(0, "Asuran-Ohrringe des Spähens", Ears, set: 900)]);
+        Assert.Equal(2, sets.Count);
+        Assert.Equal(2, sets.Select(s => s.Id).Distinct().Count());
+    }
 }
