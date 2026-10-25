@@ -26,8 +26,11 @@ public static class WishlistFile
             if (dto.ContentId != contentId)
                 throw new JsonException($"file of character {dto.ContentId}");
             // Earliest first, so that of two entries merging into one base the earlier date stays.
-            foreach (var e in (dto.Entries ?? throw new JsonException("no entries")).OrderBy(e => e.Added))
-                store.Add(new WishKey(e.Kind, e.ItemId, new SetId(e.SetKind, e.SetValue)), e.Added);
+            var entries = dto.Entries ?? throw new JsonException("no entries");
+            if (entries.Contains(null))
+                throw new JsonException("empty entry");
+            foreach (var e in entries.OrderBy(e => e!.Added))
+                store.Add(new WishKey(e!.Kind, e.ItemId, new SetId(e.SetKind, e.SetValue)), e.Added);
             return store;
         }
         catch (Exception e) when (e is JsonException or NotSupportedException)
@@ -42,7 +45,7 @@ public static class WishlistFile
     {
         var dto = new FileDto(store.ContentId, store.Entries
             .Select(e => new EntryDto(e.Key.Kind, e.Key.ItemId, e.Key.Set.Kind, e.Key.Set.Value, e.Added))
-            .ToList());
+            .ToList<EntryDto?>());
 
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
         var tmp = path + ".tmp";
@@ -50,7 +53,7 @@ public static class WishlistFile
         File.Move(tmp, path, overwrite: true);
     }
 
-    private sealed record FileDto(ulong ContentId, List<EntryDto>? Entries);
+    private sealed record FileDto(ulong ContentId, List<EntryDto?>? Entries);
 
     private sealed record EntryDto(WishKind Kind, uint ItemId, SetKind SetKind, uint SetValue, DateTimeOffset Added);
 }

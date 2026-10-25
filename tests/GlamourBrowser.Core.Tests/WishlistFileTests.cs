@@ -40,6 +40,7 @@ public sealed class WishlistFileTests : IDisposable
     [Theory]
     [InlineData("{kaputt")]
     [InlineData("""{"ContentId":123}""")]
+    [InlineData("""{"ContentId":123,"Entries":[null]}""")]
     public void BrokenFile_MovesToBak_AndStartsEmpty(string content)
     {
         File.WriteAllText(FilePath, content);

@@ -6,7 +6,7 @@ namespace GlamourBrowser.Core.Ui;
 /// <param name="WithoutThis">The filter state with only this chip's filter reset.</param>
 public sealed record FilterChip(string Label, FilterState WithoutThis);
 
-/// <summary>One removable chip per active filter, in a fixed order.</summary>
+/// <summary>One removable chip per active filter, in a fixed order; in the wishlist mode only the filters that apply there.</summary>
 public static class FilterChips
 {
     public static IReadOnlyList<FilterChip> From(FilterState state, Func<EquipSlot, string> slotName, Func<uint, string> jobName)
@@ -18,7 +18,11 @@ public static class FilterChips
             chips.Add(new FilterChip($"Suche: {state.SearchText.Trim()}", state with { SearchText = "" }));
 
         if (state.Wishlist)
+        {
+            // The other filters keep their state for when the mode ends, but do not apply to the wishlist.
             chips.Add(new FilterChip("Wunschliste", state with { Wishlist = false }));
+            return chips;
+        }
 
         if (state.Sets)
             chips.Add(new FilterChip("Serien", state with { Sets = false }));

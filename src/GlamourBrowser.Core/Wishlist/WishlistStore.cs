@@ -5,6 +5,8 @@ namespace GlamourBrowser.Core.Wishlist;
 public sealed class WishlistStore(ulong contentId, IReadOnlyDictionary<uint, uint>? variants = null)
 {
     private readonly List<WishEntry> entries = new();
+    // The same keys as a set: the grid asks for every tile on every frame.
+    private readonly HashSet<WishKey> keys = new();
 
     public ulong ContentId { get; } = contentId;
 
@@ -12,11 +14,7 @@ public sealed class WishlistStore(ulong contentId, IReadOnlyDictionary<uint, uin
 
     public event Action? Changed;
 
-    public bool Contains(WishKey key)
-    {
-        key = BaseOf(key);
-        return entries.Exists(e => e.Key == key);
-    }
+    public bool Contains(WishKey key) => keys.Contains(BaseOf(key));
 
     /// <summary>Returns false (and stays quiet) when the key, or the base item of a variant, is already listed.</summary>
     public bool Add(WishKey key, DateTimeOffset added)
@@ -24,7 +22,9 @@ public sealed class WishlistStore(ulong contentId, IReadOnlyDictionary<uint, uin
         if (Contains(key))
             return false;
 
-        entries.Add(new WishEntry(BaseOf(key), added));
+        key = BaseOf(key);
+        entries.Add(new WishEntry(key, added));
+        keys.Add(key);
         Changed?.Invoke();
         return true;
     }
@@ -33,9 +33,10 @@ public sealed class WishlistStore(ulong contentId, IReadOnlyDictionary<uint, uin
     public bool Remove(WishKey key)
     {
         key = BaseOf(key);
-        if (entries.RemoveAll(e => e.Key == key) == 0)
+        if (!keys.Remove(key))
             return false;
 
+        entries.RemoveAll(e => e.Key == key);
         Changed?.Invoke();
         return true;
     }

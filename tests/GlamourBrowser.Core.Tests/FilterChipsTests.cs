@@ -86,6 +86,10 @@ public class FilterChipsTests
     }
 
     [Fact]
-    public void WishlistChip_ComesBeforeTheSetsChip()
-        => Assert.Equal(["Suche: robe", "Wunschliste", "Serien"], Chips(new FilterState { SearchText = "robe", Sets = true, Wishlist = true }).Select(c => c.Label));
+    public void WishlistMode_ShowsOnlySearchAndWishlistChips()
+    {
+        // The other filters keep their state for later, but do not apply to the wishlist.
+        var state = new FilterState { Wishlist = true, SearchText = "robe", ClassJobId = 19, MinLevel = 50, Ownership = OwnershipFilter.Owned };
+        Assert.Equal(["Suche: robe", "Wunschliste"], Chips(state).Select(c => c.Label));
+    }
 }

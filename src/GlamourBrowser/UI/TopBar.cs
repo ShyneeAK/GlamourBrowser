@@ -4,6 +4,7 @@ using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
 using GlamourBrowser.Browser;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Rendering;
@@ -55,14 +56,19 @@ public sealed class TopBar
             state.Filter = state.Filter with { SearchText = search };
         searchActive = ImGui.IsItemActive();
 
+        // Job and sort do not apply to the wishlist (newest entry first).
+        var wishlistMode = state.Filter.Wishlist;
         var jobLabel = state.Filter.ClassJobId is { } id ? jobs.Find(id)?.Abbreviation ?? "Job" : "Job";
         NextOnLine(ImGui.CalcTextSize(jobLabel).X + ImGui.GetStyle().FramePadding.X * 2);
-        PopupButton.Draw("jobpicker", jobLabel, () =>
+        using (ImRaii.Disabled(wishlistMode))
         {
-            var selected = state.Filter.ClassJobId;
-            if (JobPicker.Draw("jobs", jobs, ref selected, theme))
-                state.Filter = state.Filter with { ClassJobId = selected };
-        });
+            PopupButton.Draw("jobpicker", jobLabel, () =>
+            {
+                var selected = state.Filter.ClassJobId;
+                if (JobPicker.Draw("jobs", jobs, ref selected, theme))
+                    state.Filter = state.Filter with { ClassJobId = selected };
+            });
+        }
 
         NextOnLine(130 * scale);
         ImGui.SetNextItemWidth(130 * scale);
@@ -73,8 +79,11 @@ public sealed class TopBar
         NextOnLine(130 * scale);
         ImGui.SetNextItemWidth(130 * scale);
         var sort = (int)config.Sort;
-        if (ImGui.Combo("##sort", ref sort, ["Nach Level", "Neueste zuerst"], 2))
-            state.SetSort((SortOrder)sort);
+        using (ImRaii.Disabled(wishlistMode))
+        {
+            if (ImGui.Combo("##sort", ref sort, ["Nach Level", "Neueste zuerst"], 2))
+                state.SetSort((SortOrder)sort);
+        }
 
         // Drag fields instead of sliders: no grab knob covering the label.
         var columns = config.Columns;

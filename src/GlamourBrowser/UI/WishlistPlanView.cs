@@ -47,6 +47,13 @@ public sealed class WishlistPlanView
 
     public void Draw()
     {
+        // Without the index every piece would land under "Quelle unbekannt".
+        if (!sources.IsReady)
+        {
+            ImGui.TextDisabled("Quellen werden geladen …");
+            return;
+        }
+
         if (plan == null || planVersion != version)
         {
             plan = WishPlanner.Plan(state.WishlistEntries, IsOwned, sources.Index.SourcesOf);

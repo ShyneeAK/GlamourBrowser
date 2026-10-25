@@ -17,7 +17,10 @@ public sealed class WishlistService : IDisposable
     private readonly string directory;
     private readonly IReadOnlyDictionary<uint, uint> variants;
     private string? path;
+    // Changed since the last frame: saved and announced on the next one.
     private bool dirty;
+    // The last save failed: tried again with the next change and at logout, not on every frame.
+    private bool unsaved;
 
     public WishlistStore? Current { get; private set; }
 
@@ -54,29 +57,36 @@ public sealed class WishlistService : IDisposable
 
     private void OnStoreChanged() => dirty = true;
 
-    private void Flush(IFramework framework) => Flush();
+    private void Flush(IFramework framework) => Flush(retry: false);
 
-    private void Flush()
+    /// <param name="retry">Also save when nothing changed but the last save failed (logout, unload).</param>
+    private void Flush(bool retry)
     {
         // The UI changes the list while drawing; the lock keeps saving from reading it halfway.
         lock (RenderSync.Lock)
         {
-            if (!dirty)
+            if (!dirty && !(retry && unsaved))
                 return;
 
-            dirty = false;
             if (Current != null && path != null)
             {
                 try
                 {
                     WishlistFile.Save(Current, path);
+                    unsaved = false;
                 }
-                catch (IOException e)
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
                 {
+                    unsaved = true;
                     Plugin.Log.Warning(e, $"Saving wishlist file {path} failed");
                 }
             }
-            Changed?.Invoke();
+
+            if (dirty)
+            {
+                dirty = false;
+                Changed?.Invoke();
+            }
         }
     }
 
@@ -89,7 +99,7 @@ public sealed class WishlistService : IDisposable
         lock (RenderSync.Lock)
         {
             // A login without a logout in between: the previous character's changes are saved first.
-            Flush();
+            Flush(retry: true);
             Release();
             path = Path.Combine(directory, $"{contentId}.json");
             Current = WishlistFile.Load(path, contentId, variants);
@@ -103,7 +113,7 @@ public sealed class WishlistService : IDisposable
     {
         lock (RenderSync.Lock)
         {
-            Flush();
+            Flush(retry: true);
             Release();
             Changed?.Invoke();
         }
@@ -115,12 +125,13 @@ public sealed class WishlistService : IDisposable
             Current.Changed -= OnStoreChanged;
         Current = null;
         path = null;
+        unsaved = false;
     }
 
     public void Dispose()
     {
         Plugin.Framework.Update -= Flush;
-        Flush();
+        Flush(retry: true);
         Plugin.ClientState.Login -= OnLogin;
         Plugin.ClientState.Logout -= OnLogout;
     }

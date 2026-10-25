@@ -45,4 +45,15 @@ public class WishResultsTests
         Assert.Empty(WishResults.Filter(all, "", hideDone: true, _ => true));
         Assert.Equal(all, WishResults.Filter(all, "", hideDone: false, _ => true));
     }
+
+    [Theory]
+    [InlineData(2, 1, "", false, false, null)]
+    [InlineData(2, 0, "kappe", false, false, "Keine Treffer")]
+    [InlineData(2, 0, "", true, false, "Alles erledigt")]
+    [InlineData(2, 0, " ", true, false, "Alles erledigt")]
+    [InlineData(0, 0, "", false, false, "Keine Einträge im Katalog gefunden")]
+    [InlineData(0, 0, "", false, true, null)]
+    [InlineData(1, 0, "kappe", false, true, "Keine Treffer")]
+    public void EmptyHint_SaysWhyTheGridIsEmpty(int resolved, int shown, string search, bool hideDone, bool loading, string? expected)
+        => Assert.Equal(expected, WishResults.EmptyHint(resolved, shown, search, hideDone, loading));
 }

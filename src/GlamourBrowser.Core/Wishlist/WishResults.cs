@@ -32,4 +32,18 @@ public static class WishResults
             .Where(s => !hideDone || !WishStatus.IsDone(s, isOwned))
             .ToList();
     }
+
+    /// <summary>What an empty wishlist grid says; null when it shows tiles, or while the sets load (the grid says that already).</summary>
+    /// <param name="resolved">Entries that resolved to an item or set.</param>
+    /// <param name="shown">Entries left after the search and "Erledigte ausblenden".</param>
+    public static string? EmptyHint(int resolved, int shown, string searchText, bool hideDone, bool loading)
+    {
+        if (shown > 0 || resolved == 0 && loading)
+            return null;
+        if (resolved == 0)
+            return "Keine Einträge im Katalog gefunden";
+        if (searchText.Trim().Length > 0)
+            return "Keine Treffer";
+        return hideDone ? "Alles erledigt" : null;
+    }
 }

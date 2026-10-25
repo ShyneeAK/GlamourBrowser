@@ -14,6 +14,7 @@ using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Sources;
 using GlamourBrowser.Core.Ui;
+using GlamourBrowser.Core.Wishlist;
 using GlamourBrowser.Data;
 using GlamourBrowser.Ownership;
 using GlamourBrowser.Rendering;
@@ -87,6 +88,13 @@ public sealed class TileGrid
         DrawDisplayOptions();
         ImGui.Spacing();
 
+        // Logged out the render pool pauses too; the wishlist mode says why it is empty.
+        if (state.Filter.Wishlist && wishlist.Current == null)
+        {
+            ImGui.TextDisabled("Nicht eingeloggt");
+            return;
+        }
+
         if (pool.IsPaused)
         {
             ImGui.TextDisabled("Pausiert");
@@ -153,7 +161,7 @@ public sealed class TileGrid
         }
     }
 
-    /// <summary>The wishlist mode's hints, view switch and filter, or the plan by source; false when no grid follows.</summary>
+    /// <summary>The wishlist mode's hints, view switch and filter (tiles only), or the plan by source; false when no grid follows.</summary>
     private bool DrawWishlistHeader()
     {
         if (wishlist.Current is not { } store)
@@ -173,19 +181,30 @@ public sealed class TileGrid
         ImGui.SameLine();
         if (ImGui.RadioButton("Nach Quelle", bySource) && !bySource)
             state.SetWishlistBySource(true);
-        ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X * 4);
-        var hideDone = config.HideDoneWishes;
-        if (ImGui.Checkbox("Erledigte ausblenden", ref hideDone))
-            state.SetHideDoneWishes(hideDone);
+        // The plan lists only missing pieces anyway.
+        if (!bySource)
+        {
+            ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X * 4);
+            var hideDone = config.HideDoneWishes;
+            if (ImGui.Checkbox("Erledigte ausblenden", ref hideDone))
+                state.SetHideDoneWishes(hideDone);
+        }
 
         // Set entries resolve only once the source index is there.
         if (state.WishlistEntries.Count < store.Entries.Count && !sources.IsReady)
             ImGui.TextDisabled("Serien werden geladen …");
-        if (!config.WishlistBySource)
-            return true;
+        if (bySource)
+        {
+            planView.Draw();
+            return false;
+        }
 
-        planView.Draw();
-        return false;
+        if (WishResults.EmptyHint(state.WishlistEntries.Count, state.Results.Count, state.Filter.SearchText, config.HideDoneWishes, !sources.IsReady) is { } hint)
+        {
+            ImGui.TextDisabled(hint);
+            return false;
+        }
+        return state.Results.Count > 0;
     }
 
     /// <summary>Page arrows and number, centered right below the full grid (also when the last page has fewer tiles).</summary>
