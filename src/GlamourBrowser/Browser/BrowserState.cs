@@ -30,6 +30,7 @@ public sealed class BrowserState
     // One subject per catalog item, made once instead of on every refresh.
     private readonly IReadOnlyDictionary<uint, ItemSubject> itemSubjects;
     private FilterState filter = new();
+    private readonly PageMemory pages = new();
 
     public BrowserState(IReadOnlyList<GlamourItem> catalog, OwnershipService ownership, AppearanceTracker appearance,
                         TileQueue queue, TileCache<IDalamudTextureWrap> cache, RenderPool pool, Configuration config, SourceService sources, SetCatalog sets,
@@ -63,6 +64,8 @@ public sealed class BrowserState
         get => filter;
         set
         {
+            // Back on a slot (or mode) the page it was left on; Refresh clamps it to the new results.
+            PageIndex = pages.Switch(filter, PageIndex, value);
             filter = value;
             Refresh();
         }
