@@ -1,3 +1,4 @@
+using GlamourBrowser.Core.CustomSets;
 using GlamourBrowser.Core.Sets;
 
 namespace GlamourBrowser.Core.Items;
@@ -17,7 +18,7 @@ public abstract record TileSubject
     public abstract EquipSlot CameraSlot { get; }
 
     /// <summary>The slots the subject replaces on the character (a <see cref="SlotMask"/>): those of its items and the ones they block.</summary>
-    public ushort Slots => (ushort)Wear.Aggregate(0, (mask, item) => mask | item.Covers);
+    public virtual ushort Slots => (ushort)Wear.Aggregate(0, (mask, item) => mask | item.Covers);
 }
 
 public sealed record ItemSubject(GlamourItem Item) : TileSubject
@@ -37,6 +38,9 @@ public sealed record SetSubject(GlamourSet Set, IReadOnlyList<GlamourItem> Piece
     public override string Name => Set.Name;
     public override IReadOnlyList<GlamourItem> Wear => Pieces;
     public override EquipSlot CameraSlot => EquipSlot.Body;
+
+    /// <summary>An own design covers every slot but the weapons (<see cref="CustomSetSubjects.LookSlots"/>): what it leaves empty shows empty.</summary>
+    public override ushort Slots => Set.Id.Kind == SetKind.Custom ? (ushort)(base.Slots | CustomSetSubjects.LookSlots) : base.Slots;
 
     /// <summary>The pieces that decide the jobs: the armour, or every piece when the set has no armour.</summary>
     public IReadOnlyList<GlamourItem> JobPieces { get; } = ArmourOrAll(Pieces);

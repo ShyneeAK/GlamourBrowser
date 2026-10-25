@@ -53,8 +53,8 @@ public sealed class CustomSetDraft
         if (slot is EquipSlot.RingRight or EquipSlot.RingLeft)
         {
             slot = selectedSlot is EquipSlot.RingRight or EquipSlot.RingLeft ? selectedSlot.Value
-                : !pieces.ContainsKey(EquipSlot.RingRight) ? EquipSlot.RingRight
-                : !pieces.ContainsKey(EquipSlot.RingLeft) ? EquipSlot.RingLeft
+                : IsFree(EquipSlot.RingRight) ? EquipSlot.RingRight
+                : IsFree(EquipSlot.RingLeft) ? EquipSlot.RingLeft
                 : EquipSlot.RingRight;
         }
 
@@ -94,6 +94,9 @@ public sealed class CustomSetDraft
                 Remove(piece.Slot);
         }
     }
+
+    // A slot emptied on purpose (item 0, see TryOn.PutAll) is free as well.
+    private bool IsFree(EquipSlot slot) => !pieces.TryGetValue(slot, out var piece) || piece.ItemId == 0;
 
     public void Remove(EquipSlot slot)
     {

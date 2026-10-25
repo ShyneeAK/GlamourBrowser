@@ -12,6 +12,12 @@ public static class CustomSetSubjects
         EquipSlot.Ears, EquipSlot.Neck, EquipSlot.Wrists, EquipSlot.RingRight, EquipSlot.RingLeft,
     ];
 
+    /// <summary>
+    /// The slots an own design decides on its own (a <see cref="SlotMask"/>): every slot but the weapons. One it leaves
+    /// empty stays empty instead of showing the worn outfit; only weapons come from the outfit when it has none.
+    /// </summary>
+    public static readonly ushort LookSlots = SlotMask.Of(Slots.Where(s => s is not (EquipSlot.MainHand or EquipSlot.OffHand)));
+
     /// <summary>FNV-1a over slot, item and dyes of every piece in slot order; never 0 (0 marks detected sets).</summary>
     public static uint Hash(CustomSet set)
     {

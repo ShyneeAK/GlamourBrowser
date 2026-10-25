@@ -279,4 +279,48 @@ public class TryOnTests
         Assert.Equal([Piece(EquipSlot.MainHand, 5), Piece(EquipSlot.OffHand, 6), Piece(EquipSlot.Head, 1)], tryOn.LookFor(Robe.Covers));
         Assert.Equal(Looks.Hash(tryOn.LookFor(Robe.Covers)), tryOn.KeyHash(Robe.Covers));
     }
+
+    [Fact]
+    public void PutAll_AnOwnDesignEmptiesTheSlotsItLeavesFree_WeaponsAside()
+    {
+        // Worn: weapons, head and body; clicked before: hands. The design has only a body: no head, no hands.
+        var design = Set(SetKind.Custom, Item(20, EquipSlot.Body));
+        var tryOn = new TryOn(Outfit);
+        tryOn.Put(Item(40, EquipSlot.Hands), default);
+        tryOn.PutAll(design, default);
+
+        Assert.Equal([Piece(EquipSlot.MainHand, 5), Piece(EquipSlot.OffHand, 6), Piece(EquipSlot.Body, 20)], tryOn.Pieces);
+        Assert.Null(tryOn.PieceIn(EquipSlot.Head));
+        Assert.False(tryOn.SetStain(EquipSlot.Head, 1, 9, 2));
+    }
+
+    [Fact]
+    public void PutAll_ADetectedSetKeepsTheOutfitAroundIt()
+    {
+        var tryOn = new TryOn(Outfit);
+        tryOn.PutAll(Set(SetKind.Dresser, Item(20, EquipSlot.Body), Item(40, EquipSlot.Hands)), default);
+
+        Assert.Equal(Piece(EquipSlot.Head, 1), tryOn.PieceIn(EquipSlot.Head));
+    }
+
+    [Fact]
+    public void Put_ARingAfterAnOwnDesignWithoutRingsGoesRight()
+    {
+        var tryOn = new TryOn(Basis);
+        tryOn.PutAll(Set(SetKind.Custom, Item(20, EquipSlot.Body)), default);
+        tryOn.Put(Item(30, EquipSlot.RingRight), default);
+
+        Assert.Equal(30u, tryOn.PieceIn(EquipSlot.RingRight)?.ItemId);
+        Assert.Null(tryOn.PieceIn(EquipSlot.RingLeft));
+    }
+
+    [Fact]
+    public void Slots_AnOwnDesignCoversEverySlotButTheWeapons()
+    {
+        var body = Item(20, EquipSlot.Body);
+        Assert.Equal(CustomSetSubjects.LookSlots, Set(SetKind.Custom, body).Slots);
+        Assert.Equal(SlotMask.Of(EquipSlot.Body), Set(SetKind.Dresser, body).Slots);
+        Assert.True(SlotMask.Contains(Set(SetKind.Custom, Item(1, EquipSlot.MainHand), body).Slots, EquipSlot.MainHand));
+        Assert.False(SlotMask.Contains(CustomSetSubjects.LookSlots, EquipSlot.OffHand));
+    }
 }

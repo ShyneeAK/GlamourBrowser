@@ -107,8 +107,9 @@ public sealed class Plugin : IDalamudPlugin
         var theme = new UI.Theme.Theme(config);
         var editor = new CustomSetEditor(browser, customSets, live, variants, appearance, BlocksOf);
         live.ItemOf = browser.ItemOf;
-        // The live view wears the try-on; while a set is edited its draft over the try-on's basis (known pieces only),
-        // built again only when the basis or the draft changed (both hand out a new list then).
+        // The live view wears the try-on; while a set is edited its draft (known pieces only) with the basis's weapons where
+        // it has none, like an own design's tile: its empty slots stay empty. Built again only when the basis or the draft
+        // changed (both hand out a new list then).
         (IReadOnlyList<CustomPiece> Basis, IReadOnlyList<CustomPiece> Draft, IReadOnlyList<CustomPiece> Look)? editorLook = null;
         live.Look = () =>
         {
@@ -117,7 +118,8 @@ public sealed class Plugin : IDalamudPlugin
             if (editorLook is not { } cached || !ReferenceEquals(cached.Basis, tryOn.TryOn.Basis) || !ReferenceEquals(cached.Draft, draft.Pieces))
             {
                 var known = draft.Pieces.Where(p => browser.ItemOf(p.ItemId) != null).ToList();
-                editorLook = cached = (tryOn.TryOn.Basis, draft.Pieces, Looks.Overlay(tryOn.TryOn.Basis, known, BlocksOf));
+                var weapons = tryOn.TryOn.Basis.Where(p => !SlotMask.Contains(CustomSetSubjects.LookSlots, p.Slot)).ToList();
+                editorLook = cached = (tryOn.TryOn.Basis, draft.Pieces, Looks.Overlay(weapons, known, BlocksOf));
             }
             return cached.Look;
         };

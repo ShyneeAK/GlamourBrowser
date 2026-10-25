@@ -67,11 +67,20 @@ public sealed class TryOn
         OnChanged();
     }
 
-    /// <summary>Puts every piece of the set on: a custom set with its dyes, a detected one in <paramref name="dye"/>.</summary>
+    /// <summary>
+    /// Puts every piece of the set on: a custom set with its dyes, a detected one in <paramref name="dye"/>. An own design
+    /// is a whole look: the slots it leaves empty (weapons aside) are emptied, also of earlier clicks.
+    /// </summary>
     public void PutAll(SetSubject set, DyePair dye)
     {
         clicked.PutAll(set);
-        if (set.Set.Id.Kind != SetKind.Custom)
+        if (set.Set.Id.Kind == SetKind.Custom)
+        {
+            var worn = SlotMask.Of(set.Wear.Select(p => p.Slot));
+            foreach (var slot in CustomSetSubjects.Slots.Where(s => SlotMask.Contains(CustomSetSubjects.LookSlots, s) && !SlotMask.Contains(worn, s)))
+                clicked.Set(new CustomPiece(slot, 0, 0, 0));
+        }
+        else
         {
             foreach (var piece in set.Wear)
                 Dye(piece.Slot, piece, dye);
