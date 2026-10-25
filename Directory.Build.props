@@ -1,0 +1,13 @@
+<Project>
+  <!--
+    Dalamud installation (updated through XIVLauncher), resolved the same way as Dalamud.NET.Sdk 15.0.0 does it.
+    For the projects that reference Lumina without that SDK (GlamourBrowser.Sources, tools/SourceProbe);
+    the plugin project gets the same value from the SDK itself.
+  -->
+  <PropertyGroup>
+    <DalamudLibPath Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
+    <DalamudLibPath Condition="$([MSBuild]::IsOSPlatform('Linux'))">$(HOME)/.xlcore/dalamud/Hooks/dev/</DalamudLibPath>
+    <DalamudLibPath Condition="$([MSBuild]::IsOSPlatform('OSX'))">$(HOME)/Library/Application Support/XIV on Mac/dalamud/Hooks/dev/</DalamudLibPath>
+    <DalamudLibPath Condition="$(DALAMUD_HOME) != ''">$(DALAMUD_HOME)/</DalamudLibPath>
+  </PropertyGroup>
+</Project>
