@@ -14,8 +14,8 @@ using GlamourBrowser.UI.Widgets;
 namespace GlamourBrowser.UI;
 
 /// <summary>
-/// The set editor in the left column: name, one row per slot (slot, item, two dyes, remove) and save / discard. A click
-/// on a row filters the grid to that slot; a click on a tile then puts the item in.
+/// The set editor in the left column: name and save / discard / transfer on top, below them one row per slot (slot, item,
+/// two dyes, remove). A click on a row filters the grid to that slot; a click on a tile then puts the item in.
 /// </summary>
 public sealed class SetEditorPane
 {
@@ -46,15 +46,8 @@ public sealed class SetEditorPane
         // The limit is in UTF-8 bytes: room for umlauts, the name itself is cut to its length (also when saved).
         if (ImGui.InputTextWithHint("##setname", CustomSetStore.DefaultName, ref name, CustomSetStore.MaxNameLength * 4 + 1))
             draft.Name = name.Length > CustomSetStore.MaxNameLength ? name[..CustomSetStore.MaxNameLength] : name;
-        ImGui.Separator();
 
-        foreach (var slot in CustomSetSubjects.Slots)
-        {
-            using var id = ImRaii.PushId((int)slot);
-            DrawSlot(draft, slot);
-        }
-
-        ImGui.Separator();
+        // The actions stay above the slot list, which scrolls on its own when the pane is short.
         using (ImRaii.Disabled(!editor.CanSave))
         {
             if (ImGui.Button("Speichern"))
@@ -65,6 +58,19 @@ public sealed class SetEditorPane
             editor.Discard();
         ImGui.SameLine();
         PlateTransferUi.DrawButton(plates, draft.Pieces);
+        ImGui.Separator();
+
+        using (var slots = ImRaii.Child("##slots", Vector2.Zero))
+        {
+            if (slots.Success)
+            {
+                foreach (var slot in CustomSetSubjects.Slots)
+                {
+                    using var id = ImRaii.PushId((int)slot);
+                    DrawSlot(draft, slot);
+                }
+            }
+        }
 
         DrawDiscardQuestion();
     }
