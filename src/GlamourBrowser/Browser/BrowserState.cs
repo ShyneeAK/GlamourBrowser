@@ -196,9 +196,9 @@ public sealed class BrowserState
             Func<uint, bool> isOwned = id => store?.IsOwned(id) ?? false;
             var sorted = filter with { Sort = config.Sort };
             WishlistEntries = ResolveWishlist();
-            if (filter.Wishlist)
+            if (filter.Mode == BrowseMode.Wishlist)
                 Results = WishResults.Filter(WishlistEntries, filter.SearchText, config.HideDoneWishes, isOwned);
-            else if (filter.Sets)
+            else if (filter.Mode == BrowseMode.Sets)
             {
                 // Without the index there are no sets yet (the grid says so).
                 var (setResults, withoutCategories) = SetFilter.Apply(index == null ? [] : sets.All, sorted, isOwned, appearance.Race, appearance.Sex,
@@ -248,7 +248,7 @@ public sealed class BrowserState
         {
             CurrentPage = ItemFilter.Page(Results, PageIndex, PageSize);
             // The plan by source shows no tiles: nothing to render, the cached ones stay for switching back.
-            if (!appearance.IsValid || filter.Wishlist && config.WishlistBySource)
+            if (!appearance.IsValid || filter.Mode == BrowseMode.Wishlist && config.WishlistBySource)
             {
                 queue.Clear();
                 return;
@@ -276,13 +276,13 @@ public sealed class BrowserState
 
     private void OnOwnershipChanged()
     {
-        if (filter.Ownership != OwnershipFilter.All || filter.Wishlist)
+        if (filter.Ownership != OwnershipFilter.All || filter.Mode == BrowseMode.Wishlist)
             Refresh();
     }
 
     private void OnWishlistChanged()
     {
-        if (filter.Wishlist)
+        if (filter.Mode == BrowseMode.Wishlist)
             Refresh();
         else
         {

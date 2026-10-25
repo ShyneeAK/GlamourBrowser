@@ -25,7 +25,7 @@ public class SetFilterTests
     private static (IReadOnlyList<SetSubject> Results, IReadOnlyList<SetSubject> WithoutCategories) Apply(
         FilterState filter, Func<uint, bool>? owned = null, Func<uint, IReadOnlySet<SourceCategory>>? categories = null,
         Func<uint, float>? patch = null, byte sex = 1, IEnumerable<SetSubject>? sets = null)
-        => SetFilter.Apply(sets ?? [A, B], filter with { Sets = true }, owned ?? (_ => false), 4, sex, categories, patch, job => job == 19 ? 1u : job);
+        => SetFilter.Apply(sets ?? [A, B], filter with { Mode = BrowseMode.Sets }, owned ?? (_ => false), 4, sex, categories, patch, job => job == 19 ? 1u : job);
 
     [Fact]
     public void Search_MatchesSetOrPieceName()

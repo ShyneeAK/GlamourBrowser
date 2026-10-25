@@ -48,10 +48,11 @@ public sealed class FilterColumn
                 ImGui.SetTooltip("Fehlt: " + string.Join(", ", sources.Index.Failures));
         }
 
-        // The wishlist mode only follows the search; the containers stay readable.
-        if (f.Wishlist)
-            ImGui.TextDisabled("gilt nicht für die Wunschliste");
-        using (ImRaii.Disabled(f.Wishlist))
+        // The wishlist and custom set modes only follow the search; the containers stay readable.
+        var onlySearch = BrowseModes.OnlySearch(f.Mode);
+        if (onlySearch)
+            ImGui.TextDisabled(BrowseModes.NotApplicable(f.Mode));
+        using (ImRaii.Disabled(onlySearch))
             DrawFilterSections(f);
 
         if (Section.Begin("containers", "Behälter", config))
@@ -75,12 +76,12 @@ public sealed class FilterColumn
 
         // One switch instead of a section: whether an item can be dyed at all is what matters.
         var dyeable = f.DyeableOnly;
-        using (ImRaii.Disabled(f.Sets))
+        using (ImRaii.Disabled(f.Mode == BrowseMode.Sets))
         {
             if (ImGui.Checkbox("Nur Färbbare", ref dyeable))
                 state.Filter = f with { DyeableOnly = dyeable };
         }
-        if (f.Sets && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+        if (f.Mode == BrowseMode.Sets && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip("gilt nur für einzelne Items");
         ImGui.Spacing();
 

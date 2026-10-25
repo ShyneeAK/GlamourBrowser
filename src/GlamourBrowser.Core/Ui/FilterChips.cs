@@ -6,7 +6,7 @@ namespace GlamourBrowser.Core.Ui;
 /// <param name="WithoutThis">The filter state with only this chip's filter reset.</param>
 public sealed record FilterChip(string Label, FilterState WithoutThis);
 
-/// <summary>One removable chip per active filter, in a fixed order; in the wishlist mode only the filters that apply there.</summary>
+/// <summary>One removable chip per active filter, in a fixed order; in the wishlist and custom set modes only the filters that apply there.</summary>
 public static class FilterChips
 {
     /// <param name="jobParts">The job selection as whole groups and single jobs, see <see cref="JobSelection.Parts"/>.</param>
@@ -18,15 +18,11 @@ public static class FilterChips
         if (state.SearchText.Trim().Length > 0)
             chips.Add(new FilterChip($"Suche: {state.SearchText.Trim()}", state with { SearchText = "" }));
 
-        if (state.Wishlist)
-        {
-            // The other filters keep their state for when the mode ends, but do not apply to the wishlist.
-            chips.Add(new FilterChip("Wunschliste", state with { Wishlist = false }));
+        if (state.Mode != BrowseMode.Items)
+            chips.Add(new FilterChip(BrowseModes.DisplayName(state.Mode), state with { Mode = BrowseMode.Items }));
+        // The other filters keep their state for when the mode ends, but do not apply to the wishlist or the custom sets.
+        if (BrowseModes.OnlySearch(state.Mode))
             return chips;
-        }
-
-        if (state.Sets)
-            chips.Add(new FilterChip("Ausrüstungs-Sets", state with { Sets = false }));
 
         foreach (var slot in Enum.GetValues<EquipSlot>().Where(state.Slots.Contains))
             chips.Add(new FilterChip(slotName(slot), state with { Slots = state.Slots.Where(s => s != slot).ToHashSet() }));

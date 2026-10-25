@@ -23,12 +23,15 @@ public class PageMemoryTests
     public void ModesAndTheWholeCatalog_HaveTheirOwnPage()
     {
         var memory = new PageMemory();
-        var sets = SlotSelection.ToggleSets(All);
-        var wishlist = SlotSelection.ToggleWishlist(sets);
+        var sets = SlotSelection.ToggleMode(All, BrowseMode.Sets);
+        var wishlist = SlotSelection.ToggleMode(sets, BrowseMode.Wishlist);
+        var mySets = SlotSelection.ToggleMode(wishlist, BrowseMode.MySets);
         Assert.Equal(0, memory.Switch(All, 7, sets));
         Assert.Equal(0, memory.Switch(sets, 3, wishlist));
-        Assert.Equal(3, memory.Switch(wishlist, 1, SlotSelection.ToggleSets(wishlist)));
-        Assert.Equal(7, memory.Switch(sets, 3, SlotSelection.ToggleSets(sets)));
+        Assert.Equal(0, memory.Switch(wishlist, 1, mySets));
+        Assert.Equal(1, memory.Switch(mySets, 5, SlotSelection.ToggleMode(mySets, BrowseMode.Wishlist)));
+        Assert.Equal(3, memory.Switch(wishlist, 1, SlotSelection.ToggleMode(wishlist, BrowseMode.Sets)));
+        Assert.Equal(7, memory.Switch(sets, 3, SlotSelection.ToggleMode(sets, BrowseMode.Sets)));
     }
 
     [Fact]

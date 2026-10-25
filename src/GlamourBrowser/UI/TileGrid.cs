@@ -89,7 +89,7 @@ public sealed class TileGrid
         ImGui.Spacing();
 
         // Logged out the render pool pauses too; the wishlist mode says why it is empty.
-        if (state.Filter.Wishlist && wishlist.Current == null)
+        if (state.Filter.Mode == BrowseMode.Wishlist && wishlist.Current == null)
         {
             ImGui.TextDisabled(wishlist.LoadFailed ? "Wunschliste konnte nicht geladen werden" : "Nicht eingeloggt");
             return;
@@ -104,10 +104,10 @@ public sealed class TileGrid
         if (pool.Status is { } status)
             ImGui.TextColored(new Vector4(1f, 0.8f, 0.3f, 1f), status);
 
-        if (state.Filter.Wishlist && !DrawWishlistHeader())
+        if (state.Filter.Mode == BrowseMode.Wishlist && !DrawWishlistHeader())
             return;
 
-        if (state.Filter.Sets && state.Results.Count == 0)
+        if (state.Filter.Mode == BrowseMode.Sets && state.Results.Count == 0)
         {
             if (!sources.IsReady)
             {

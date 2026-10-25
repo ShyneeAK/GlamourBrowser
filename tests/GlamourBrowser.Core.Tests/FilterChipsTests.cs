@@ -82,27 +82,27 @@ public class FilterChipsTests
         Assert.Equal(new HashSet<Expansion> { Expansion.Dawntrail }, without.Expansions);
     }
 
-    [Fact]
-    public void SetsChip_RemovesSetMode()
+    [Theory]
+    [InlineData(BrowseMode.Sets, "Ausrüstungs-Sets")]
+    [InlineData(BrowseMode.MySets, "Meine Sets")]
+    [InlineData(BrowseMode.Wishlist, "Wunschliste")]
+    public void ModeChip_EndsTheMode(BrowseMode mode, string label)
     {
-        var chip = Assert.Single(Chips(new FilterState { Sets = true }));
-        Assert.Equal("Ausrüstungs-Sets", chip.Label);
-        Assert.False(chip.WithoutThis.Sets);
-    }
-
-    [Fact]
-    public void WishlistChip_RemovesWishlistMode()
-    {
-        var chip = Assert.Single(Chips(new FilterState { Wishlist = true }));
-        Assert.Equal("Wunschliste", chip.Label);
-        Assert.False(chip.WithoutThis.Wishlist);
+        var chip = Assert.Single(Chips(new FilterState { Mode = mode }));
+        Assert.Equal(label, chip.Label);
+        Assert.Equal(BrowseMode.Items, chip.WithoutThis.Mode);
     }
 
     [Fact]
     public void WishlistMode_ShowsOnlySearchAndWishlistChips()
     {
         // The other filters keep their state for later, but do not apply to the wishlist.
-        var state = new FilterState { Wishlist = true, SearchText = "robe", Jobs = new HashSet<uint> { 19 }, MinLevel = 50, Ownership = OwnershipFilter.Owned };
+        var state = new FilterState { Mode = BrowseMode.Wishlist, SearchText = "robe", Jobs = new HashSet<uint> { 19 }, MinLevel = 50, Ownership = OwnershipFilter.Owned };
         Assert.Equal(["Suche: robe", "Wunschliste"], Chips(state).Select(c => c.Label));
     }
+
+    [Fact]
+    public void MySetsChip_OnlySearchAndMode()
+        => Assert.Equal(["Suche: robe", "Meine Sets"],
+            Chips(new FilterState { Mode = BrowseMode.MySets, SearchText = "robe", DyeableOnly = true, Jobs = new HashSet<uint> { 19 } }).Select(c => c.Label));
 }

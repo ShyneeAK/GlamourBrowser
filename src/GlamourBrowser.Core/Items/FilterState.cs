@@ -15,11 +15,8 @@ public sealed record FilterState
     public string SearchText { get; init; } = "";
     public IReadOnlySet<EquipSlot> Slots { get; init; } = new HashSet<EquipSlot>();
 
-    /// <summary>The grid shows whole sets instead of single items (the "Ausrüstungs-Sets" entry of the slot bar).</summary>
-    public bool Sets { get; init; }
-
-    /// <summary>The grid shows the wishlist (the star of the slot bar); only the search applies.</summary>
-    public bool Wishlist { get; init; }
+    /// <summary>What the grid shows; the slots only apply to <see cref="BrowseMode.Items"/>.</summary>
+    public BrowseMode Mode { get; init; }
     /// <summary>Gear made for these jobs (see <see cref="JobFilter"/>); empty means every item.</summary>
     public IReadOnlySet<uint> Jobs { get; init; } = new HashSet<uint>();
     public int MinLevel { get; init; } = 1;

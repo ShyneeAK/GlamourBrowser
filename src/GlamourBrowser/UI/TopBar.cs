@@ -60,11 +60,11 @@ public sealed class TopBar
             state.Filter = state.Filter with { SearchText = search };
         searchActive = ImGui.IsItemActive();
 
-        // Job and sort do not apply to the wishlist (newest entry first).
-        var wishlistMode = state.Filter.Wishlist;
+        // Job and sort do not apply to the wishlist and the custom sets (newest first).
+        var onlySearch = BrowseModes.OnlySearch(state.Filter.Mode);
         var jobLabel = JobSelection.Label(JobParts(state.Filter.Jobs));
         NextOnLine(ImGui.CalcTextSize(jobLabel).X + ImGui.GetStyle().FramePadding.X * 2);
-        using (ImRaii.Disabled(wishlistMode))
+        using (ImRaii.Disabled(onlySearch))
         {
             PopupButton.Draw("jobpicker", jobLabel, () =>
             {
@@ -73,7 +73,7 @@ public sealed class TopBar
                     state.Filter = state.Filter with { Jobs = selected };
             });
         }
-        DisabledHint(wishlistMode);
+        DisabledHint(onlySearch);
 
         NextOnLine(130 * scale);
         ImGui.SetNextItemWidth(130 * scale);
@@ -84,12 +84,12 @@ public sealed class TopBar
         NextOnLine(130 * scale);
         ImGui.SetNextItemWidth(130 * scale);
         var sort = (int)config.Sort;
-        using (ImRaii.Disabled(wishlistMode))
+        using (ImRaii.Disabled(onlySearch))
         {
             if (ImGui.Combo("##sort", ref sort, ["Nach Level", "Neueste zuerst"], 2))
                 state.SetSort((SortOrder)sort);
         }
-        DisabledHint(wishlistMode);
+        DisabledHint(onlySearch);
 
         // A picker instead of drag fields: its grid shows the size and takes a new one with one click.
         var columns = config.Columns;
@@ -146,10 +146,10 @@ public sealed class TopBar
 
     private IReadOnlyList<JobPart> JobParts(IReadOnlySet<uint> selected) => JobSelection.Parts(selected, jobGroups, JobName);
 
-    /// <summary>Why the control before it is grayed out in the wishlist mode.</summary>
-    private static void DisabledHint(bool wishlistMode)
+    /// <summary>Why the control before it is grayed out in the wishlist and custom set modes.</summary>
+    private void DisabledHint(bool onlySearch)
     {
-        if (wishlistMode && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip("gilt nicht für die Wunschliste");
+        if (onlySearch && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip(BrowseModes.NotApplicable(state.Filter.Mode));
     }
 }

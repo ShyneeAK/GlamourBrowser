@@ -24,49 +24,35 @@ public class SlotSelectionTests
     }
 
     [Fact]
-    public void ToggleSets_TurnsOnAndClearsSlots()
+    public void ToggleMode_TurnsOnAndClearsSlots()
     {
-        var on = SlotSelection.ToggleSets(new FilterState { Slots = Set(EquipSlot.Head) });
-        Assert.True(on.Sets);
-        Assert.Empty(on.Slots);
-        Assert.False(SlotSelection.ToggleSets(on).Sets);
-    }
-
-    [Fact]
-    public void SelectSlot_LeavesSetMode()
-    {
-        var state = SlotSelection.SelectSlot(new FilterState { Sets = true }, EquipSlot.Head, additive: false);
-        Assert.False(state.Sets);
-        Assert.Equal(Set(EquipSlot.Head), state.Slots);
-    }
-
-    [Fact]
-    public void ToggleWishlist_TurnsOffSetsAndSlots()
-    {
-        var on = SlotSelection.ToggleWishlist(new FilterState { Sets = true, Slots = Set(EquipSlot.Head), SearchText = "robe" });
-        Assert.True(on.Wishlist);
-        Assert.False(on.Sets);
+        var on = SlotSelection.ToggleMode(new FilterState { Slots = Set(EquipSlot.Head), SearchText = "robe" }, BrowseMode.Sets);
+        Assert.Equal(BrowseMode.Sets, on.Mode);
         Assert.Empty(on.Slots);
         Assert.Equal("robe", on.SearchText);
-
-        var off = SlotSelection.ToggleWishlist(on);
-        Assert.False(off.Wishlist);
-        Assert.False(off.Sets);
     }
 
     [Fact]
-    public void SelectSlot_LeavesWishlistMode()
+    public void ToggleMode_SameModeTurnsOff()
+        => Assert.Equal(BrowseMode.Items, SlotSelection.ToggleMode(new FilterState { Mode = BrowseMode.MySets }, BrowseMode.MySets).Mode);
+
+    [Fact]
+    public void ToggleMode_SwitchesBetweenModes()
     {
-        var state = SlotSelection.SelectSlot(new FilterState { Wishlist = true }, EquipSlot.Head, additive: false);
-        Assert.False(state.Wishlist);
+        var sets = SlotSelection.ToggleMode(new FilterState(), BrowseMode.Sets);
+        var mySets = SlotSelection.ToggleMode(sets, BrowseMode.MySets);
+        Assert.Equal(BrowseMode.MySets, mySets.Mode);
+        Assert.Equal(BrowseMode.Wishlist, SlotSelection.ToggleMode(mySets, BrowseMode.Wishlist).Mode);
+    }
+
+    [Theory]
+    [InlineData(BrowseMode.Sets)]
+    [InlineData(BrowseMode.MySets)]
+    [InlineData(BrowseMode.Wishlist)]
+    public void SelectSlot_EndsAnyMode(BrowseMode mode)
+    {
+        var state = SlotSelection.SelectSlot(new FilterState { Mode = mode }, EquipSlot.Head, additive: false);
+        Assert.Equal(BrowseMode.Items, state.Mode);
         Assert.Equal(Set(EquipSlot.Head), state.Slots);
-    }
-
-    [Fact]
-    public void ToggleSets_LeavesWishlistMode()
-    {
-        var state = SlotSelection.ToggleSets(new FilterState { Wishlist = true });
-        Assert.True(state.Sets);
-        Assert.False(state.Wishlist);
     }
 }

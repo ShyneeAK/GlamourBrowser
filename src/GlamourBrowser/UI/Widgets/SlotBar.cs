@@ -36,15 +36,15 @@ public static class SlotBar
             }
         }
         ImGui.SameLine();
-        if (IconToggle.Draw($"{id}-sets", SlotIcons.Sets, new Vector2(edge), filter.Sets, "Ausrüstungs-Sets", theme, FontAwesomeIcon.LayerGroup))
+        if (IconToggle.Draw($"{id}-sets", SlotIcons.Sets, new Vector2(edge), filter.Mode == BrowseMode.Sets, "Ausrüstungs-Sets", theme, FontAwesomeIcon.LayerGroup))
         {
-            filter = SlotSelection.ToggleSets(filter);
+            filter = SlotSelection.ToggleMode(filter, BrowseMode.Sets);
             changed = true;
         }
         ImGui.SameLine();
-        if (IconToggle.Draw($"{id}-wishlist", SlotIcons.Wishlist, new Vector2(edge), filter.Wishlist, "Wunschliste", theme, FontAwesomeIcon.Star))
+        if (IconToggle.Draw($"{id}-wishlist", SlotIcons.Wishlist, new Vector2(edge), filter.Mode == BrowseMode.Wishlist, "Wunschliste", theme, FontAwesomeIcon.Star))
         {
-            filter = SlotSelection.ToggleWishlist(filter);
+            filter = SlotSelection.ToggleMode(filter, BrowseMode.Wishlist);
             changed = true;
         }
         return changed;
