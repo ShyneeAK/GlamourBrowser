@@ -25,6 +25,8 @@ public sealed class FilterColumn
     private readonly SourceService sources;
     private readonly Theme.Theme theme;
 
+    private static readonly Vector4 WarningColor = new(1f, 0.8f, 0.3f, 1f);
+
     public FilterColumn(BrowserState state, OwnershipService ownership, Configuration config, SourceService sources, Theme.Theme theme)
     {
         this.state = state;
@@ -37,6 +39,14 @@ public sealed class FilterColumn
     public void Draw()
     {
         var f = state.Filter;
+
+        // Above the sections, so it shows with all of them collapsed: source and expansion filters then miss items.
+        if (sources.IsReady && sources.Index.HasFailures)
+        {
+            ImGui.TextColored(WarningColor, "Einige Quellen konnten nicht geladen werden");
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip("Fehlt: " + string.Join(", ", sources.Index.Failures));
+        }
 
         if (Section.Begin("level", "Level", config))
         {
@@ -80,11 +90,17 @@ public sealed class FilterColumn
 
         if (Section.Begin("expansions", "Erweiterung", config))
         {
-            foreach (var expansion in Enum.GetValues<Expansion>())
+            // The patch of an item comes from the source index; until it is built the filter would do nothing.
+            if (!sources.IsReady)
+                ImGui.TextDisabled("Quellen werden geladen …");
+            using (ImRaii.Disabled(!sources.IsReady))
             {
-                var on = f.Expansions.Contains(expansion);
-                if (ImGui.Checkbox(Expansions.LongName(expansion), ref on))
-                    state.Filter = f with { Expansions = Toggle(f.Expansions, expansion, on) };
+                foreach (var expansion in Enum.GetValues<Expansion>())
+                {
+                    var on = f.Expansions.Contains(expansion);
+                    if (ImGui.Checkbox(Expansions.LongName(expansion), ref on))
+                        state.Filter = f with { Expansions = Toggle(f.Expansions, expansion, on) };
+                }
             }
             Section.End();
         }
@@ -136,8 +152,6 @@ public sealed class FilterColumn
     {
         if (!sources.IsReady)
             ImGui.TextDisabled("Quellen werden geladen …");
-        else if (sources.Index.HasFailures)
-            ImGui.TextColored(new Vector4(1f, 0.8f, 0.3f, 1f), "Einige Quellen konnten nicht geladen werden");
 
         using var disabled = ImRaii.Disabled(!sources.IsReady);
         var counts = state.CountsWithoutCategories;
