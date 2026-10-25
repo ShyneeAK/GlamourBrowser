@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
@@ -6,12 +7,15 @@ using GlamourBrowser.GlamourPlate;
 
 namespace GlamourBrowser.UI;
 
-/// <summary>The "In Glamour-Plate übertragen" button and the popup with the outcome.</summary>
+/// <summary>The "In Glamour-Plate übertragen" button, a short note when all went well, and a popup only when something is wrong.</summary>
 public static class PlateTransferUi
 {
     private const string ResultPopup = "##plate-transfer-result";
+    private static readonly TimeSpan SuccessShown = TimeSpan.FromSeconds(5);
+    // The problem popup was opened: when it is closed by a click outside, it has been seen.
+    private static bool resultOpened;
 
-    /// <summary>Active only while the game's plate editor is open; the outcome shows in <see cref="DrawResult"/>.</summary>
+    /// <summary>Active only while the game's plate editor is open.</summary>
     public static void DrawButton(GlamourPlateBridge plates, IReadOnlyList<CustomPiece> pieces)
     {
         var ready = plates.IsEditorOpen && !plates.IsTransferring && pieces.Count > 0;
@@ -22,16 +26,38 @@ public static class PlateTransferUi
         }
         if (!plates.IsEditorOpen && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip("Glamour-Plate im Spiel zum Bearbeiten öffnen");
+
+        if (plates.LastResult is not { HasProblems: false } done)
+            return;
+        if (DateTime.Now - done.Finished >= SuccessShown)
+        {
+            plates.ClearResult();
+            return;
+        }
+        ImGui.SameLine();
+        ImGui.TextDisabled(done.Transferred == 1 ? "Übertragen: 1 Teil" : $"Übertragen: {done.Transferred} Teile");
     }
 
-    /// <summary>Draw once per frame where it is always visible: opens the result when a transfer has finished.</summary>
+    /// <summary>Draw once per frame where it is always visible: shows what went wrong or is missing after a transfer.</summary>
     public static void DrawResult(GlamourPlateBridge plates)
     {
-        if (plates.LastResult is not { } result)
+        if (plates.LastResult is not { HasProblems: true } result)
+        {
+            resultOpened = false;
             return;
+        }
         if (!ImGui.IsPopupOpen(ResultPopup))
+        {
+            if (resultOpened)
+            {
+                plates.ClearResult();
+                resultOpened = false;
+                return;
+            }
             ImGui.OpenPopup(ResultPopup);
-        if (!ImGui.BeginPopupModal(ResultPopup, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar))
+            resultOpened = true;
+        }
+        if (!ImGui.BeginPopup(ResultPopup))
             return;
 
         if (result.EditorClosed)
@@ -48,6 +74,7 @@ public static class PlateTransferUi
         if (ImGui.Button("OK"))
         {
             plates.ClearResult();
+            resultOpened = false;
             ImGui.CloseCurrentPopup();
         }
         ImGui.EndPopup();

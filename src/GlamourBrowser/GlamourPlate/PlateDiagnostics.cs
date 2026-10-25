@@ -74,7 +74,15 @@ public static unsafe class PlateDiagnostics
             {
                 ref var item = ref items[i];
                 Log($"  current[{i}] item {item.ItemId} {NameOf(item.ItemId)} | source {item.Source} id {item.SourceId} | stains {item.StainIds[0]}/{item.StainIds[1]} "
-                    + $"| pending {item.PendingStainIds[0]}/{item.PendingStainIds[1]} | slot category {item.EquipSlotCategory} | stain state {item.StainState}");
+                    + $"| slot category {item.EquipSlotCategory} | stain state {item.StainState} | flags {item.Flags}");
+                // Dyes the player picked in the editor but has not paid for yet (applied when the plate is saved).
+                for (var c = 0; c < 2; c++)
+                {
+                    if (item.PendingStainIds[c] != 0 || item.PendingStainItemIds[c] != 0)
+                        Log($"    pending[{c}] stain {item.PendingStainIds[c]} | item {item.PendingStainItemIds[c]} {NameOf(item.PendingStainItemIds[c])} "
+                            + $"| inventory {item.PendingStainInventoryTypes[c]} slot {item.PendingStainInventorySlots[c]} "
+                            + $"| from inventory item {item.IsPendingStainFromInventoryItem[c]} | from item id {item.IsPendingStainFromItemId[c]}");
+                }
             }
         }
 

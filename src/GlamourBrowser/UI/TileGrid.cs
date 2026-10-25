@@ -64,6 +64,8 @@ public sealed class TileGrid
     private readonly CustomSetService customSets;
     private readonly CustomSetEditor editor;
     private readonly GlamourPlateBridge plates;
+    // What the last import did, shown next to its button for a moment.
+    private (string Text, DateTime At)? importStatus;
     // A custom set keeps its id while it changes: its content hash and name are part of the key.
     private readonly Dictionary<((uint ItemId, SetId Set) Id, uint Variant, string Name), TileLabels> labels = new();
     private (float Width, float FontSize, int Ownership, bool SourcesReady) labelsFor;
@@ -197,6 +199,23 @@ public sealed class TileGrid
                 editor.StartFromOutfit();
             DrawPlateStart();
             ImGui.EndPopup();
+        }
+
+        ImGui.SameLine();
+        using (ImRaii.Disabled(!plates.PlatesLoaded))
+        {
+            if (ImGui.Button("Alle Glamour-Plates importieren"))
+            {
+                var (imported, skipped) = plates.ImportAll(store);
+                importStatus = ($"{imported} Sets importiert, {skipped} übersprungen", DateTime.Now);
+            }
+        }
+        if (!plates.PlatesLoaded && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip("Glamour-Plates zuerst an der Kommode öffnen");
+        if (importStatus is { } status && DateTime.Now - status.At < TimeSpan.FromSeconds(5))
+        {
+            ImGui.SameLine();
+            ImGui.TextDisabled(status.Text);
         }
 
         if (store.Sets.Count == 0)

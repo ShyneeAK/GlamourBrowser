@@ -12,13 +12,29 @@ public enum PlateSourceKind
 /// <summary>Where the plate takes a piece from.</summary>
 /// <param name="Id">Index in the glamour dresser, or the row of the armoire (Cabinet sheet).</param>
 /// <param name="ItemId">The id the game expects there: the raw dresser id (HQ offset kept), a variant, or one piece of an outfit.</param>
-/// <param name="Stain0">The dye the piece is stored with; the plate keeps it (dyes set from outside are not saved).</param>
+/// <param name="Stain0">The dye the piece is stored with; the plate starts with it (a dye passed with the item is not saved).</param>
 public readonly record struct PlateSource(PlateSourceKind Kind, uint Id, uint ItemId, byte Stain0, byte Stain1);
 
 /// <param name="Piece">The set's piece for this slot; null clears the slot.</param>
 /// <param name="Missing">Why a piece cannot be transferred ("liegt in: …", "nicht im Besitz").</param>
-/// <param name="DyeNote">The set's dye differs from the stored one: "im Spiel färben: …".</param>
-public sealed record PlateSlot(EquipSlot Slot, CustomPiece? Piece, PlateSource? Source, string? Missing, string? DyeNote);
+public sealed record PlateSlot(EquipSlot Slot, CustomPiece? Piece, PlateSource? Source, string? Missing);
+
+/// <summary>A dye the plate editor puts on a channel when the plate is saved (the player pays then): the dye and the items that give it.</summary>
+public readonly record struct PlateDye(byte Stain, IReadOnlyList<uint> ItemIds);
+
+public static class PlateDyes
+{
+    /// <summary>Terebinthe-Öl: what the game itself takes to remove a dye in the plate editor (seen in the dye spike).</summary>
+    public const uint RemoverItemId = 5728;
+
+    /// <summary>The dye to put on each channel so the plate gets the set's dyes; null for a channel that already has it.</summary>
+    /// <param name="dyeItemsOf">The items that give a dye (Stain sheet), e.g. "Einfacher Farbstoff".</param>
+    public static (PlateDye? Channel1, PlateDye? Channel2) Changes(CustomPiece piece, PlateSource source, Func<byte, IReadOnlyList<uint>> dyeItemsOf)
+    {
+        PlateDye? Change(byte want, byte stored) => want == stored ? null : new PlateDye(want, want == 0 ? [RemoverItemId] : dyeItemsOf(want));
+        return (Change(piece.Stain0, source.Stain0), Change(piece.Stain1, source.Stain1));
+    }
+}
 
 public static class PlateSlots
 {
@@ -34,15 +50,17 @@ public static class PlateTransfer
     public const string NotTaken = "vom Spiel nicht übernommen – Kommoden- bzw. Armoire-Liste im Plate-Editor öffnen und erneut übertragen";
     public const string NotCleared = "vom Spiel nicht geleert – Kommoden- bzw. Armoire-Liste im Plate-Editor öffnen und erneut übertragen";
     public const string NotDone = "nicht übertragen – Glamour-Plate wurde geschlossen";
+    public const string DyeNotSet = "Farbe vom Spiel nicht vorgemerkt – im Plate-Editor von Hand färben";
 
     /// <summary>
-    /// What a transfer achieved: the transferred pieces, and a note for every slot that is not as planned (missing
-    /// piece, piece or clear the game did not take, slots left when the editor closed) and for different dyes.
+    /// What a transfer achieved: the transferred pieces, and a note only where something is wrong or missing (missing
+    /// piece, piece, clear or dye the game did not take, slots left when the editor closed).
     /// </summary>
     /// <param name="done">Slots the editor shows as planned.</param>
     /// <param name="failed">Slots still wrong after the last try.</param>
+    /// <param name="dyeFailed">Done slots whose dyes the editor did not mark for saving.</param>
     public static TransferReport Report(IReadOnlyList<PlateSlot> plan, IReadOnlyCollection<EquipSlot> done, IReadOnlyCollection<EquipSlot> failed,
-                                        bool editorClosed, Func<uint, string> nameOf, Func<EquipSlot, string> slotName)
+                                        IReadOnlyCollection<EquipSlot> dyeFailed, bool editorClosed, Func<uint, string> nameOf, Func<EquipSlot, string> slotName)
     {
         var notes = new List<(string Name, string Reason)>();
         foreach (var slot in plan)
@@ -54,8 +72,8 @@ public static class PlateTransfer
                 notes.Add((name, slot.Source != null ? NotTaken : NotCleared));
             else if (!done.Contains(slot.Slot) && editorClosed)
                 notes.Add((name, NotDone));
-            else if (slot.DyeNote != null && done.Contains(slot.Slot))
-                notes.Add((name, slot.DyeNote));
+            else if (done.Contains(slot.Slot) && dyeFailed.Contains(slot.Slot))
+                notes.Add((name, DyeNotSet));
         }
         return new TransferReport(plan.Count(s => s.Source != null && done.Contains(s.Slot)), plan.Count(s => s.Piece != null), notes);
     }
@@ -63,28 +81,24 @@ public static class PlateTransfer
     /// <summary>One entry per plate slot: its source (dresser before armoire), else why it is missing; empty set slots clear the plate's slot.</summary>
     /// <param name="placesOf">Where the player keeps an item (container names, best first), for the reason.</param>
     public static IReadOnlyList<PlateSlot> Plan(IReadOnlyList<CustomPiece> pieces, Func<uint, PlateSource?> dresserOf, Func<uint, PlateSource?> armoireOf,
-                                                Func<uint, IReadOnlyList<string>> placesOf, Func<byte, string> dyeName)
+                                                Func<uint, IReadOnlyList<string>> placesOf)
     {
         var result = new List<PlateSlot>();
         foreach (var slot in PlateSlots.Order)
         {
             if (pieces.FirstOrDefault(p => p.Slot == slot) is not { ItemId: not 0 } piece)
             {
-                result.Add(new PlateSlot(slot, null, null, null, null));
+                result.Add(new PlateSlot(slot, null, null, null));
                 continue;
             }
 
             if ((dresserOf(piece.ItemId) ?? armoireOf(piece.ItemId)) is not { } source)
             {
                 var places = placesOf(piece.ItemId);
-                result.Add(new PlateSlot(slot, piece, null, places.Count > 0 ? $"liegt in: {places[0]}" : "nicht im Besitz", null));
+                result.Add(new PlateSlot(slot, piece, null, places.Count > 0 ? $"liegt in: {places[0]}" : "nicht im Besitz"));
                 continue;
             }
-
-            string? dyeNote = null;
-            if (piece.Stain0 != source.Stain0 || piece.Stain1 != source.Stain1)
-                dyeNote = "im Spiel färben: " + dyeName(piece.Stain0) + (piece.Stain1 != 0 || source.Stain1 != 0 ? " / " + dyeName(piece.Stain1) : "");
-            result.Add(new PlateSlot(slot, piece, source, null, dyeNote));
+            result.Add(new PlateSlot(slot, piece, source, null));
         }
         return result;
     }

@@ -17,8 +17,11 @@ using ItemSource = FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentMiragePrismMira
 namespace GlamourBrowser.GlamourPlate;
 
 /// <param name="EditorClosed">The plate editor was not (or no longer) open; nothing or only part was transferred.</param>
-/// <param name="Notes">Per piece that needs attention: its name and why ("liegt in: …", "im Spiel färben: …", "vom Spiel nicht übernommen – …").</param>
-public sealed record TransferResult(bool EditorClosed, int Transferred, int Total, IReadOnlyList<(string Name, string Reason)> Notes);
+/// <param name="Notes">Only what went wrong or is missing: the piece (or slot) and why.</param>
+public sealed record TransferResult(bool EditorClosed, int Transferred, int Total, IReadOnlyList<(string Name, string Reason)> Notes, DateTime Finished)
+{
+    public bool HasProblems => EditorClosed || Notes.Count > 0;
+}
 
 /// <summary>
 /// Talks to the game's glamour plate editor: reads the saved plates and fills the plate being edited with a set.
@@ -43,6 +46,8 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
         public int Round { get; set; }
         public List<PlateSlot> Done { get; } = new();
         public List<PlateSlot> Failed { get; } = new();
+        // Slots whose piece is in but whose dyes the editor did not mark (yet).
+        public HashSet<int> DyeFailed { get; } = new();
         public IReadOnlyList<PlateSlot> Plan { get; init; } = [];
     }
 
@@ -118,11 +123,11 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
                 return;
             if (agent == null || !agent->IsAgentActive() || agent->Data == null)
             {
-                LastResult = new TransferResult(true, 0, pieces.Count, []);
+                LastResult = new TransferResult(true, 0, pieces.Count, [], DateTime.Now);
                 return;
             }
 
-            var plan = PlateTransfer.Plan(pieces, DresserLookup(), ArmoireLookup(), PlacesOf, dyes.NameOf);
+            var plan = PlateTransfer.Plan(pieces, DresserLookup(), ArmoireLookup(), PlacesOf);
             running = new Transfer(plan.Select((slot, index) => (index, slot)).ToList(), agent->Data->SelectedItemIndex) { Plan = plan };
         }
     }
@@ -144,7 +149,12 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
             // Each round sets and checks every slot still pending; those the game did not take wait for the next frame.
             foreach (var (index, slot) in transfer.Pending.ToList())
             {
-                if (Apply(agent, index, slot))
+                var (itemTaken, dyesTaken) = Apply(agent, index, slot);
+                if (dyesTaken)
+                    transfer.DyeFailed.Remove(index);
+                else
+                    transfer.DyeFailed.Add(index);
+                if (itemTaken && dyesTaken)
                 {
                     transfer.Pending.Remove((index, slot));
                     transfer.Done.Add(slot);
@@ -153,37 +163,91 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
             if (transfer.Pending.Count > 0 && ++transfer.Round < MaxTries)
                 return;
 
-            transfer.Failed.AddRange(transfer.Pending.Select(p => p.Slot));
+            // The piece is in but its dyes were not marked: done, with a note; otherwise the slot failed.
+            foreach (var (index, slot) in transfer.Pending)
+            {
+                if (agent->Data->CurrentItems[index].ItemId is var shown && Normalize(shown) == Expected(slot))
+                    transfer.Done.Add(slot);
+                else
+                    transfer.Failed.Add(slot);
+            }
             agent->Data->SelectedItemIndex = transfer.SelectedBefore;
             Finish(transfer, editorClosed: false);
         }
     }
 
-    /// <summary>Sets (or clears) one plate slot and tells whether the editor shows it afterwards.</summary>
-    private static bool Apply(AgentMiragePrismMiragePlate* agent, int index, PlateSlot slot)
+    /// <summary>
+    /// Sets (or clears) one plate slot, marks the set's dyes where they differ from the stored ones (paid when the
+    /// player saves the plate), and tells whether the editor shows the piece and the dyes afterwards.
+    /// </summary>
+    private (bool Item, bool Dyes) Apply(AgentMiragePrismMiragePlate* agent, int index, PlateSlot slot)
     {
         agent->Data->SelectedItemIndex = (uint)index;
-        if (slot.Source is { } source)
-        {
-            agent->SetSelectedItemData(source.Kind == PlateSourceKind.Dresser ? ItemSource.PrismBox : ItemSource.Cabinet, source.Id, source.ItemId,
-                source.Stain0, source.Stain1);
-        }
-        else
+        if (slot.Source is not { } source)
         {
             agent->ClearItemData((uint)index);
+            return (Normalize(agent->Data->CurrentItems[index].ItemId) == 0, true);
         }
 
-        var shown = agent->Data->CurrentItems[index].ItemId;
-        var expected = slot.Source is { } s ? Normalize(s.ItemId) : 0;
-        return Normalize(shown) == expected;
+        agent->SetSelectedItemData(source.Kind == PlateSourceKind.Dresser ? ItemSource.PrismBox : ItemSource.Cabinet, source.Id, source.ItemId,
+            source.Stain0, source.Stain1);
+        if (Normalize(agent->Data->CurrentItems[index].ItemId) != Expected(slot))
+            return (false, false);
+
+        var (first, second) = PlateDyes.Changes(slot.Piece!.Value, source, dyes.ItemsOf);
+        if (first == null && second == null)
+            return (true, true);
+
+        var item0 = DyeItem(first, out var id0);
+        var item1 = DyeItem(second, out var id1);
+        agent->SetSelectedItemStains(item0, first?.Stain ?? 0, id0, item1, second?.Stain ?? 0, id1);
+        ref var shown = ref agent->Data->CurrentItems[index];
+        var marked = (first == null || shown.PendingStainIds[0] == first.Value.Stain && shown.PendingStainItemIds[0] != 0)
+                     && (second == null || shown.PendingStainIds[1] == second.Value.Stain && shown.PendingStainItemIds[1] != 0);
+        return (true, marked);
     }
+
+    /// <summary>
+    /// The dye item to take: a stack in the inventory like the editor does by hand; without one, only its id (the game
+    /// then asks for it when the plate is saved). Null and id 0 leave the channel as it is.
+    /// </summary>
+    private static InventoryItem* DyeItem(PlateDye? dye, out uint itemId)
+    {
+        itemId = 0;
+        if (dye is not { ItemIds.Count: > 0 } wanted)
+            return null;
+        var manager = InventoryManager.Instance();
+        if (manager != null)
+        {
+            foreach (var type in new[] { InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3, InventoryType.Inventory4 })
+            {
+                var container = manager->GetInventoryContainer(type);
+                if (container == null || !container->IsLoaded)
+                    continue;
+                for (var i = 0; i < container->Size; i++)
+                {
+                    var item = container->GetInventorySlot(i);
+                    if (item != null && item->ItemId != 0 && wanted.ItemIds.Contains(item->ItemId))
+                    {
+                        itemId = item->ItemId;
+                        return item;
+                    }
+                }
+            }
+        }
+        itemId = wanted.ItemIds[0];
+        return null;
+    }
+
+    private static uint Expected(PlateSlot slot) => slot.Source is { } source ? Normalize(source.ItemId) : 0;
 
     private void Finish(Transfer transfer, bool editorClosed)
     {
         running = null;
+        var dyeFailed = transfer.DyeFailed.Select(i => transfer.Plan[i].Slot).ToList();
         var report = PlateTransfer.Report(transfer.Plan, transfer.Done.Select(s => s.Slot).ToList(), transfer.Failed.Select(s => s.Slot).ToList(),
-            editorClosed, nameOf, UI.SlotNames.Full);
-        LastResult = new TransferResult(editorClosed, report.Transferred, report.Total, report.Notes);
+            dyeFailed, editorClosed, nameOf, UI.SlotNames.Full);
+        LastResult = new TransferResult(editorClosed, report.Transferred, report.Total, report.Notes, DateTime.Now);
     }
 
     private Func<uint, PlateSource?> DresserLookup()
@@ -205,6 +269,19 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
             .Select(row => (Row: row.RowId, ItemId: row.Item.RowId))
             .ToList();
         return PlateSources.Armoire(rows, variants);
+    }
+
+    /// <summary>Every saved plate that is not empty and not already a custom set becomes one ("Glamour-Plate {n}").</summary>
+    /// <returns>How many were imported, and how many non-empty plates were skipped as already there.</returns>
+    public (int Imported, int Skipped) ImportAll(CustomSetStore store)
+    {
+        var plates = Enumerable.Range(0, PlateCount).Select(i => ReadPlate(i) ?? []).ToList();
+        var imported = PlateImport.NewSets(plates, store.Sets, variants);
+        var now = DateTimeOffset.Now;
+        // Oldest plate first, so that plate 1 ends up last changed and on top.
+        foreach (var (plate, pieces) in imported.Reverse())
+            store.Add($"Glamour-Plate {plate + 1}", pieces, now);
+        return (imported.Count, plates.Count(p => p.Count > 0) - imported.Count);
     }
 
     private IReadOnlyList<string> PlacesOf(uint itemId) => ownership.Current?.LocationsOf(itemId).Select(l => l.DisplayName).ToList() ?? [];

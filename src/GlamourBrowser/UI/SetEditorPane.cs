@@ -24,6 +24,8 @@ public sealed class SetEditorPane
     private readonly DyeCatalog dyes;
     private readonly Theme.Theme theme;
     private readonly GlamourPlateBridge plates;
+    // The discard question was opened: when it is closed by a click outside, the answer is "keep".
+    private bool discardAsked;
 
     public SetEditorPane(CustomSetEditor editor, BrowserState state, DyeCatalog dyes, Theme.Theme theme, GlamourPlateBridge plates)
     {
@@ -110,24 +112,40 @@ public sealed class SetEditorPane
         }
     }
 
-    /// <summary>"Änderungen verwerfen?" while a new start waits for the unsaved draft.</summary>
+    /// <summary>"Änderungen verwerfen?" while a new start waits for the unsaved draft; a click outside keeps the draft.</summary>
     private void DrawDiscardQuestion()
     {
-        const string popup = "Änderungen verwerfen?##discard";
-        if (editor.AsksToDiscard && !ImGui.IsPopupOpen(popup))
+        const string popup = "##discard";
+        if (!editor.AsksToDiscard)
+        {
+            discardAsked = false;
+            return;
+        }
+        if (!ImGui.IsPopupOpen(popup))
+        {
+            if (discardAsked)
+            {
+                editor.Answer(false);
+                discardAsked = false;
+                return;
+            }
             ImGui.OpenPopup(popup);
-        if (!ImGui.BeginPopupModal(popup, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar))
+            discardAsked = true;
+        }
+        if (!ImGui.BeginPopup(popup))
             return;
         ImGui.TextUnformatted("Änderungen verwerfen?");
         if (ImGui.Button("Verwerfen"))
         {
             editor.Answer(true);
+            discardAsked = false;
             ImGui.CloseCurrentPopup();
         }
         ImGui.SameLine();
         if (ImGui.Button("Abbrechen"))
         {
             editor.Answer(false);
+            discardAsked = false;
             ImGui.CloseCurrentPopup();
         }
         ImGui.EndPopup();

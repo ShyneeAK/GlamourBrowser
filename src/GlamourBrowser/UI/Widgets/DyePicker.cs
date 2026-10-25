@@ -44,7 +44,8 @@ public static class DyePicker
         var swatch = new Vector2(ImGui.GetFrameHeight());
         foreach (var shade in dyes.All.GroupBy(d => d.Shade))
         {
-            ImGui.Spacing();
+            // Room between the colour groups, so they read as groups.
+            ImGui.Dummy(new Vector2(0, 6 * UiScale.Global));
             var index = 0;
             foreach (var dye in shade)
             {
