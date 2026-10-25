@@ -36,14 +36,19 @@ public sealed unsafe class LivePane
     private readonly WishlistService wishlist;
     private readonly CustomSetService customSets;
     private readonly DyeCatalog dyes;
+    private readonly CustomSetEditor editor;
+    private readonly SetEditorPane editorPane;
     private readonly HashSet<(uint Item, SourceCategory Category)> expanded = new();
     // Pieces of the selected set whose sources are open.
     private readonly HashSet<uint> openPieces = new();
     private const int SourcesPerCategory = 3;
 
     public LivePane(BrowserState state, OwnershipService ownership, LivePreview live, CalibrationService calibration, JobCatalog jobs, Theme.Theme theme,
-                    SourceService sources, WishlistService wishlist, CustomSetService customSets, DyeCatalog dyes)
+                    SourceService sources, WishlistService wishlist, CustomSetService customSets, DyeCatalog dyes, CustomSetEditor editor,
+                    SetEditorPane editorPane)
     {
+        this.editor = editor;
+        this.editorPane = editorPane;
         this.sources = sources;
         this.wishlist = wishlist;
         this.customSets = customSets;
@@ -63,7 +68,12 @@ public sealed unsafe class LivePane
 
         ImGui.Spacing();
         using var card = ImRaii.Child("##itemcard", Vector2.Zero, true);
-        if (card.Success)
+        if (!card.Success)
+            return;
+        // While a custom set is edited, the editor takes the card's place.
+        if (editor.IsOpen)
+            editorPane.Draw();
+        else
             DrawItemCard();
     }
 
@@ -213,6 +223,9 @@ public sealed unsafe class LivePane
         DrawWishToggle(set);
         if (set.Set.Id.Kind == SetKind.Custom)
         {
+            ImGui.SameLine();
+            if (IconButton.Draw("##editset", 0, FontAwesomeIcon.Pen, "Bearbeiten", theme) && customSets.Current?.Find(set.Set.Id.Value) is { } stored)
+                editor.StartEdit(stored);
             ImGui.SameLine();
             DrawDeleteButton(set);
         }

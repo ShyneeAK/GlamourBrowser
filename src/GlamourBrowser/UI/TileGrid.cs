@@ -15,6 +15,8 @@ using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Sources;
 using GlamourBrowser.Core.Ui;
 using GlamourBrowser.Core.Wishlist;
+using GlamourBrowser.Core.CustomSets;
+using Dalamud.Interface.Utility.Raii;
 using GlamourBrowser.Data;
 using GlamourBrowser.Ownership;
 using GlamourBrowser.Rendering;
@@ -59,6 +61,7 @@ public sealed class TileGrid
     private readonly WishlistService wishlist;
     private readonly WishlistPlanView planView;
     private readonly CustomSetService customSets;
+    private readonly CustomSetEditor editor;
     // A custom set keeps its id while it changes: its content hash and name are part of the key.
     private readonly Dictionary<((uint ItemId, SetId Set) Id, uint Variant, string Name), TileLabels> labels = new();
     private (float Width, float FontSize, int Ownership, bool SourcesReady) labelsFor;
@@ -66,12 +69,13 @@ public sealed class TileGrid
 
     public TileGrid(BrowserState state, TileCache<IDalamudTextureWrap> cache, RenderPool pool, OwnershipService ownership,
                     LivePreview live, Configuration config, Theme.Theme theme, SourceService sources, JobCatalog jobs,
-                    WishlistService wishlist, WishlistPlanView planView, CustomSetService customSets)
+                    WishlistService wishlist, WishlistPlanView planView, CustomSetService customSets, CustomSetEditor editor)
     {
         this.sources = sources;
         this.wishlist = wishlist;
         this.planView = planView;
         this.customSets = customSets;
+        this.editor = editor;
         this.jobs = jobs;
         this.theme = theme;
         this.state = state;
@@ -174,11 +178,27 @@ public sealed class TileGrid
         }
     }
 
-    /// <summary>The custom set mode's hints; false when no grid follows.</summary>
+    /// <summary>The custom set mode's "+ Neues Set" with its start points, and its hints; false when no grid follows.</summary>
     private bool DrawMySetsHeader()
     {
         if (customSets.Current is not { } store)
             return false;
+
+        if (ImGui.Button("+ Neues Set"))
+            ImGui.OpenPopup("##newset");
+        if (ImGui.BeginPopup("##newset"))
+        {
+            if (ImGui.Selectable("Leer"))
+                editor.StartNew(CustomSetStore.DefaultName, []);
+            if (ImGui.Selectable("Aktuelles Outfit"))
+                editor.StartFromOutfit();
+            using (ImRaii.Disabled())
+                ImGui.Selectable("Glamour-Plate");
+            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+                ImGui.SetTooltip("Glamour-Plates zuerst an der Kommode öffnen");
+            ImGui.EndPopup();
+        }
+
         if (store.Sets.Count == 0)
         {
             ImGui.TextDisabled("Noch keine eigenen Sets – „+ Neues Set“ anklicken");
@@ -317,6 +337,9 @@ public sealed class TileGrid
         var pressedOnStar = canWish && pressed.X >= starMin.X && pressed.Y >= starMin.Y && pressed.X <= starMax.X && pressed.Y <= starMax.Y;
         if (clicked && pressedOnStar)
             wishlist.Toggle(subject);
+        // While a custom set is edited, a tile goes into it instead of being selected.
+        else if (clicked && editor.IsOpen)
+            editor.Put(subject);
         else if (clicked)
         {
             state.Selected = subject;

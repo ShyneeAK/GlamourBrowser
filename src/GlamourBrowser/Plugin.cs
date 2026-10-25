@@ -88,12 +88,14 @@ public sealed class Plugin : IDalamudPlugin
         Framework.Update += OnFrameworkUpdate;
         UI.UiScale.Set(config.UiScale);
         var theme = new UI.Theme.Theme(config);
+        var editor = new CustomSetEditor(browser, customSets, live, variants, appearance);
         mainWindow = new MainWindow(
-            new LivePane(browser, ownership, live, calibration, jobs, theme, sources, wishlist, customSets, dyes),
+            new LivePane(browser, ownership, live, calibration, jobs, theme, sources, wishlist, customSets, dyes, editor,
+                         new SetEditorPane(editor, browser, dyes, theme)),
             new TopBar(browser, jobs, config, theme),
             new FilterColumn(browser, ownership, config, sources, theme),
             new TileGrid(browser, cache, pool, ownership, live, config, theme, sources, jobs, wishlist,
-                         new WishlistPlanView(browser, ownership, wishlist, sources, live, theme, customSets), customSets),
+                         new WishlistPlanView(browser, ownership, wishlist, sources, live, theme, customSets), customSets, editor),
             theme,
             config);
         settingsWindow = new SettingsWindow(config, browser, pool, calibration, theme);
