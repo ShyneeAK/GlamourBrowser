@@ -119,15 +119,20 @@ public static class PlateTransfer
         return result;
     }
 
-    /// <summary>A plate's 12 slots (item ids and dyes in <see cref="PlateSlots.Order"/>) as pieces; HQ ids normalized, empty slots skipped.</summary>
-    public static IReadOnlyList<CustomPiece> Read(ReadOnlySpan<uint> itemIds, ReadOnlySpan<byte> stain0, ReadOnlySpan<byte> stain1)
+    /// <summary>
+    /// A plate's 12 slots (item ids and dyes in <see cref="PlateSlots.Order"/>) as pieces; HQ ids normalized, empty
+    /// slots and items the catalog does not know skipped.
+    /// </summary>
+    /// <param name="isKnown">Whether the catalog knows the (normalized) item.</param>
+    public static IReadOnlyList<CustomPiece> Read(ReadOnlySpan<uint> itemIds, ReadOnlySpan<byte> stain0, ReadOnlySpan<byte> stain1, Func<uint, bool> isKnown)
     {
         var result = new List<CustomPiece>();
         for (var i = 0; i < PlateSlots.Order.Count && i < itemIds.Length; i++)
         {
             var raw = itemIds[i];
-            if (raw != 0)
-                result.Add(new CustomPiece(PlateSlots.Order[i], raw > DresserContents.HqOffset ? raw - DresserContents.HqOffset : raw, stain0[i], stain1[i]));
+            var id = raw > DresserContents.HqOffset ? raw - DresserContents.HqOffset : raw;
+            if (id != 0 && isKnown(id))
+                result.Add(new CustomPiece(PlateSlots.Order[i], id, stain0[i], stain1[i]));
         }
         return result;
     }

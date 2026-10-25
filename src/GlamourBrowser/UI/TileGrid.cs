@@ -206,7 +206,7 @@ public sealed class TileGrid
         {
             if (ImGui.Button("Alle Glamour-Plates importieren"))
             {
-                var (imported, skipped) = plates.ImportAll(store);
+                var (imported, skipped) = plates.ImportAll(store, IsKnown);
                 importStatus = ($"{imported} Sets importiert, {skipped} übersprungen", DateTime.Now);
             }
         }
@@ -231,6 +231,8 @@ public sealed class TileGrid
         return true;
     }
 
+    private bool IsKnown(uint itemId) => state.ItemOf(itemId) != null;
+
     /// <summary>The start point "Glamour-Plate": one entry per saved plate with its number of pieces, once the game has the plates.</summary>
     private void DrawPlateStart()
     {
@@ -242,7 +244,7 @@ public sealed class TileGrid
         }
         for (var i = 0; i < plates.PlateCount; i++)
         {
-            if (plates.ReadPlate(i) is not { } pieces)
+            if (plates.ReadPlate(i, IsKnown) is not { } pieces)
                 continue;
             if (ImGui.MenuItem($"Plate {i + 1} · {(pieces.Count == 1 ? "1 Teil" : $"{pieces.Count} Teile")}"))
             {
@@ -287,7 +289,7 @@ public sealed class TileGrid
             ImGui.TextDisabled("Ausrüstungs-Sets werden geladen …");
         if (bySource)
         {
-            planView.Draw();
+            planView.Draw(editor);
             return false;
         }
 

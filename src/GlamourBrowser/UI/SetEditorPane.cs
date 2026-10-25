@@ -43,8 +43,9 @@ public sealed class SetEditorPane
 
         var name = draft.Name;
         ImGui.SetNextItemWidth(-1);
-        if (ImGui.InputTextWithHint("##setname", CustomSetStore.DefaultName, ref name, CustomSetStore.MaxNameLength))
-            draft.Name = name;
+        // The limit is in UTF-8 bytes: room for umlauts, the name itself is cut to its length (also when saved).
+        if (ImGui.InputTextWithHint("##setname", CustomSetStore.DefaultName, ref name, CustomSetStore.MaxNameLength * 4 + 1))
+            draft.Name = name.Length > CustomSetStore.MaxNameLength ? name[..CustomSetStore.MaxNameLength] : name;
         ImGui.Separator();
 
         foreach (var slot in CustomSetSubjects.Slots)
@@ -54,7 +55,7 @@ public sealed class SetEditorPane
         }
 
         ImGui.Separator();
-        using (ImRaii.Disabled(draft.Pieces.Count == 0))
+        using (ImRaii.Disabled(!editor.CanSave))
         {
             if (ImGui.Button("Speichern"))
                 editor.Save();

@@ -134,7 +134,16 @@ public class PlateTransferTests
         byte[] stain1 = new byte[12];
         Assert.Equal([new CustomPiece(MainHand, 28329, 0, 0), new CustomPiece(Head, 16121, 0, 0), new CustomPiece(Body, 18692, 5, 0),
                       new CustomPiece(RingRight, 39508, 0, 0), new CustomPiece(RingLeft, 16234, 0, 0)],
-            PlateTransfer.Read(ids, stain0, stain1));
+            PlateTransfer.Read(ids, stain0, stain1, _ => true));
+    }
+
+    [Fact]
+    public void Read_DropsItemsTheCatalogDoesNotKnow()
+    {
+        uint[] ids = [0, 0, 16121, 1_018_692, 0, 0, 4_000_000, 0, 0, 0, 0, 0];
+        var known = new HashSet<uint> { 16121, 18692 };
+        Assert.Equal([new CustomPiece(Head, 16121, 0, 0), new CustomPiece(Body, 18692, 0, 0)],
+            PlateTransfer.Read(ids, new byte[12], new byte[12], known.Contains));
     }
 
     private static string SlotName(Items.EquipSlot slot) => slot.ToString();

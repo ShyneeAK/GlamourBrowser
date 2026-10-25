@@ -45,7 +45,7 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
         public List<(int Index, PlateSlot Slot)> Pending { get; } = steps.ToList();
         public uint SelectedBefore { get; } = selectedBefore;
         public int Round { get; set; }
-        public List<PlateSlot> Done { get; } = new();
+        public List<(int Index, PlateSlot Slot)> Done { get; } = new();
         public List<PlateSlot> Failed { get; } = new();
         // Slots whose piece is in but whose dyes the editor did not mark (yet).
         public HashSet<int> DyeFailed { get; } = new();
@@ -72,6 +72,11 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
     }
 
     /// <summary>The game's plate editor is open (at the dresser), so a set can be transferred.</summary>
+    /// <remarks>
+    /// <c>Data->OpenMode</c> is not checked: it was 0 in every dump while editing and what its other values mean is not
+    /// known. A mode in which the editor does not take pieces would show as "vom Spiel nicht übernommen" after the
+    /// transfer, since every slot is checked.
+    /// </remarks>
     public bool IsEditorOpen
     {
         get
@@ -107,14 +112,15 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
         }
     }
 
-    /// <summary>The pieces of a saved plate, null while the plates are not loaded.</summary>
-    public IReadOnlyList<CustomPiece>? ReadPlate(int index)
+    /// <summary>The pieces of a saved plate the catalog knows, null while the plates are not loaded.</summary>
+    /// <param name="isKnown">Whether the catalog knows the item; a "+N" variant counts as its base.</param>
+    public IReadOnlyList<CustomPiece>? ReadPlate(int index, Func<uint, bool> isKnown)
     {
         var mirage = MirageManager.Instance();
         if (mirage == null || !mirage->GlamourPlatesLoaded || index < 0 || index >= mirage->GlamourPlates.Length)
             return null;
         ref var plate = ref mirage->GlamourPlates[index];
-        return PlateTransfer.Read(plate.ItemIds, plate.Stain0Ids, plate.Stain1Ids);
+        return PlateTransfer.Read(plate.ItemIds, plate.Stain0Ids, plate.Stain1Ids, id => isKnown(variants.GetValueOrDefault(id, id)));
     }
 
     /// <summary>Starts filling the plate being edited with the pieces; the outcome lands in <see cref="LastResult"/>.</summary>
@@ -161,8 +167,14 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
                 if (itemTaken && dyesTaken)
                 {
                     transfer.Pending.Remove((index, slot));
-                    transfer.Done.Add(slot);
+                    transfer.Done.Add((index, slot));
                 }
+            }
+            // A later call may change a slot set before it: a done slot that no longer shows its piece goes again.
+            foreach (var step in transfer.Done.Where(s => Normalize(agent->Data->CurrentItems[s.Index].ItemId) != Expected(s.Slot)).ToList())
+            {
+                transfer.Done.Remove(step);
+                transfer.Pending.Add(step);
             }
             if (transfer.Pending.Count > 0 && ++transfer.Round < MaxTries)
                 return;
@@ -171,7 +183,7 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
             foreach (var (index, slot) in transfer.Pending)
             {
                 if (agent->Data->CurrentItems[index].ItemId is var shown && Normalize(shown) == Expected(slot))
-                    transfer.Done.Add(slot);
+                    transfer.Done.Add((index, slot));
                 else
                     transfer.Failed.Add(slot);
             }
@@ -266,7 +278,7 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
     {
         running = null;
         var dyeFailed = transfer.DyeFailed.Select(i => transfer.Plan[i].Slot).ToList();
-        var report = PlateTransfer.Report(transfer.Plan, transfer.Done.Select(s => s.Slot).ToList(), transfer.Failed.Select(s => s.Slot).ToList(),
+        var report = PlateTransfer.Report(transfer.Plan, transfer.Done.Select(s => s.Slot.Slot).ToList(), transfer.Failed.Select(s => s.Slot).ToList(),
             dyeFailed, editorClosed, nameOf, UI.SlotNames.Full);
         LastResult = new TransferResult(editorClosed, report.Transferred, report.Total, report.Notes, DateTime.Now);
     }
@@ -294,9 +306,10 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
 
     /// <summary>Every saved plate that is not empty and not already a custom set becomes one ("Glamour-Plate {n}").</summary>
     /// <returns>How many were imported, and how many non-empty plates were skipped as already there.</returns>
-    public (int Imported, int Skipped) ImportAll(CustomSetStore store)
+    /// <param name="isKnown">Whether the catalog knows the item, see <see cref="ReadPlate"/>.</param>
+    public (int Imported, int Skipped) ImportAll(CustomSetStore store, Func<uint, bool> isKnown)
     {
-        var plates = Enumerable.Range(0, PlateCount).Select(i => ReadPlate(i) ?? []).ToList();
+        var plates = Enumerable.Range(0, PlateCount).Select(i => ReadPlate(i, isKnown) ?? []).ToList();
         var imported = PlateImport.NewSets(plates, store.Sets, variants);
         var now = DateTimeOffset.Now;
         // Oldest plate first, so that plate 1 ends up last changed and on top.

@@ -43,6 +43,8 @@ public sealed class CustomSetFileTests : IDisposable
     [InlineData("""{"ContentId":123}""")]
     [InlineData("""{"ContentId":123,"Sets":[null]}""")]
     [InlineData("""{"ContentId":123,"Sets":[{"Id":1,"Name":"A","Changed":"2026-10-25T15:00:00+01:00"}]}""")]
+    [InlineData("""{"ContentId":123,"Sets":[{"Id":1,"Name":"A","Changed":"2026-10-25T15:00:00+01:00","Pieces":[{"Slot":5,"ItemId":10,"Stain0":0,"Stain1":0}]}]}""")]
+    [InlineData("""{"ContentId":123,"Sets":[{"Id":1,"Name":"A","Changed":"2026-10-25T15:00:00+01:00","Pieces":[{"Slot":99,"ItemId":10,"Stain0":0,"Stain1":0}]}]}""")]
     public void BrokenFile_MovesToBak(string content)
     {
         File.WriteAllText(FilePath, content);
@@ -51,6 +53,18 @@ public sealed class CustomSetFileTests : IDisposable
         Assert.Empty(loaded.Sets);
         Assert.False(File.Exists(FilePath));
         Assert.Equal(content, File.ReadAllText(FilePath + ".bak"));
+    }
+
+    [Theory]
+    [InlineData("""{"ContentId":123,"NextId":4,"Sets":[{"Id":7,"Name":"A""", 8u)]
+    [InlineData("""{"ContentId":123,"NextId":9,"Sets":[null]}""", 9u)]
+    [InlineData("{kaputt", 1u)]
+    public void BrokenFile_NewSetsGetNoIdItHeld(string content, uint firstNewId)
+    {
+        // A wish may still point at a set of the broken file; a new set must not take its id.
+        File.WriteAllText(FilePath, content);
+        var loaded = CustomSetFile.Load(FilePath, 123);
+        Assert.Equal(firstNewId, loaded.Add("Neu", [new CustomPiece(Body, 10, 0, 0)], Now).Id);
     }
 
     [Fact]

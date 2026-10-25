@@ -41,14 +41,17 @@ public static class CustomSetSubjects
             : selected;
 
     /// <summary>
-    /// The set with the pieces the catalog knows, their dyes and <see cref="Hash"/> as variant; a piece is worn in its
-    /// set slot (a ring in the left one too). Null when no piece is known.
+    /// The set with the pieces the catalog knows in their slot, their dyes and <see cref="Hash"/> as variant; a ring is
+    /// worn in its set slot (the left one too), any other piece in another slot than its item's is left out. Null when
+    /// no piece is known.
     /// </summary>
     public static SetSubject? ToSubject(CustomSet set, Func<uint, GlamourItem?> itemOf)
     {
+        static bool IsRing(EquipSlot slot) => slot is EquipSlot.RingRight or EquipSlot.RingLeft;
+
         var known = set.Pieces
             .Select(p => (Piece: p, Item: itemOf(p.ItemId)))
-            .Where(x => x.Item != null)
+            .Where(x => x.Item != null && (x.Item.Slot == x.Piece.Slot || IsRing(x.Item.Slot) && IsRing(x.Piece.Slot)))
             .Select(x => (x.Piece, Item: x.Item!.Slot == x.Piece.Slot ? x.Item : x.Item with { Slot = x.Piece.Slot }))
             .ToList();
         if (known.Count == 0)

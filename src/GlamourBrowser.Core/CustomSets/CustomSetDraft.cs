@@ -8,6 +8,8 @@ public sealed class CustomSetDraft
     private readonly Dictionary<EquipSlot, CustomPiece> pieces;
     private readonly string savedName;
     private readonly IReadOnlyList<CustomPiece> savedPieces;
+    // Pieces in slot order, built again after a change (the UI reads them every frame).
+    private IReadOnlyList<CustomPiece>? sorted;
 
     /// <param name="id">The stored set's id, null for a new set.</param>
     public CustomSetDraft(uint? id, string name, IReadOnlyList<CustomPiece> pieces)
@@ -25,7 +27,7 @@ public sealed class CustomSetDraft
     public string Name { get; set; }
 
     /// <summary>In slot order; pieces whose item the catalog does not know stay too.</summary>
-    public IReadOnlyList<CustomPiece> Pieces => pieces.Values.OrderBy(p => p.Slot).ToList();
+    public IReadOnlyList<CustomPiece> Pieces => sorted ??= pieces.Values.OrderBy(p => p.Slot).ToList();
 
     public CustomPiece? PieceIn(EquipSlot slot) => pieces.TryGetValue(slot, out var piece) ? piece : null;
 
@@ -48,7 +50,7 @@ public sealed class CustomSetDraft
         }
 
         var old = PieceIn(slot);
-        pieces[slot] = new CustomPiece(slot, item.Id, item.DyeCount >= 1 ? old?.Stain0 ?? 0 : (byte)0, item.DyeCount >= 2 ? old?.Stain1 ?? 0 : (byte)0);
+        Set(new CustomPiece(slot, item.Id, item.DyeCount >= 1 ? old?.Stain0 ?? 0 : (byte)0, item.DyeCount >= 2 ? old?.Stain1 ?? 0 : (byte)0));
     }
 
     /// <summary>Takes every piece of the set with its dyes, in the slot the set wears it; other slots stay.</summary>
@@ -57,19 +59,29 @@ public sealed class CustomSetDraft
         foreach (var piece in set.Wear)
         {
             var (stain0, stain1) = set.StainsOf(piece.Slot);
-            pieces[piece.Slot] = new CustomPiece(piece.Slot, piece.Id, stain0, stain1);
+            Set(new CustomPiece(piece.Slot, piece.Id, stain0, stain1));
         }
     }
 
-    public void Remove(EquipSlot slot) => pieces.Remove(slot);
+    public void Remove(EquipSlot slot)
+    {
+        if (pieces.Remove(slot))
+            sorted = null;
+    }
 
     /// <summary>Sets dye channel 1 or 2 of the slot's piece; false when the slot is empty or the item has no such channel.</summary>
     public bool SetStain(EquipSlot slot, int channel, byte stain, int dyeCount)
     {
         if (channel is < 1 or > 2 || channel > dyeCount || PieceIn(slot) is not { } piece)
             return false;
-        pieces[slot] = channel == 1 ? piece with { Stain0 = stain } : piece with { Stain1 = stain };
+        Set(channel == 1 ? piece with { Stain0 = stain } : piece with { Stain1 = stain });
         return true;
+    }
+
+    private void Set(CustomPiece piece)
+    {
+        pieces[piece.Slot] = piece;
+        sorted = null;
     }
 
     /// <summary>The draft as a tile subject (id 0 while new), for the live preview; null without a known piece.</summary>

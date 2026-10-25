@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using GlamourBrowser.Core.Items;
 
 namespace GlamourBrowser.Core.CustomSets;
@@ -7,8 +8,12 @@ namespace GlamourBrowser.Core.CustomSets;
 public static class CustomSetFile
 {
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
+    private static readonly Regex IdField = new("\"(Id|NextId)\"\\s*:\\s*(\\d+)", RegexOptions.CultureInvariant);
 
-    /// <summary>A broken file, or one of another character, moves to <c>.bak</c> and the list starts empty. Unknown items are kept.</summary>
+    /// <summary>
+    /// A broken file (also a piece in no plate slot), or one of another character, moves to <c>.bak</c> and the list
+    /// starts empty; its new sets get none of the ids the file still shows (a wish may point at one). Unknown items are kept.
+    /// </summary>
     /// <param name="variants">"+N" variants mapped to their base item, see <see cref="CustomSetStore"/>.</param>
     public static CustomSetStore Load(string path, ulong contentId, IReadOnlyDictionary<uint, uint>? variants = null)
     {
@@ -16,9 +21,10 @@ public static class CustomSetFile
         if (!File.Exists(path))
             return store;
 
+        var text = File.ReadAllText(path);
         try
         {
-            var dto = JsonSerializer.Deserialize<FileDto>(File.ReadAllText(path), Options)
+            var dto = JsonSerializer.Deserialize<FileDto>(text, Options)
                       ?? throw new JsonException("empty document");
             if (dto.ContentId != contentId)
                 throw new JsonException($"file of character {dto.ContentId}");
@@ -26,6 +32,8 @@ public static class CustomSetFile
             {
                 if (set?.Pieces == null || set.Pieces.Contains(null))
                     throw new JsonException("empty set or piece");
+                if (set.Pieces.FirstOrDefault(p => !CustomSetSubjects.Slots.Contains(p!.Slot)) is { } wrong)
+                    throw new JsonException($"piece in slot {(int)wrong.Slot}");
                 var pieces = set.Pieces.Select(p => new CustomPiece(p!.Slot, p.ItemId, p.Stain0, p.Stain1)).ToList();
                 store.Restore(new CustomSet(set.Id, set.Name ?? "", pieces, set.Changed), dto.NextId);
             }
@@ -34,8 +42,24 @@ public static class CustomSetFile
         catch (Exception e) when (e is JsonException or NotSupportedException)
         {
             File.Move(path, path + ".bak", overwrite: true);
-            return new CustomSetStore(contentId, variants);
+            var empty = new CustomSetStore(contentId, variants);
+            empty.ReserveIdsBelow(NextIdAfter(text));
+            return empty;
         }
+    }
+
+    /// <summary>The first id past every set id and counter the (broken) text shows, 1 for none.</summary>
+    private static uint NextIdAfter(string text)
+    {
+        var next = 1u;
+        foreach (Match match in IdField.Matches(text))
+        {
+            if (!uint.TryParse(match.Groups[2].Value, out var value))
+                continue;
+            // A counter is the next id itself, a set id is taken.
+            next = Math.Max(next, match.Groups[1].Value == "NextId" || value == uint.MaxValue ? value : value + 1);
+        }
+        return next;
     }
 
     /// <summary>Writes to a temporary file first so a concurrent reader never sees half a file.</summary>

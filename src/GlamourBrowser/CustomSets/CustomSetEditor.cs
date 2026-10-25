@@ -24,6 +24,8 @@ public sealed class CustomSetEditor
     private Func<CustomSetDraft>? pendingStart;
     // The store the draft belongs to: another one (a login without logout) means another character.
     private CustomSetStore? draftStore;
+    // The draft as the preview shows it; null without a piece the catalog knows.
+    private SetSubject? draftSubject;
 
     /// <param name="variants">"+N" variants mapped to their base item: start pieces are shown as their base.</param>
     public CustomSetEditor(BrowserState state, CustomSetService customSets, LivePreview live, IReadOnlyDictionary<uint, uint> variants,
@@ -43,6 +45,9 @@ public sealed class CustomSetEditor
 
     /// <summary>The slot clicked in the editor: the grid shows it, a ring goes there.</summary>
     public EquipSlot? SelectedSlot { get; private set; }
+
+    /// <summary>The draft has a piece the catalog knows: a set of unknown pieces only would not show up in "Meine Sets".</summary>
+    public bool CanSave => Draft != null && draftSubject != null;
 
     /// <summary>A start waits for the answer to "Änderungen verwerfen?" (see <see cref="Answer"/>).</summary>
     public bool AsksToDiscard => pendingStart != null;
@@ -105,7 +110,7 @@ public sealed class CustomSetEditor
     /// <summary>Stores the draft (a new set or an update of its set), shows it selected and goes back to "Meine Sets".</summary>
     public void Save()
     {
-        if (Draft == null || customSets.Current is not { } store || Draft.Pieces.Count == 0)
+        if (Draft == null || customSets.Current is not { } store || !CanSave)
             return;
 
         var now = DateTimeOffset.Now;
@@ -139,7 +144,7 @@ public sealed class CustomSetEditor
         UpdatePreview();
     }
 
-    /// <summary>Ends editing; the set (or nothing) stays selected, the grid shows "Meine Sets".</summary>
+    /// <summary>Ends editing; the set (or nothing) stays selected, the grid shows "Meine Sets" from its first page (the last changed set).</summary>
     private void Close(SetSubject? selected)
     {
         Draft = null;
@@ -148,14 +153,15 @@ public sealed class CustomSetEditor
         state.Selected = selected;
         live.Select(selected);
         state.Filter = state.Filter with { Mode = BrowseMode.MySets, Slots = new HashSet<EquipSlot>() };
+        state.ShowFirstPage();
     }
 
     /// <summary>The live preview and the selection show the draft as it is now.</summary>
     private void UpdatePreview()
     {
-        var subject = Draft?.ToSubject(state.ItemOf);
-        state.Selected = subject;
-        live.Select(subject);
+        draftSubject = Draft?.ToSubject(state.ItemOf);
+        state.Selected = draftSubject;
+        live.Select(draftSubject);
     }
 
     private void OnSetsChanged()

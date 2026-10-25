@@ -270,19 +270,22 @@ public sealed unsafe class LivePane
     private void DrawDyeDots(SetSubject set, EquipSlot slot)
     {
         var (stain0, stain1) = set.StainsOf(slot);
-        foreach (var stain in new[] { stain0, stain1 })
-        {
-            if (stain == 0)
-                continue;
-            ImGui.SameLine();
-            var line = ImGui.GetTextLineHeight();
-            var radius = line * 0.35f;
-            var min = ImGui.GetCursorScreenPos();
-            ImGui.Dummy(new Vector2(radius * 2, line));
-            ImGui.GetWindowDrawList().AddCircleFilled(min + new Vector2(radius, line / 2), radius, dyes.Find(stain)?.Color ?? theme.Colors.TextMuted);
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip(dyes.NameOf(stain));
-        }
+        DrawDyeDot(stain0);
+        DrawDyeDot(stain1);
+    }
+
+    private void DrawDyeDot(byte stain)
+    {
+        if (stain == 0)
+            return;
+        ImGui.SameLine();
+        var line = ImGui.GetTextLineHeight();
+        var radius = line * 0.35f;
+        var min = ImGui.GetCursorScreenPos();
+        ImGui.Dummy(new Vector2(radius * 2, line));
+        ImGui.GetWindowDrawList().AddCircleFilled(min + new Vector2(radius, line / 2), radius, dyes.Find(stain)?.Color ?? theme.Colors.TextMuted);
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip(dyes.NameOf(stain));
     }
 
     /// <summary>Deletes a custom set after asking.</summary>

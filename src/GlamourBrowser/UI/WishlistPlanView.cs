@@ -48,7 +48,8 @@ public sealed class WishlistPlanView
         customSets.Changed += () => version++;
     }
 
-    public void Draw()
+    /// <param name="editor">While a custom set is edited, a click on a piece puts it in (as on a tile).</param>
+    public void Draw(CustomSetEditor editor)
     {
         // Without the index every piece would land under "Quelle unbekannt".
         if (!sources.IsReady)
@@ -85,7 +86,7 @@ public sealed class WishlistPlanView
             using (ImRaii.PushIndent(iconSize.X + ImGui.GetStyle().ItemSpacing.X))
             {
                 foreach (var piece in group.Pieces)
-                    DrawPiece(piece, group.SharedAction == null, iconSize);
+                    DrawPiece(piece, group.SharedAction == null, iconSize, editor);
             }
         }
     }
@@ -114,8 +115,11 @@ public sealed class WishlistPlanView
         LivePane.DrawAction(group.SharedAction, "group", theme);
     }
 
-    /// <summary>Icon and name (a click selects it), then the piece's own cost and, when the group has no shared one, its action.</summary>
-    private void DrawPiece(WishPiece piece, bool ownAction, Vector2 iconSize)
+    /// <summary>
+    /// Icon and name (a click selects it, or puts it into the edited custom set), then the piece's own cost and, when
+    /// the group has no shared one, its action.
+    /// </summary>
+    private void DrawPiece(WishPiece piece, bool ownAction, Vector2 iconSize, CustomSetEditor editor)
     {
         var item = piece.Item;
         GameIcon.Draw(item.IconId, iconSize, FontAwesomeIcon.Tshirt, theme.Colors.TextMuted);
@@ -125,8 +129,13 @@ public sealed class WishlistPlanView
         if (ImGui.Selectable($"{item.Name}##piece{item.Id}", selected, ImGuiSelectableFlags.None, new Vector2(ImGui.CalcTextSize(item.Name).X, 0))
             && state.ItemSubjectFor(item.Id) is { } subject)
         {
-            state.Selected = subject;
-            live.Select(subject);
+            if (editor.IsOpen)
+                editor.Put(subject);
+            else
+            {
+                state.Selected = subject;
+                live.Select(subject);
+            }
         }
 
         if (piece.Source is not { } source)

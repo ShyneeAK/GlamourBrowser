@@ -82,6 +82,7 @@ public class CustomSetDraftTests
             id => id == 10 ? Robe : null)!;
         var draft = Empty();
         draft.Put(Item(20, Head), null);
+        Assert.Single(draft.Pieces);
         draft.PutAll(other);
         Assert.Equal([new CustomPiece(Head, 20, 0, 0), new CustomPiece(Body, 10, 3, 4)], draft.Pieces);
     }
@@ -107,6 +108,22 @@ public class CustomSetDraftTests
         Assert.False(draft.IsDirty);
         draft.Name = "Neu";
         Assert.True(draft.IsDirty);
+    }
+
+    [Fact]
+    public void Pieces_StayTheSameListUntilTheDraftChanges()
+    {
+        var draft = new CustomSetDraft(null, "A", [new CustomPiece(Body, 10, 0, 0)]);
+        var pieces = draft.Pieces;
+        Assert.Same(pieces, draft.Pieces);
+
+        draft.Put(Item(20, Head), null);
+        Assert.Equal([new CustomPiece(Head, 20, 0, 0), new CustomPiece(Body, 10, 0, 0)], draft.Pieces);
+        draft.SetStain(Body, 1, 5, dyeCount: 2);
+        Assert.Equal(new CustomPiece(Body, 10, 5, 0), draft.Pieces[1]);
+        draft.Remove(Head);
+        Assert.Equal([new CustomPiece(Body, 10, 5, 0)], draft.Pieces);
+        Assert.Equal([new CustomPiece(Body, 10, 0, 0)], pieces);
     }
 
     [Fact]

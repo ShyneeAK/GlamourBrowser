@@ -110,6 +110,8 @@ public sealed class BrowserState
 
     public void PreviousPage() => GoToPage(PageIndex - 1);
 
+    public void ShowFirstPage() => GoToPage(0);
+
     public void SetGrid(int columns, int rows)
     {
         // The page's first item stays in view; remembered pages of other slots no longer match the page size.

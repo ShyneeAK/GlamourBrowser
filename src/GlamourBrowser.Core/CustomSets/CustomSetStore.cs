@@ -52,6 +52,9 @@ public sealed class CustomSetStore(ulong contentId, IReadOnlyDictionary<uint, ui
         return true;
     }
 
+    /// <summary>Ids below <paramref name="nextId"/> were given out before (in a file that broke): new sets get none of them.</summary>
+    public void ReserveIdsBelow(uint nextId) => NextId = Math.Max(NextId, nextId);
+
     /// <summary>Takes a set from the file as it is (id and time kept), without <see cref="Changed"/>.</summary>
     public void Restore(CustomSet set, uint nextId)
     {

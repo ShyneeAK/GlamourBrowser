@@ -51,6 +51,15 @@ public class CustomSetSubjectsTests
     }
 
     [Fact]
+    public void ToSubject_DropsAPieceInAnotherSlotThanItsItem()
+    {
+        // A body item in the head slot, a head item in a ring slot: only rings change sides.
+        var subject = CustomSetSubjects.ToSubject(Set(new CustomPiece(Head, 10, 0, 0), new CustomPiece(RingLeft, 30, 0, 0)), ItemOf)!;
+        Assert.Equal([(30u, RingLeft)], subject.Wear.Select(p => (p.Id, p.Slot)));
+        Assert.Null(CustomSetSubjects.ToSubject(Set(new CustomPiece(RingLeft, 20, 0, 0)), ItemOf));
+    }
+
+    [Fact]
     public void ToSubject_VariantIsTheHash()
     {
         var set = Set(new CustomPiece(Body, 10, 1, 0));
