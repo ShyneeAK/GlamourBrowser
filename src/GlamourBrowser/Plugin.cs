@@ -113,12 +113,12 @@ public sealed class Plugin : IDalamudPlugin
             id => browser.ItemOf(id)?.DyeCount ?? 0);
         mainWindow = new MainWindow(
             new LivePane(browser, ownership, live, calibration, jobs, theme, sources, wishlist, customSets, dyes, editor,
-                         new SetEditorPane(editor, browser, dyes, theme, plates), plates),
+                         new SetEditorPane(editor, browser, dyes, theme, plates), plates, tryOn),
             new TopBar(browser, jobs, config, theme),
             new FilterColumn(browser, ownership, config, sources, theme),
             new TileGrid(browser, cache, pool, ownership, live, config, theme, sources, jobs, wishlist,
-                         new WishlistPlanView(browser, ownership, wishlist, sources, live, theme, customSets), customSets, editor, plates,
-                         memoryStats),
+                         new WishlistPlanView(browser, ownership, wishlist, sources, live, theme, customSets, tryOn), customSets, editor, plates,
+                         memoryStats, tryOn),
             theme,
             config,
             settingsWindow.Toggle);

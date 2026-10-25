@@ -24,6 +24,7 @@ namespace GlamourBrowser.UI;
 public sealed class WishlistPlanView
 {
     private readonly BrowserState state;
+    private readonly TryOnService tryOn;
     private readonly OwnershipService ownership;
     private readonly SourceService sources;
     private readonly LivePreview live;
@@ -34,8 +35,9 @@ public sealed class WishlistPlanView
     private int planVersion;
 
     public WishlistPlanView(BrowserState state, OwnershipService ownership, WishlistService wishlist, SourceService sources, LivePreview live,
-                            Theme.Theme theme, CustomSetService customSets)
+                            Theme.Theme theme, CustomSetService customSets, TryOnService tryOn)
     {
+        this.tryOn = tryOn;
         this.state = state;
         this.ownership = ownership;
         this.sources = sources;
@@ -135,6 +137,7 @@ public sealed class WishlistPlanView
             {
                 state.Selected = subject;
                 live.Select(subject);
+                tryOn.Put(subject, state.TileDye);
             }
         }
 

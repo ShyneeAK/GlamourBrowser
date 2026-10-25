@@ -65,6 +65,7 @@ public sealed class TileGrid
     private readonly CustomSetEditor editor;
     private readonly GlamourPlateBridge plates;
     private readonly MemoryStats memory;
+    private readonly TryOnService tryOn;
     // What the last import did, shown next to its button for a moment.
     private (string Text, DateTime At)? importStatus;
     // A custom set keeps its id while it changes: its content hash and name are part of the key.
@@ -75,8 +76,9 @@ public sealed class TileGrid
     public TileGrid(BrowserState state, TileCache<IDalamudTextureWrap> cache, RenderPool pool, OwnershipService ownership,
                     LivePreview live, Configuration config, Theme.Theme theme, SourceService sources, JobCatalog jobs,
                     WishlistService wishlist, WishlistPlanView planView, CustomSetService customSets, CustomSetEditor editor, GlamourPlateBridge plates,
-                    MemoryStats memory)
+                    MemoryStats memory, TryOnService tryOn)
     {
+        this.tryOn = tryOn;
         this.memory = memory;
         this.sources = sources;
         this.wishlist = wishlist;
@@ -402,10 +404,12 @@ public sealed class TileGrid
         // While a custom set is edited, a tile goes into it instead of being selected.
         else if (clicked && editor.IsOpen)
             editor.Put(subject);
+        // Otherwise it is selected and put on in the try-on, dyed like its tile.
         else if (clicked)
         {
             state.Selected = subject;
             live.Select(subject);
+            tryOn.Put(subject, state.TileDye);
         }
 
         var drawList = ImGui.GetWindowDrawList();

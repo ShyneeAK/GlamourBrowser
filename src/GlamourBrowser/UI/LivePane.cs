@@ -9,6 +9,7 @@ using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using GlamourBrowser.Browser;
+using GlamourBrowser.Core.CustomSets;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Sources;
@@ -40,6 +41,9 @@ public sealed unsafe class LivePane
     private readonly CustomSetEditor editor;
     private readonly SetEditorPane editorPane;
     private readonly GlamourPlateBridge plates;
+    private readonly TryOnService tryOn;
+    // When the try-on was last saved as a set, for a short confirmation next to the button.
+    private DateTime? savedAt;
     private readonly HashSet<(uint Item, SourceCategory Category)> expanded = new();
     // Pieces of the selected set whose sources are open.
     private readonly HashSet<uint> openPieces = new();
@@ -47,8 +51,9 @@ public sealed unsafe class LivePane
 
     public LivePane(BrowserState state, OwnershipService ownership, LivePreview live, CalibrationService calibration, JobCatalog jobs, Theme.Theme theme,
                     SourceService sources, WishlistService wishlist, CustomSetService customSets, DyeCatalog dyes, CustomSetEditor editor,
-                    SetEditorPane editorPane, GlamourPlateBridge plates)
+                    SetEditorPane editorPane, GlamourPlateBridge plates, TryOnService tryOn)
     {
+        this.tryOn = tryOn;
         this.plates = plates;
         this.editor = editor;
         this.editorPane = editorPane;
@@ -68,6 +73,9 @@ public sealed unsafe class LivePane
     {
         var avail = ImGui.GetContentRegionAvail();
         DrawLive(new Vector2(avail.X, MathF.Min(avail.X * 960f / 576f, avail.Y * 0.55f)));
+        // The set editor has its own buttons; the try-on waits behind it.
+        if (!editor.IsOpen)
+            DrawTryOnButtons();
 
         ImGui.Spacing();
         using var card = ImRaii.Child("##itemcard", Vector2.Zero, true);
@@ -79,6 +87,31 @@ public sealed unsafe class LivePane
             editorPane.Draw();
         else
             DrawItemCard();
+    }
+
+    /// <summary>Below the live view: back to the try-on's basis (tile mode), or the whole try-on as a new custom set.</summary>
+    private void DrawTryOnButtons()
+    {
+        if (ImGui.Button("Zurücksetzen"))
+            tryOn.Reset();
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip("Zurück auf aktuelles Outfit bzw. Unterwäsche, je nach Kachel-Modus");
+
+        ImGui.SameLine();
+        var store = customSets.Current;
+        using (ImRaii.Disabled(store == null || tryOn.TryOn.Pieces.Count == 0))
+        {
+            if (ImGui.Button("Als Set speichern") && store != null)
+            {
+                store.Add(CustomSetStore.DefaultName, tryOn.TryOn.Pieces, DateTimeOffset.Now);
+                savedAt = DateTime.UtcNow;
+            }
+        }
+        if (savedAt is { } at && DateTime.UtcNow - at < TimeSpan.FromSeconds(3))
+        {
+            ImGui.SameLine();
+            ImGui.TextDisabled("Als ‚Neues Set‘ gespeichert");
+        }
     }
 
     private void DrawLive(Vector2 area)
