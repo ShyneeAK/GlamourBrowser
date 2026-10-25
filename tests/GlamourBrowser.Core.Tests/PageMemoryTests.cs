@@ -35,6 +35,10 @@ public class PageMemoryTests
     }
 
     [Fact]
+    public void Switch_ADyeChangeKeepsThePage()
+        => Assert.Equal(5, new PageMemory().Switch(Head, 5, Head with { Dye = 81 }));
+
+    [Fact]
     public void SameView_KeepsThePage()
         => Assert.Equal(5, new PageMemory().Switch(Head, 5, Head with { Sort = Head.Sort }));
 

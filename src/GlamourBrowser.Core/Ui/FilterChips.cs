@@ -10,7 +10,9 @@ public sealed record FilterChip(string Label, FilterState WithoutThis);
 public static class FilterChips
 {
     /// <param name="jobParts">The job selection as whole groups and single jobs, see <see cref="JobSelection.Parts"/>.</param>
-    public static IReadOnlyList<FilterChip> From(FilterState state, Func<EquipSlot, string> slotName, Func<IReadOnlySet<uint>, IReadOnlyList<JobPart>> jobParts)
+    /// <param name="dyeName">The tile dye's name for its chip; without it the chip shows the stain id.</param>
+    public static IReadOnlyList<FilterChip> From(FilterState state, Func<EquipSlot, string> slotName, Func<IReadOnlySet<uint>, IReadOnlyList<JobPart>> jobParts,
+                                                 Func<byte, string>? dyeName = null)
     {
         var defaults = new FilterState();
         var chips = new List<FilterChip>();
@@ -38,6 +40,9 @@ public static class FilterChips
 
         if (state.DyeableOnly)
             chips.Add(new FilterChip("Nur Färbbare", state with { DyeableOnly = false }));
+
+        if (state.Dye != 0)
+            chips.Add(new FilterChip($"Farbe: {dyeName?.Invoke(state.Dye) ?? state.Dye.ToString()}", state with { Dye = 0 }));
 
         if (state.Ownership != OwnershipFilter.All)
             chips.Add(new FilterChip(state.Ownership == OwnershipFilter.Owned ? "Habe ich" : "Fehlt mir", state with { Ownership = OwnershipFilter.All }));

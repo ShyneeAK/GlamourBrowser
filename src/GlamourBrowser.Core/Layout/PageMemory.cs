@@ -36,6 +36,7 @@ public sealed class PageMemory
 
     private static (string, BrowseMode) View(FilterState f) => (string.Join(",", f.Slots.Order()), f.Mode);
 
-    // Everything but the view; the other sets compare by reference, so any change of them counts as a change.
-    private static FilterState Rest(FilterState f) => f with { Slots = NoSlots, Mode = BrowseMode.Items };
+    // Everything but the view and the tile dye (it colours the tiles, the list stays); the other sets compare by
+    // reference, so any change of them counts as a change.
+    private static FilterState Rest(FilterState f) => f with { Slots = NoSlots, Mode = BrowseMode.Items, Dye = 0 };
 }

@@ -23,6 +23,8 @@ public sealed record FilterState
     public int MaxLevel { get; init; } = 100;
     /// <summary>Only items with at least one dye channel ("Nur Färbbare").</summary>
     public bool DyeableOnly { get; init; }
+    /// <summary>The tile dye ("Farbe" next to the job picker, a stain id; 0 = none): dyeable items render in it, nothing is hidden.</summary>
+    public byte Dye { get; init; }
     public OwnershipFilter Ownership { get; init; } = OwnershipFilter.All;
     public bool WearableOnly { get; init; } = true;
     public IReadOnlySet<SourceCategory> Categories { get; init; } = new HashSet<SourceCategory>();

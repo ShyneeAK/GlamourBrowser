@@ -19,6 +19,13 @@ public class ItemFilterTests
     private static uint[] Ids(IEnumerable<GlamourItem> items) => items.Select(i => i.Id).ToArray();
 
     [Fact]
+    public void Dye_DoesNotFilter()
+    {
+        var items = new[] { Item(1, "Robe", EquipSlot.Body, dyes: 2), Item(2, "Wams", EquipSlot.Body) };
+        Assert.Equal(Ids(Apply(items, new FilterState())), Ids(Apply(items, new FilterState { Dye = 81 })));
+    }
+
+    [Fact]
     public void SearchText_IsCaseInsensitiveSubstring()
     {
         var items = new[] { Item(1, "Äther-Filzrobe", EquipSlot.Body), Item(2, "Verschlissenes Wams", EquipSlot.Body) };

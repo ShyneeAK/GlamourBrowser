@@ -15,6 +15,20 @@ public class FilterChipsTests
     public void NoActiveFilters_NoChips() => Assert.Empty(Chips(new FilterState()));
 
     [Fact]
+    public void Dye_GivesAChipThatRemovesIt()
+    {
+        var state = new FilterState { Dye = 81 };
+        var chip = Assert.Single(FilterChips.From(state, SlotName, jobs => JobSelection.Parts(jobs, Jobs, JobName), id => id == 81 ? "Schwarz" : "?"));
+
+        Assert.Equal("Farbe: Schwarz", chip.Label);
+        Assert.Equal(0, chip.WithoutThis.Dye);
+    }
+
+    [Fact]
+    public void Dye_NoChipInTheWishlistMode()
+        => Assert.DoesNotContain(Chips(new FilterState { Dye = 81, Mode = BrowseMode.Wishlist }), c => c.Label.StartsWith("Farbe"));
+
+    [Fact]
     public void OneChipPerActiveFilter()
     {
         var state = new FilterState
