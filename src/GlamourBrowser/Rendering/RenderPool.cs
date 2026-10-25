@@ -55,6 +55,8 @@ public sealed unsafe class RenderPool : IDisposable
         public bool Frozen { get; set; }
         public DrawGate? DrawGate { get; set; }
         public int DrawRetries { get; set; }
+        /// <summary>A retry toggled the weapon the other way last frame; this frame toggles it back.</summary>
+        public bool RetryPending { get; set; }
         public (TileMode Mode, ulong Hash, EquipSlot Slot)? DressedAs { get; set; }
         public bool Busy => Key != null;
     }
@@ -205,20 +207,6 @@ public sealed unsafe class RenderPool : IDisposable
 
                 worker.Key = key;
                 worker.Stopwatch.Restart();
-                // The game keeps a drawn weapon drawn across item loads (the new weapon comes into the hand by itself),
-                // so weapon tiles never sheathe; only leaving weapon tiles sheathes. Weapon tiles always let the
-                // animation run, the weapon is attached to the hand by the animation.
-                var sheathed = !key.WeaponDrawn && worker.WeaponDrawn;
-                if (sheathed || key.WeaponDrawn)
-                {
-                    view.SetAnimationPaused(false);
-                    worker.Frozen = false;
-                }
-                if (sheathed)
-                {
-                    view.SetWeaponDrawn(false);
-                    worker.WeaponDrawn = false;
-                }
                 // Re-dress when the slot changes too, otherwise the previous tile's item (e.g. a hat)
                 // stays on the character.
                 var redressed = worker.DressedAs != (key.Mode, key.AppearanceHash, item.Slot);
@@ -228,13 +216,13 @@ public sealed unsafe class RenderPool : IDisposable
                     worker.DressedAs = (key.Mode, key.AppearanceHash, item.Slot);
                 }
                 view.SetItem(item.Slot, key.ItemId, key.Stain0, key.Stain1);
-                // Weapon tiles draw the weapon after loading; the draw has to finish first (DrawGate in the Pose phase).
+                // The weapon is drawn or sheathed once the item has loaded (Loading phase), and that has to finish
+                // first (DrawGate in the Pose phase).
                 view.ApplyCamera(cameraFor(item.Slot));
                 // A view keeps its pose and frozen moment from tile to tile; only a change (or a re-dress, which may
                 // rebuild the character) lets the animation run again and waits for it in the Pose phase.
-                // Every weapon tile draws anew: a freshly loaded weapon comes back sheathed while the view still
-                // reports it as drawn, and drawing again without sheathing first does nothing.
-                worker.PoseChanged = redressed || key.WeaponDrawn || sheathed || worker.LastPose != key.Pose;
+                // Weapon tiles always let the animation run: the weapon is attached to the hand by the animation.
+                worker.PoseChanged = redressed || key.WeaponDrawn || worker.LastPose != key.Pose;
                 worker.LastPose = key.Pose;
                 if (worker.PoseChanged)
                 {
@@ -248,6 +236,7 @@ public sealed unsafe class RenderPool : IDisposable
                     Plugin.Log.Warning($"Idle pose {key.Pose} could not be applied; tiles use the standard pose");
                 }
                 worker.DrawGate = null;
+                worker.RetryPending = false;
                 worker.Frames = 0;
                 worker.Phase = Phase.Loading;
                 break;
@@ -261,15 +250,25 @@ public sealed unsafe class RenderPool : IDisposable
                         Fail(worker, "Zeitüberschreitung beim Laden");
                     return;
                 }
-                // A freshly loaded weapon can come back sheathed even though the view had it drawn: check the
-                // character itself, not what this worker did last time, and draw (or sheathe) again if needed.
-                // The weapon is loaded (sheathed): draw it now, the DrawGate waits for the stance to settle.
-                if (worker.Key!.Value.WeaponDrawn)
+                // Draw or sheathe now that the item has loaded (a toggle sent while an item loads is ignored). Judged by
+                // the character itself, not only by what this worker did last time: the game keeps a drawn weapon drawn
+                // across item loads, and a toggle can be dropped. The DrawGate waits for the stance to settle.
+                var wantDrawn = worker.Key!.Value.WeaponDrawn;
+                var inHand = view.IsWeaponInHand();
+                if (wantDrawn || worker.WeaponDrawn || inHand)
                 {
-                    if (!view.IsWeaponInHand())
-                        view.SetWeaponDrawn(true);
-                    worker.WeaponDrawn = true;
+                    if (inHand != wantDrawn || worker.WeaponDrawn != wantDrawn)
+                        view.SetWeaponDrawn(wantDrawn);
+                    if (!wantDrawn)
+                    {
+                        // Sheathing plays an animation: let it run, then settle and freeze anew.
+                        view.SetAnimationPaused(false);
+                        worker.Frozen = false;
+                        worker.PoseChanged = true;
+                    }
+                    worker.WeaponDrawn = wantDrawn;
                     worker.DrawRetries = 0;
+                    worker.RetryPending = false;
                     worker.DrawGate = new DrawGate(DrawMinFrames, DrawStableFrames, DrawTimeoutFrames);
                 }
                 view.ApplyVisibility(showWeapons: true);
@@ -302,25 +301,42 @@ public sealed unsafe class RenderPool : IDisposable
 
             case Phase.Pose:
                 var (playing, _) = view.BaseTimeline();
-                if (worker.DrawGate != null && !view.IsWeaponInHand() && worker.DrawRetries < MaxDrawRetries)
+                var tileDrawn = worker.Key!.Value.WeaponDrawn;
+                if (worker.RetryPending)
                 {
-                    // The draw did not take: sheathe on one frame, draw again on the next.
-                    var phase = (worker.DrawGate.Frames + 1) % DrawRetryFrames;
-                    if (phase == 0)
-                        view.SetWeaponDrawn(false);
-                    else if (phase == 1 && worker.DrawGate.Frames > 1)
-                    {
-                        view.SetWeaponDrawn(true);
-                        worker.DrawRetries++;
-                    }
+                    // Second half of a retry: back to the wanted state.
+                    view.SetWeaponDrawn(tileDrawn);
+                    worker.RetryPending = false;
+                    worker.DrawRetries++;
                 }
-                var poseState = worker.DrawGate?.Step(view.TimelineSignature(), view.BodyBlend(), view.IsWeaponInHand()) ?? worker.PoseGate!.Step(playing);
+                else if (worker.DrawGate != null && view.IsWeaponInHand() != tileDrawn && worker.DrawRetries < MaxDrawRetries
+                         && (worker.DrawGate.Frames + 1) % DrawRetryFrames == 0 && (tileDrawn || !worker.DrawGate.Changed))
+                {
+                    // The toggle did not take, and the same toggle again does nothing: toggle the other way on this
+                    // frame, back on the next. A sheathe that took may keep the weapon in hand for a while, so
+                    // sheathing is only retried while no animation has started.
+                    view.SetWeaponDrawn(!tileDrawn);
+                    worker.RetryPending = true;
+                }
+
+                PoseGateState poseState;
+                if (worker.DrawGate == null)
+                    poseState = worker.PoseGate!.Step(playing);
+                else
+                {
+                    poseState = worker.DrawGate.Step(view.TimelineSignature(), view.BodyBlend(), view.IsWeaponInHand() == tileDrawn);
+                    // Sheathing brings the idle pose back as well: wait for both.
+                    if (!tileDrawn)
+                        poseState = PoseGateStates.Both(poseState, worker.PoseGate!.Step(playing));
+                }
                 if (poseState == PoseGateState.Wait)
                     return;
                 if (poseState == PoseGateState.Timeout && !poseWarned)
                 {
                     poseWarned = true;
-                    Plugin.Log.Warning(worker.DrawGate != null ? "Drawing the weapon did not settle in time; copying anyway" : $"Idle pose {worker.Key!.Value.Pose} did not start playing; tiles may show the standard pose");
+                    Plugin.Log.Warning(worker.DrawGate == null ? $"Idle pose {worker.Key!.Value.Pose} did not start playing; tiles may show the standard pose"
+                        : tileDrawn ? "Drawing the weapon did not settle in time; copying anyway"
+                        : "Sheathing the weapon (or the idle pose) did not settle in time; copying anyway");
                 }
                 worker.Frames = 0;
                 // After a change the blend from the previous animation has to finish before freezing.

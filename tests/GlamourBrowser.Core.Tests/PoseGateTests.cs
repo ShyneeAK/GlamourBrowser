@@ -46,4 +46,16 @@ public class PoseGateTests
         Assert.Equal(0f, AnimationTiming.LastFrame(0.01f));
         Assert.Equal(0f, AnimationTiming.LastFrame(0f));
     }
+
+    [Theory]
+    [InlineData(PoseGateState.Ready, PoseGateState.Ready, PoseGateState.Ready)]
+    [InlineData(PoseGateState.Ready, PoseGateState.Wait, PoseGateState.Wait)]
+    [InlineData(PoseGateState.Wait, PoseGateState.Ready, PoseGateState.Wait)]
+    [InlineData(PoseGateState.Timeout, PoseGateState.Wait, PoseGateState.Wait)]      // the other gate may still finish
+    [InlineData(PoseGateState.Timeout, PoseGateState.Ready, PoseGateState.Timeout)]
+    [InlineData(PoseGateState.Ready, PoseGateState.Timeout, PoseGateState.Timeout)]
+    public void Both_ReadyOnlyWhenBothAre_WaitsWhileEitherWaits(PoseGateState a, PoseGateState b, PoseGateState expected)
+    {
+        Assert.Equal(expected, PoseGateStates.Both(a, b));
+    }
 }

@@ -7,6 +7,15 @@ public enum PoseGateState
     Timeout,
 }
 
+public static class PoseGateStates
+{
+    /// <summary>Two gates that must both pass: waits while either waits, times out when one gave up and the other is done.</summary>
+    public static PoseGateState Both(PoseGateState a, PoseGateState b)
+        => a == PoseGateState.Wait || b == PoseGateState.Wait ? PoseGateState.Wait
+         : a == PoseGateState.Timeout || b == PoseGateState.Timeout ? PoseGateState.Timeout
+         : PoseGateState.Ready;
+}
+
 /// <summary>
 /// Holds a tile back until its character really plays the wanted idle-pose timeline, plus a few frames
 /// for the blend from the previous animation; gives up after a timeout.
