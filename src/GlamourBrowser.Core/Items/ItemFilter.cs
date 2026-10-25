@@ -75,7 +75,7 @@ public static class ItemFilter
     public static int ClampPage(int pageIndex, int itemCount, int pageSize)
         => Math.Clamp(pageIndex, 0, PageCount(itemCount, pageSize) - 1);
 
-    public static IReadOnlyList<GlamourItem> Page(IReadOnlyList<GlamourItem> items, int pageIndex, int pageSize)
+    public static IReadOnlyList<T> Page<T>(IReadOnlyList<T> items, int pageIndex, int pageSize)
     {
         pageSize = Math.Max(1, pageSize);
         return items.Skip(pageIndex * pageSize).Take(pageSize).ToList();

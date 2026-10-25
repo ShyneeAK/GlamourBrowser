@@ -73,7 +73,8 @@ public sealed class Plugin : IDalamudPlugin
         pool = new RenderPool(queue, cache, id => byId.GetValueOrDefault(id), appearance, CameraFor) { MaxViews = config.ParallelViews };
         live = new LivePreview(pool, appearance, config, CameraFor);
         sources = new SourceService(catalog.Select(i => i.Id).ToHashSet());
-        browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources);
+        var sets = new SetCatalog(byId, sources);
+        browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets);
         Framework.Update += OnFrameworkUpdate;
         UI.UiScale.Set(config.UiScale);
         var theme = new UI.Theme.Theme(config);

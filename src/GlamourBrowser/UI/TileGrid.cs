@@ -187,14 +187,20 @@ public sealed class TileGrid
         }
     }
 
-    private void DrawTile(GlamourItem item, Vector2 size)
+    private void DrawTile(TileSubject subject, Vector2 size)
     {
+        if (subject is not ItemSubject { Item: var item })
+        {
+            ImGui.Dummy(size);
+            return;
+        }
+
         const float rounding = 8f;
         var colors = theme.Colors;
         var pos = ImGui.GetCursorScreenPos();
         if (ImGui.InvisibleButton($"##tile{item.Id}", size))
         {
-            state.Selected = item;
+            state.Selected = subject;
             live.Select(item);
         }
         var hovered = ImGui.IsItemHovered();
@@ -202,9 +208,9 @@ public sealed class TileGrid
         var drawList = ImGui.GetWindowDrawList();
         drawList.AddRectFilled(pos, pos + size, hovered ? colors.CardRaised : colors.Card, rounding);
 
-        var key = state.KeyFor(item);
+        var key = state.KeyFor(subject);
         var owned = ownership.Current?.IsOwned(item.Id) ?? false;
-        var selected = state.Selected?.Id == item.Id;
+        var selected = state.Selected?.Id == subject.Id;
         if (cache.TryGet(key, out var texture) && texture != null)
         {
             drawList.AddImageRounded(texture.Handle, pos, pos + size, Vector2.Zero, Vector2.One, TileStyle.ImageTint(owned, selected, config.DimMissingTiles), rounding);

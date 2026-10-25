@@ -5,6 +5,7 @@ using Dalamud.Interface.Textures.TextureWraps;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Layout;
 using GlamourBrowser.Core.Rendering;
+using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Sources;
 using GlamourBrowser.Ownership;
 using GlamourBrowser.Rendering;
@@ -12,7 +13,7 @@ using GlamourBrowser.Sources;
 
 namespace GlamourBrowser.Browser;
 
-/// <summary>Filter, paging and layout of the tile grid; keeps the render queue in sync with what is shown.</summary>
+/// <summary>Filter, paging and layout of the tile grid (items or, in the set mode, sets); keeps the render queue in sync with what is shown.</summary>
 public sealed class BrowserState
 {
     private readonly IReadOnlyList<GlamourItem> catalog;
@@ -22,13 +23,18 @@ public sealed class BrowserState
     private readonly TileCache<IDalamudTextureWrap> cache;
     private readonly Configuration config;
     private readonly SourceService sources;
+    private readonly SetCatalog sets;
+    // One subject per catalog item, made once instead of on every refresh.
+    private readonly IReadOnlyDictionary<uint, ItemSubject> itemSubjects;
     private FilterState filter = new();
 
     public BrowserState(IReadOnlyList<GlamourItem> catalog, OwnershipService ownership, AppearanceTracker appearance,
-                        TileQueue queue, TileCache<IDalamudTextureWrap> cache, RenderPool pool, Configuration config, SourceService sources)
+                        TileQueue queue, TileCache<IDalamudTextureWrap> cache, RenderPool pool, Configuration config, SourceService sources, SetCatalog sets)
     {
         this.sources = sources;
+        this.sets = sets;
         this.catalog = catalog;
+        itemSubjects = catalog.ToDictionary(i => i.Id, i => new ItemSubject(i));
         this.ownership = ownership;
         this.appearance = appearance;
         this.queue = queue;
@@ -57,14 +63,14 @@ public sealed class BrowserState
     }
 
     public int PageIndex { get; private set; }
-    public IReadOnlyList<GlamourItem> Results { get; private set; } = [];
-    public IReadOnlyList<GlamourItem> CurrentPage { get; private set; } = [];
+    public IReadOnlyList<TileSubject> Results { get; private set; } = [];
+    public IReadOnlyList<TileSubject> CurrentPage { get; private set; } = [];
     public int PageSize => config.Columns * config.Rows;
     public int PageCount => ItemFilter.PageCount(Results.Count, PageSize);
     public PageLayoutResult Layout { get; private set; }
-    public GlamourItem? Selected { get; set; }
+    public TileSubject? Selected { get; set; }
 
-    /// <summary>Items per source category under all other filters (the numbers behind the category checkboxes).</summary>
+    /// <summary>Items (or sets) per source category under all other filters (the numbers behind the category checkboxes).</summary>
     public IReadOnlyDictionary<SourceCategory, int> CountsWithoutCategories { get; private set; } = new Dictionary<SourceCategory, int>();
 
     public void UpdateLayout(float width, float height, float spacing, float labelHeight)
@@ -115,9 +121,18 @@ public sealed class BrowserState
         Refresh();
     }
 
-    public TileKey KeyFor(GlamourItem item)
-        => new(item.Id, 0, 0, config.TileMode, appearance.Hash, Layout.RenderWidth == 0 ? PageLayout.RenderSteps[0] : Layout.RenderWidth,
-               StanceFor(item) is var stance && stance.WeaponDrawn ? TileKey.StandardPose : stance.Pose, stance.WeaponDrawn);
+    public TileKey KeyFor(TileSubject subject) => subject switch
+    {
+        SetSubject set => TileKeys.ForSet(set.Set.Id, config.TileMode, appearance.Hash, RenderWidth, IdleStance.Pose),
+        ItemSubject { Item: var item } => new(item.Id, 0, 0, config.TileMode, appearance.Hash, RenderWidth,
+                                              StanceFor(item) is var stance && stance.WeaponDrawn ? TileKey.StandardPose : stance.Pose, stance.WeaponDrawn),
+        _ => throw new ArgumentOutOfRangeException(nameof(subject)),
+    };
+
+    /// <summary>The item or set a tile key was made for (the render pool's lookup).</summary>
+    public TileSubject? SubjectFor(TileKey key) => key.Set.IsSet ? sets.Find(key.Set) : itemSubjects.GetValueOrDefault(key.ItemId);
+
+    private int RenderWidth => Layout.RenderWidth == 0 ? PageLayout.RenderSteps[0] : Layout.RenderWidth;
 
     public static readonly Stance WeaponDrawnStance = new(true, 0);
 
@@ -139,13 +154,24 @@ public sealed class BrowserState
             // Categories and patches only once the background index is ready; the sort always comes from the config.
             var index = sources.IsReady ? sources.Index : null;
             Func<uint, bool> isOwned = id => store?.IsOwned(id) ?? false;
-            if (index == null)
-                Results = ItemFilter.Apply(catalog, filter with { Sort = config.Sort }, isOwned, appearance.Race, appearance.Sex);
+            var sorted = filter with { Sort = config.Sort };
+            if (filter.Sets)
+            {
+                // Without the index there are no sets yet (the grid says so).
+                var (setResults, withoutCategories) = SetFilter.Apply(index == null ? [] : sets.All, sorted, isOwned, appearance.Race, appearance.Sex,
+                    index == null ? null : index.CategoriesOf, index == null ? null : index.PatchOf);
+                Results = setResults;
+                if (index != null)
+                    CountsWithoutCategories = SetFilter.Counts(withoutCategories, index.CategoriesOf);
+            }
+            else if (index == null)
+                Results = Subjects(ItemFilter.Apply(catalog, sorted, isOwned, appearance.Race, appearance.Sex));
             else
             {
                 // One pass for both: the numbers behind the category checkboxes ignore the categories themselves.
-                (Results, var withoutCategories) = ItemFilter.ApplyWithCategoryBase(catalog, filter with { Sort = config.Sort }, isOwned,
+                var (items, withoutCategories) = ItemFilter.ApplyWithCategoryBase(catalog, sorted, isOwned,
                     appearance.Race, appearance.Sex, index.CategoriesOf, index.PatchOf);
+                Results = Subjects(items);
                 CountsWithoutCategories = index.Counts(withoutCategories.Select(i => i.Id));
             }
             PageIndex = ItemFilter.ClampPage(PageIndex, Results.Count, PageSize);
@@ -196,6 +222,8 @@ public sealed class BrowserState
 
     private List<TileKey> PageKeys(int page)
         => page >= 0 && page < PageCount ? ItemFilter.Page(Results, page, PageSize).Select(KeyFor).ToList() : [];
+
+    private IReadOnlyList<TileSubject> Subjects(IReadOnlyList<GlamourItem> items) => items.Select(i => (TileSubject)itemSubjects[i.Id]).ToList();
 
     private void OnOwnershipChanged()
     {

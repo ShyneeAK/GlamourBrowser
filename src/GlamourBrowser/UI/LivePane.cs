@@ -133,7 +133,7 @@ public sealed unsafe class LivePane
 
     private void DrawItemCard()
     {
-        if (state.Selected is not { } item)
+        if (state.Selected is not ItemSubject { Item: var item })
         {
             ImGui.TextDisabled("Kein Item ausgewählt");
             return;
