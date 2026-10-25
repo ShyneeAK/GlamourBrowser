@@ -15,11 +15,9 @@ The user interface is in German. The plugin is not in the official Dalamud repos
 - **My sets**: build your own outfits with dyes, like in the glamour dresser. Start from scratch, from your current outfit or from a glamour plate, import all glamour plates at once, and transfer a set into the open glamour plate editor.
 - **Render cache** with settings for how many recently shown pages stay rendered and how many are rendered ahead, plus an optional memory line (tile cache, VRAM, RAM).
 
-## Commands
+## Usage
 
-- `/gbrowser` opens or closes the main window.
-- `/gbrowser diag` writes the weapon state of all render views to the Dalamud log.
-- `/gbrowser plate` writes the state of the glamour plate editor to the Dalamud log.
+`/gbrowser` opens or closes the main window.
 
 ## Building
 
