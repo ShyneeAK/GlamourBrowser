@@ -60,8 +60,16 @@ public sealed class ShopNpcResolver
     // German names carry grammar markers such as "[p]" or "[a]".
     private static readonly Regex GrammarMarker = new(@"\[[a-z]\]", RegexOptions.Compiled);
 
+    /// <summary>The NPC's name on its own; German grammar markers are resolved, other languages' are dropped.</summary>
     public string NameOf(uint npcId)
-        => data.GetExcelSheet<ENpcResident>()!.TryGetRow(npcId, out var resident) ? GrammarMarker.Replace(resident.Singular.ExtractText(), "") : "";
+    {
+        if (!data.GetExcelSheet<ENpcResident>()!.TryGetRow(npcId, out var resident))
+            return "";
+        var singular = resident.Singular.ExtractText();
+        return data.Options.DefaultExcelLanguage == Lumina.Data.Language.German
+            ? GermanNames.Nominative(singular, resident.Pronoun)
+            : GrammarMarker.Replace(singular, "");
+    }
 
     private void Link(uint shopId, uint npcId)
     {
