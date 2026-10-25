@@ -10,6 +10,7 @@ using Dalamud.Interface.Utility.Raii;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using GlamourBrowser.Browser;
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Sources;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Utility;
@@ -32,6 +33,8 @@ public sealed unsafe class LivePane
     private readonly Theme.Theme theme;
     private readonly SourceService sources;
     private readonly HashSet<(uint Item, SourceCategory Category)> expanded = new();
+    // Pieces of the selected set whose sources are open.
+    private readonly HashSet<uint> openPieces = new();
     private const int SourcesPerCategory = 3;
     private const uint MapIcon = 60561;        // map flag
     private const uint DutyFinderIcon = 46;    // main menu: duty finder
@@ -133,6 +136,11 @@ public sealed unsafe class LivePane
 
     private void DrawItemCard()
     {
+        if (state.Selected is SetSubject set)
+        {
+            DrawSetCard(set);
+            return;
+        }
         if (state.Selected is not ItemSubject { Item: var item })
         {
             ImGui.TextDisabled("Kein Item ausgewählt");
@@ -174,6 +182,66 @@ public sealed unsafe class LivePane
 
         ImGui.Separator();
         DrawSources(item);
+    }
+
+    /// <summary>Name, progress and origin of a set, then its pieces: owned or not, where they are or come from; a click opens a piece's sources.</summary>
+    private void DrawSetCard(SetSubject set)
+    {
+        var colors = theme.Colors;
+        bool IsOwned(uint id) => ownership.Current?.IsOwned(id) ?? false;
+        var progress = SetProgress.Of(set, IsOwned);
+        var body = set.Pieces.FirstOrDefault(p => p.Slot == EquipSlot.Body) ?? set.Pieces[0];
+        GameIcon.Draw(body.IconId, new Vector2(40 * UiScale.Global), FontAwesomeIcon.LayerGroup, colors.TextMuted);
+        ImGui.SameLine();
+        ImGui.BeginGroup();
+        ImGui.TextWrapped(set.Name);
+        var origin = set.Set.Id.Kind switch
+        {
+            SetKind.Dresser => "Kommoden-Set",
+            SetKind.MogStation => "Mogstation-Set",
+            _ => "Serie",
+        };
+        ImGui.TextDisabled($"{progress.Owned}/{progress.Total} · {origin}");
+        ImGui.EndGroup();
+        ImGui.Separator();
+
+        var iconSize = new Vector2(ImGui.GetTextLineHeight());
+        foreach (var piece in set.Pieces)
+        {
+            var owned = IsOwned(piece.Id);
+            using (ImRaii.PushColor(ImGuiCol.Text, owned ? colors.Accent : colors.TextMuted))
+            using (UiScale.PushIcons())
+                ImGui.TextUnformatted((owned ? FontAwesomeIcon.Check : FontAwesomeIcon.Times).ToIconString());
+            ImGui.SameLine();
+            GameIcon.Draw(piece.IconId, iconSize, FontAwesomeIcon.Tshirt, colors.TextMuted);
+            ImGui.SameLine();
+            var open = openPieces.Contains(piece.Id);
+            // As wide as the name only, so the place or source fits behind it.
+            if (ImGui.Selectable($"{piece.Name}##piece{piece.Id}", open, ImGuiSelectableFlags.None, new Vector2(ImGui.CalcTextSize(piece.Name).X, 0)))
+            {
+                if (!openPieces.Remove(piece.Id))
+                    openPieces.Add(piece.Id);
+            }
+            ImGui.SameLine();
+            ImGui.TextDisabled(owned ? WhereOwned(piece) : BestSource(piece));
+            if (!open)
+                continue;
+            using (ImRaii.PushId((int)piece.Id))
+            using (ImRaii.PushIndent(iconSize.X * 2 + ImGui.GetStyle().ItemSpacing.X * 2))
+                DrawSources(piece);
+            ImGui.Separator();
+        }
+    }
+
+    private string WhereOwned(GlamourItem piece) => ownership.Current?.LocationsOf(piece.Id).FirstOrDefault()?.DisplayName ?? "";
+
+    /// <summary>The source of the piece's highest ranked category, as "Kategorie: Titel".</summary>
+    private string BestSource(GlamourItem piece)
+    {
+        if (!sources.IsReady || SourceRanking.Top(sources.Index.KnownCategoriesOf(piece.Id)) is not { } top)
+            return "";
+        var source = sources.Index.SourcesOf(piece.Id).FirstOrDefault(s => s.Category == top);
+        return source == null ? SourceCategories.DisplayName(top) : $"{SourceCategories.DisplayName(top)}: {source.Title}";
     }
 
     private void DrawSources(GlamourItem item)

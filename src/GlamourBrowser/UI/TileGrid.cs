@@ -11,6 +11,7 @@ using GlamourBrowser.Browser;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Layout;
 using GlamourBrowser.Core.Rendering;
+using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Sources;
 using GlamourBrowser.Core.Ui;
 using GlamourBrowser.Data;
@@ -49,7 +50,7 @@ public sealed class TileGrid
     private readonly Theme.Theme theme;
     private readonly SourceService sources;
     private readonly JobCatalog jobs;
-    private readonly Dictionary<uint, TileLabels> labels = new();
+    private readonly Dictionary<(uint ItemId, SetId Set), TileLabels> labels = new();
     private (float Width, float FontSize, int Ownership, bool SourcesReady) labelsFor;
     private int ownershipVersion;
 
@@ -71,9 +72,9 @@ public sealed class TileGrid
     public void Draw()
     {
         // Slot selection sits above the tiles it filters, the tile display options right-aligned next to it.
-        var slots = state.Filter.Slots;
-        if (SlotBar.Draw("slotbar", ref slots, theme, DisplayOptionsWidth()))
-            state.Filter = state.Filter with { Slots = slots };
+        var filter = state.Filter;
+        if (SlotBar.Draw("slotbar", ref filter, theme, DisplayOptionsWidth()))
+            state.Filter = filter;
         DrawDisplayOptions();
         ImGui.Spacing();
 
@@ -85,6 +86,20 @@ public sealed class TileGrid
 
         if (pool.Status is { } status)
             ImGui.TextColored(new Vector4(1f, 0.8f, 0.3f, 1f), status);
+
+        if (state.Filter.Sets && state.Results.Count == 0)
+        {
+            if (!sources.IsReady)
+            {
+                ImGui.TextDisabled("Serien werden geladen …");
+                return;
+            }
+            if (sources.Index.Failures.Contains("Serien"))
+            {
+                ImGui.TextDisabled("Serien konnten nicht geladen werden");
+                return;
+            }
+        }
 
         var avail = ImGui.GetContentRegionAvail();
         var spacing = ImGui.GetStyle().ItemSpacing.X;
@@ -189,16 +204,10 @@ public sealed class TileGrid
 
     private void DrawTile(TileSubject subject, Vector2 size)
     {
-        if (subject is not ItemSubject { Item: var item })
-        {
-            ImGui.Dummy(size);
-            return;
-        }
-
         const float rounding = 8f;
         var colors = theme.Colors;
         var pos = ImGui.GetCursorScreenPos();
-        if (ImGui.InvisibleButton($"##tile{item.Id}", size))
+        if (ImGui.InvisibleButton($"##tile{subject.Id.ItemId}-{subject.Id.Set.Kind}{subject.Id.Set.Value}", size))
         {
             state.Selected = subject;
             live.Select(subject);
@@ -209,7 +218,8 @@ public sealed class TileGrid
         drawList.AddRectFilled(pos, pos + size, hovered ? colors.CardRaised : colors.Card, rounding);
 
         var key = state.KeyFor(subject);
-        var owned = ownership.Current?.IsOwned(item.Id) ?? false;
+        // A set counts as owned when it is complete.
+        var owned = subject is SetSubject set ? SetProgress.Of(set, IsOwned).Complete : IsOwned(subject.Wear[0].Id);
         var selected = state.Selected?.Id == subject.Id;
         if (cache.TryGet(key, out var texture) && texture != null)
         {
@@ -217,7 +227,9 @@ public sealed class TileGrid
         }
         else
         {
-            var icon = Plugin.TextureProvider.GetFromGameIcon(new GameIconLookup(item.IconId)).GetWrapOrEmpty();
+            // A set shows the icon of its body piece (or its first piece) until the render is there.
+            var iconId = (subject.Wear.FirstOrDefault(w => w.Slot == EquipSlot.Body) ?? subject.Wear[0]).IconId;
+            var icon = Plugin.TextureProvider.GetFromGameIcon(new GameIconLookup(iconId)).GetWrapOrEmpty();
             var iconSize = new Vector2(MathF.Min(size.X * 0.5f, 64 * UiScale.Global));
             var iconPos = pos + (size - iconSize) / 2;
             drawList.AddImage(icon.Handle, iconPos, iconPos + iconSize);
@@ -236,12 +248,12 @@ public sealed class TileGrid
             var shadeTop = pos + new Vector2(0, size.Y - stripHeight);
             drawList.AddRectFilled(shadeTop, pos + size, 0xB0000000, rounding, ImDrawFlags.RoundCornersBottom);
             var textX = 6f;
-            var text = LabelsFor(item, owned, size.X - 12);
+            var text = LabelsFor(subject, owned, size.X - 12);
             drawList.AddText(shadeTop + new Vector2(textX, 4), colors.Text, text.Name);
             if (rows >= 2)
                 drawList.AddText(shadeTop + new Vector2(textX, 4 + lineHeight), colors.TextMuted, text.Line);
             if (rows >= 3)
-                DrawTraitIcons(drawList, item, text, shadeTop + new Vector2(textX, 6 + lineHeight * 2), size.X - 12, iconSize);
+                DrawTraitIcons(drawList, subject, text, shadeTop + new Vector2(textX, 6 + lineHeight * 2), size.X - 12, iconSize);
         }
 
         if (pool.Failures.TryGetValue(key, out var error))
@@ -266,12 +278,23 @@ public sealed class TileGrid
         drawList.AddTriangleFilled(corner, corner - new Vector2(badge, 0), corner + new Vector2(0, badge), frame.BadgeColor);
     }
 
-    /// <summary>The tile's texts and icons from the per-item cache, built on the first frame the tile shows.</summary>
-    private TileLabels LabelsFor(GlamourItem item, bool owned, float width)
-    {
-        if (labels.TryGetValue(item.Id, out var cached))
-            return cached;
+    private bool IsOwned(uint itemId) => ownership.Current?.IsOwned(itemId) ?? false;
 
+    /// <summary>The tile's texts and icons from the per-subject cache, built on the first frame the tile shows.</summary>
+    private TileLabels LabelsFor(TileSubject subject, bool owned, float width)
+    {
+        if (labels.TryGetValue(subject.Id, out var cached))
+            return cached;
+        return labels[subject.Id] = subject switch
+        {
+            SetSubject set => SetLabels(set, width),
+            ItemSubject { Item: var item } => ItemLabels(item, owned, width),
+            _ => throw new ArgumentOutOfRangeException(nameof(subject)),
+        };
+    }
+
+    private TileLabels ItemLabels(GlamourItem item, bool owned, float width)
+    {
         var categories = sources.IsReady ? sources.Index.KnownCategoriesOf(item.Id) : null;
         // Owned: where it is; missing: where to get it.
         var places = owned ? ownership.Current?.LocationsOf(item.Id).Select(l => l.DisplayName).ToList() ?? [] : [];
@@ -290,33 +313,45 @@ public sealed class TileGrid
             icons.Add(new TraitIcon(TraitKind.Trade, tradeIcon, glyph, Tooltip: TileInfo.TradeText(item.Trade)));
         }
         if (categories != null)
-            icons.AddRange(SourceRanking.Icons(categories).Select(category => new TraitIcon(TraitKind.Source, 0, default, category)));
+            icons.AddRange(SourceTraitIcons(categories));
+        return new TileLabels(Truncate(item.Name, width), Truncate(line, width), icons.ToArray(), JobIcon(item.ClassJobIds));
+    }
 
-        // The job/role icon stands apart, right-aligned.
-        TraitIcon? job = null;
-        var badge = JobBadges.For(JobBadges.CollapseClasses(item.ClassJobIds, jobs.ParentOf), jobs.GroupOf, jobs.All.Count);
-        if (badge.Kind != JobBadgeKind.None)
-        {
-            var info = badge.Kind == JobBadgeKind.Job ? jobs.Find(badge.JobId) : null;
-            job = new TraitIcon(TraitKind.Job, info?.IconId ?? JobCatalog.RoleIcon(badge.Group), FontAwesomeIcon.User,
-                                Tooltip: info?.Name ?? JobGroups.DisplayName(badge.Group));
-        }
-        return labels[item.Id] = new TileLabels(Truncate(item.Name, width), Truncate(line, width), icons.ToArray(), job);
+    /// <summary>A set: name, level and progress, the source icons of all pieces and the jobs every armour piece fits.</summary>
+    private TileLabels SetLabels(SetSubject set, float width)
+    {
+        var categories = sources.IsReady ? SetFilter.CategoriesOf(set, sources.Index.KnownCategoriesOf) : null;
+        var line = TileInfo.SetLine(set.Set.Level, SetProgress.Of(set, IsOwned));
+        return new TileLabels(Truncate(set.Name, width), Truncate(line, width), categories != null ? SourceTraitIcons(categories).ToArray() : [], JobIcon(set.ArmourJobs));
+    }
+
+    private static IEnumerable<TraitIcon> SourceTraitIcons(IReadOnlySet<SourceCategory> categories)
+        => SourceRanking.Icons(categories).Select(category => new TraitIcon(TraitKind.Source, 0, default, category));
+
+    /// <summary>The job/role icon; it stands apart, right-aligned.</summary>
+    private TraitIcon? JobIcon(IReadOnlySet<uint> classJobIds)
+    {
+        var badge = JobBadges.For(JobBadges.CollapseClasses(classJobIds, jobs.ParentOf), jobs.GroupOf, jobs.All.Count);
+        if (badge.Kind == JobBadgeKind.None)
+            return null;
+        var info = badge.Kind == JobBadgeKind.Job ? jobs.Find(badge.JobId) : null;
+        return new TraitIcon(TraitKind.Job, info?.IconId ?? JobCatalog.RoleIcon(badge.Group), FontAwesomeIcon.User,
+                             Tooltip: info?.Name ?? JobGroups.DisplayName(badge.Group));
     }
 
     /// <summary>Dye channels, tradability and one source icon per group, the job/role right-aligned; cut off on the right when the tile is narrow.</summary>
-    private void DrawTraitIcons(ImDrawListPtr drawList, GlamourItem item, TileLabels text, Vector2 min, float width, float iconSize)
+    private void DrawTraitIcons(ImDrawListPtr drawList, TileSubject subject, TileLabels text, Vector2 min, float width, float iconSize)
     {
         const float spacing = 3f;
         var (fit, showRight) = TileInfo.FitRow(text.Icons.Length, text.Job != null, iconSize, spacing, width);
         var windowHovered = ImGui.IsWindowHovered();
         for (var i = 0; i < fit; i++)
-            DrawTrait(drawList, item, text.Icons[i], min + new Vector2(i * (iconSize + spacing), 0), iconSize, windowHovered);
+            DrawTrait(drawList, subject, text.Icons[i], min + new Vector2(i * (iconSize + spacing), 0), iconSize, windowHovered);
         if (showRight)
-            DrawTrait(drawList, item, text.Job!.Value, min + new Vector2(width - iconSize, 0), iconSize, windowHovered);
+            DrawTrait(drawList, subject, text.Job!.Value, min + new Vector2(width - iconSize, 0), iconSize, windowHovered);
     }
 
-    private void DrawTrait(ImDrawListPtr drawList, GlamourItem item, TraitIcon icon, Vector2 at, float iconSize, bool windowHovered)
+    private void DrawTrait(ImDrawListPtr drawList, TileSubject subject, TraitIcon icon, Vector2 at, float iconSize, bool windowHovered)
     {
         var colors = theme.Colors;
         if (icon.Kind == TraitKind.Source)
@@ -327,8 +362,12 @@ public sealed class TileGrid
             drawList.AddText(ImGui.GetFont(), ImGui.GetFontSize() * 0.75f, at + new Vector2(iconSize * 0.6f, iconSize * 0.35f), colors.Text, icon.Label);
         // Only the icon itself shows a tooltip; the rest of the tile has none.
         if (windowHovered && ImGui.IsMouseHoveringRect(at, at + new Vector2(iconSize)))
-            ImGui.SetTooltip(icon.Tooltip ?? TileInfo.SourceTooltip(icon.Category, sources.Index.SourcesOf(item.Id)));
+            ImGui.SetTooltip(icon.Tooltip ?? SourceTooltip(subject, icon.Category));
     }
+
+    private string SourceTooltip(TileSubject subject, SourceCategory category) => subject is SetSubject set
+        ? TileInfo.SetSourceTooltip(category, set.Pieces.Select(p => (p.Name, sources.Index.SourcesOf(p.Id))).ToList())
+        : TileInfo.SourceTooltip(category, sources.Index.SourcesOf(subject.Wear[0].Id));
 
     /// <summary>A source category icon; savage gets a red corner because the game has no own icon for it.</summary>
     public static void DrawSourceIcon(ImDrawListPtr drawList, SourceCategory category, Vector2 min, float size, uint fallbackColor)

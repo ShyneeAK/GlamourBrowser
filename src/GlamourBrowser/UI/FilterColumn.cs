@@ -60,11 +60,16 @@ public sealed class FilterColumn
 
         if (Section.Begin("dye", "Färbbar", config))
         {
-            foreach (var (count, label) in new[] { (0, "nicht färbbar"), (1, "1 Kanal"), (2, "2 Kanäle") })
+            if (f.Sets)
+                ImGui.TextDisabled("gilt nur für einzelne Items");
+            using (ImRaii.Disabled(f.Sets))
             {
-                var on = f.DyeCounts.Contains(count);
-                if (ImGui.Checkbox(label, ref on))
-                    state.Filter = f with { DyeCounts = Toggle(f.DyeCounts, count, on) };
+                foreach (var (count, label) in new[] { (0, "nicht färbbar"), (1, "1 Kanal"), (2, "2 Kanäle") })
+                {
+                    var on = f.DyeCounts.Contains(count);
+                    if (ImGui.Checkbox(label, ref on))
+                        state.Filter = f with { DyeCounts = Toggle(f.DyeCounts, count, on) };
+                }
             }
             Section.End();
         }
