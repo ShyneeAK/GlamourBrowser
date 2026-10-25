@@ -25,6 +25,10 @@ public sealed class Configuration : IPluginConfiguration
     /// <summary>Weapon tiles with the weapon drawn (slower: every tile plays the draw); off = on the back.</summary>
     public bool TileWeaponsDrawn { get; set; }
     public bool DimMissingTiles { get; set; } = true;
+    /// <summary>The wishlist mode leaves out done wishes ("Erledigte ausblenden").</summary>
+    public bool HideDoneWishes { get; set; }
+    /// <summary>The wishlist mode shows the missing pieces grouped by source instead of tiles.</summary>
+    public bool WishlistBySource { get; set; }
     /// <summary>The plugin's own UI scale on top of Dalamud's, 0.5–3.</summary>
     public float UiScale { get; set; } = 1f;
     public bool FilterColumnVisible { get; set; } = true;

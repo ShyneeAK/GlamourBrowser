@@ -16,6 +16,7 @@ using GlamourBrowser.Ownership;
 using GlamourBrowser.Rendering;
 using GlamourBrowser.Sources;
 using GlamourBrowser.UI;
+using GlamourBrowser.Wishlist;
 
 namespace GlamourBrowser;
 
@@ -42,6 +43,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly MainWindow mainWindow;
     private readonly SettingsWindow settingsWindow;
     private readonly OwnershipService ownership;
+    private readonly WishlistService wishlist;
     private readonly InventoryReader inventoryReader;
     private readonly RetainerReader retainerReader;
     private readonly DresserReader dresserReader;
@@ -64,6 +66,7 @@ public sealed class Plugin : IDalamudPlugin
         calibration = new CalibrationService(config);
         var (catalog, variants) = ItemCatalogLoader.Load(DataManager);
         ownership = new OwnershipService(variants);
+        wishlist = new WishlistService(variants);
         inventoryReader = new InventoryReader(ownership);
         retainerReader = new RetainerReader(ownership);
         dresserReader = new DresserReader(ownership);
@@ -76,7 +79,7 @@ public sealed class Plugin : IDalamudPlugin
         // Variants too: their sources are merged into the base item.
         sources = new SourceService(catalog.Select(i => i.Id).Concat(variants.Keys).ToHashSet());
         var sets = new SetCatalog(byId, variants, sources);
-        browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets);
+        browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets, wishlist);
         Framework.Update += OnFrameworkUpdate;
         UI.UiScale.Set(config.UiScale);
         var theme = new UI.Theme.Theme(config);
@@ -199,6 +202,7 @@ public sealed class Plugin : IDalamudPlugin
         dresserReader.Dispose();
         retainerReader.Dispose();
         inventoryReader.Dispose();
+        wishlist.Dispose();
         ownership.Dispose();
     }
 }

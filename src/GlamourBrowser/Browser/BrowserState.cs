@@ -7,13 +7,15 @@ using GlamourBrowser.Core.Layout;
 using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Sources;
+using GlamourBrowser.Core.Wishlist;
 using GlamourBrowser.Ownership;
 using GlamourBrowser.Rendering;
 using GlamourBrowser.Sources;
+using GlamourBrowser.Wishlist;
 
 namespace GlamourBrowser.Browser;
 
-/// <summary>Filter, paging and layout of the tile grid (items or, in the set mode, sets); keeps the render queue in sync with what is shown.</summary>
+/// <summary>Filter, paging and layout of the tile grid (items, sets or the wishlist); keeps the render queue in sync with what is shown.</summary>
 public sealed class BrowserState
 {
     private readonly IReadOnlyList<GlamourItem> catalog;
@@ -24,15 +26,18 @@ public sealed class BrowserState
     private readonly Configuration config;
     private readonly SourceService sources;
     private readonly SetCatalog sets;
+    private readonly WishlistService wishlist;
     // One subject per catalog item, made once instead of on every refresh.
     private readonly IReadOnlyDictionary<uint, ItemSubject> itemSubjects;
     private FilterState filter = new();
 
     public BrowserState(IReadOnlyList<GlamourItem> catalog, OwnershipService ownership, AppearanceTracker appearance,
-                        TileQueue queue, TileCache<IDalamudTextureWrap> cache, RenderPool pool, Configuration config, SourceService sources, SetCatalog sets)
+                        TileQueue queue, TileCache<IDalamudTextureWrap> cache, RenderPool pool, Configuration config, SourceService sources, SetCatalog sets,
+                        WishlistService wishlist)
     {
         this.sources = sources;
         this.sets = sets;
+        this.wishlist = wishlist;
         this.catalog = catalog;
         itemSubjects = catalog.ToDictionary(i => i.Id, i => new ItemSubject(i));
         this.ownership = ownership;
@@ -47,6 +52,7 @@ public sealed class BrowserState
         // The pose is part of the tile key: new keys render, the cache drops the old ones; with the standard pose nothing changes.
         appearance.PoseChanged += RequestTiles;
         ownership.Changed += OnOwnershipChanged;
+        wishlist.Changed += OnWishlistChanged;
         pool.Disrupted += RequestTiles;
         sources.Ready += Refresh;
         Refresh();
@@ -69,6 +75,9 @@ public sealed class BrowserState
     public int PageCount => ItemFilter.PageCount(Results.Count, PageSize);
     public PageLayoutResult Layout { get; private set; }
     public TileSubject? Selected { get; set; }
+
+    /// <summary>Every wishlist entry that resolves to an item or set, newest first (sets only once the source index is ready).</summary>
+    public IReadOnlyList<TileSubject> WishlistEntries { get; private set; } = [];
 
     /// <summary>Items (or sets) per source category under all other filters (the numbers behind the category checkboxes).</summary>
     public IReadOnlyDictionary<SourceCategory, int> CountsWithoutCategories { get; private set; } = new Dictionary<SourceCategory, int>();
@@ -114,6 +123,20 @@ public sealed class BrowserState
         RequestTiles();
     }
 
+    public void SetHideDoneWishes(bool hide)
+    {
+        config.HideDoneWishes = hide;
+        config.Save();
+        Refresh();
+    }
+
+    public void SetWishlistBySource(bool bySource)
+    {
+        config.WishlistBySource = bySource;
+        config.Save();
+        Refresh();
+    }
+
     public void SetSort(SortOrder sort)
     {
         config.Sort = sort;
@@ -155,7 +178,10 @@ public sealed class BrowserState
             var index = sources.IsReady ? sources.Index : null;
             Func<uint, bool> isOwned = id => store?.IsOwned(id) ?? false;
             var sorted = filter with { Sort = config.Sort };
-            if (filter.Sets)
+            WishlistEntries = ResolveWishlist();
+            if (filter.Wishlist)
+                Results = WishResults.Filter(WishlistEntries, filter.SearchText, config.HideDoneWishes, isOwned);
+            else if (filter.Sets)
             {
                 // Without the index there are no sets yet (the grid says so).
                 var (setResults, withoutCategories) = SetFilter.Apply(index == null ? [] : sets.All, sorted, isOwned, appearance.Race, appearance.Sex,
@@ -225,9 +251,25 @@ public sealed class BrowserState
 
     private IReadOnlyList<TileSubject> Subjects(IReadOnlyList<GlamourItem> items) => items.Select(i => (TileSubject)itemSubjects[i.Id]).ToList();
 
+    private IReadOnlyList<TileSubject> ResolveWishlist()
+        => wishlist.Current is { } store
+            ? WishResults.Resolve(store.Entries, id => itemSubjects.GetValueOrDefault(id), id => sets.Find(id))
+            : [];
+
     private void OnOwnershipChanged()
     {
-        if (filter.Ownership != OwnershipFilter.All)
+        if (filter.Ownership != OwnershipFilter.All || filter.Wishlist)
             Refresh();
+    }
+
+    private void OnWishlistChanged()
+    {
+        if (filter.Wishlist)
+            Refresh();
+        else
+        {
+            lock (RenderSync.Lock)
+                WishlistEntries = ResolveWishlist();
+        }
     }
 }
