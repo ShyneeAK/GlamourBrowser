@@ -6,8 +6,10 @@ namespace GlamourBrowser.Sources;
 /// <summary>
 /// Builds the source index from Lumina and LuminaSupplemental. Each source family runs in its own
 /// try/catch: a failing family is logged and marked, the others still make it into the index.
+/// A cancelled <paramref name="cancel"/> stops the build before the next family with an
+/// <see cref="OperationCanceledException"/>.
 /// </summary>
-public sealed class SourceIndexBuilder(GameData data, IReadOnlySet<uint> relevantItems, Action<string> log)
+public sealed class SourceIndexBuilder(GameData data, IReadOnlySet<uint> relevantItems, Action<string> log, CancellationToken cancel = default)
 {
     public SourceIndex Build()
     {
@@ -38,6 +40,7 @@ public sealed class SourceIndexBuilder(GameData data, IReadOnlySet<uint> relevan
 
     private void Run(SourceIndex.Builder builder, string family, Action action)
     {
+        cancel.ThrowIfCancellationRequested();
         try
         {
             action();

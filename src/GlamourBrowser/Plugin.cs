@@ -181,6 +181,8 @@ public sealed class Plugin : IDalamudPlugin
         UI.UiScale.Dispose();
 
         Framework.Update -= OnFrameworkUpdate;
+        // A source build still running at unload must not hand its index to the parts released below.
+        sources.Dispose();
         // CharaViews must be released on the framework thread.
         Framework.RunOnFrameworkThread(() =>
         {
