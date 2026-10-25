@@ -45,6 +45,16 @@ public sealed record SetSubject(GlamourSet Set, IReadOnlyList<GlamourItem> Piece
 
     public bool Allows(byte race, byte sex) => Pieces.All(p => p.Restriction.Allows(race, sex));
 
+    private static readonly IReadOnlyDictionary<EquipSlot, (byte Stain0, byte Stain1)> NoDyes = new Dictionary<EquipSlot, (byte, byte)>();
+
+    /// <summary>The dye of each slot (custom sets); a slot without an entry is undyed.</summary>
+    public IReadOnlyDictionary<EquipSlot, (byte Stain0, byte Stain1)> Dyes { get; init; } = NoDyes;
+
+    public (byte Stain0, byte Stain1) StainsOf(EquipSlot slot) => Dyes.GetValueOrDefault(slot);
+
+    /// <summary>A custom set's content hash, part of its tile key so that a changed set renders again; 0 for detected sets.</summary>
+    public uint Variant { get; init; }
+
     /// <summary>The set with its pieces from the catalog; unknown pieces drop out, the first piece of a slot wins. Null below 2 pieces.</summary>
     public static SetSubject? Resolve(GlamourSet set, Func<uint, GlamourItem?> itemOf)
     {

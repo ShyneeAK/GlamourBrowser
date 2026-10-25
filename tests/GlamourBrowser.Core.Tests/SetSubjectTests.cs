@@ -103,4 +103,12 @@ public class SetSubjectTests
         var resolved = SetSubject.ResolveAll(sets, id => items.FirstOrDefault(i => i.Id == baseOf.GetValueOrDefault(id, id)));
         Assert.Equal(new SetId(SetKind.Model, 1), Assert.Single(resolved).Set.Id);
     }
+
+    [Fact]
+    public void StainsOf_DefaultsToNone_ForDetectedSets()
+    {
+        var set = Subject(Item(1, Head), Item(2, Body));
+        Assert.Equal(((byte)0, (byte)0), set.StainsOf(Body));
+        Assert.Equal(0u, set.Variant);
+    }
 }
