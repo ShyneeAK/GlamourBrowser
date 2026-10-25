@@ -15,7 +15,6 @@ public sealed unsafe class LivePreview : IDisposable
     private readonly AppearanceTracker appearance;
     private readonly Configuration config;
     private readonly Func<EquipSlot, CameraPreset?> cameraFor;
-    private readonly Func<GlamourItem, byte?> stanceJobOf;
     private CharaViewHandle? view;
     private CharaViewHandle? suspended;
     // The variant is a custom set's content hash: an edited set (or draft) is dressed again.
@@ -24,10 +23,8 @@ public sealed unsafe class LivePreview : IDisposable
     private float rotateX, rotateY, panX, panY, zoom;
     private bool reset;
 
-    public LivePreview(RenderPool pool, AppearanceTracker appearance, Configuration config, Func<EquipSlot, CameraPreset?> cameraFor,
-                       Func<GlamourItem, byte?> stanceJobOf)
+    public LivePreview(RenderPool pool, AppearanceTracker appearance, Configuration config, Func<EquipSlot, CameraPreset?> cameraFor)
     {
-        this.stanceJobOf = stanceJobOf;
         this.pool = pool;
         this.appearance = appearance;
         this.config = config;
@@ -39,6 +36,10 @@ public sealed unsafe class LivePreview : IDisposable
     /// <summary>Weapon in hand instead of sheathed, toggled from the UI like the game's try-on window.</summary>
     public bool WeaponDrawn { get; set; }
     private bool? appliedWeaponDrawn;
+    // The kind of weapon in hand (WeaponStance, RenderPool.OwnWeapon for the outfit's own); null when sheathed.
+    private string? inHandStance;
+    // Frames spent sheathing before another kind of weapon loads; -1 while not sheathing.
+    private int sheatheFrames = -1;
 
     /// <summary>Weapon shown or hidden, toggled from the UI like the game's try-on window.</summary>
     public bool WeaponVisible { get; set; } = true;
@@ -104,6 +105,8 @@ public sealed unsafe class LivePreview : IDisposable
             appliedPose = null;
             appliedWeaponDrawn = null;
             appliedWeaponVisible = null;
+            inHandStance = null;
+            sheatheFrames = -1;
         }
 
         view.Tick();
@@ -114,6 +117,29 @@ public sealed unsafe class LivePreview : IDisposable
         var camera = cameraFor(subject?.CameraSlot ?? EquipSlot.Body);
         var mode = subject != null ? config.TileMode : TileMode.CurrentOutfit;
         var wanted = (subject?.Id ?? default, (subject as SetSubject)?.Variant ?? 0, mode, appearance.Hash, camera);
+
+        // The game picks the stance when a weapon is drawn and keeps it for the next weapon loaded into the hand: before
+        // another kind of weapon loads, the drawn one is sheathed (only while nothing loads), and drawn anew below.
+        var (weaponDrawn, weaponVisible) = LiveWeapons.Effective(subject, WeaponDrawn, WeaponVisible);
+        var stance = WeaponStance.Of(subject) ?? RenderPool.OwnWeapon;
+        if (applied != wanted && weaponDrawn && appliedWeaponDrawn == true && inHandStance != stance && sheatheFrames < 0 && view.IsIdle)
+        {
+            view.SetWeaponDrawn(false);
+            appliedWeaponDrawn = false;
+            inHandStance = null;
+            sheatheFrames = 0;
+        }
+        if (sheatheFrames >= 0)
+        {
+            // On the back, or given up after the timeout (the weapon then keeps the old stance).
+            if (++sheatheFrames < RenderPool.SheatheMinFrames || view.IsWeaponInHand() && sheatheFrames < RenderPool.SheatheTimeoutFrames || !view.IsIdle)
+            {
+                ApplyCameraInput(view);
+                return;
+            }
+            sheatheFrames = -1;
+        }
+
         if (applied != wanted && view.IsIdle)
         {
             view.ApplyOutfit(appearance.Outfit, mode, subject?.Slots ?? 0);
@@ -129,7 +155,6 @@ public sealed unsafe class LivePreview : IDisposable
         }
 
         // With the weapon drawn the battle stance is the base animation: an idle pose override would hide it.
-        var (weaponDrawn, weaponVisible) = LiveWeapons.Effective(subject, WeaponDrawn, WeaponVisible);
         var pose = config.UseIdlePose && !weaponDrawn ? appearance.IdlePose : TileKey.StandardPose;
         if (appliedPose != pose && view.State == CharaViewHandle.StateReady)
         {
@@ -144,18 +169,15 @@ public sealed unsafe class LivePreview : IDisposable
             appliedWeaponVisible = weaponVisible;
         }
 
-        // The weapon is held in the stance of the job set on the character (a weapon's own job, else the player's): a
-        // new job while the weapon is in hand sheathes it now, the block below draws it again on the next tick.
-        var job = subject is ItemSubject { Item: var item } ? stanceJobOf(item) : null;
-        if (weaponDrawn && view.IsIdle && view.SetClassJob(job) && appliedWeaponDrawn == true)
+        // Drawn or sheathed once the items have loaded (a toggle during a load is ignored); drawn without a job like the
+        // game's try-on window, so the weapon is held in its own stance.
+        if (appliedWeaponDrawn != weaponDrawn && view.IsIdle)
         {
-            view.SetWeaponDrawn(false);
-            appliedWeaponDrawn = null;
-        }
-        else if (appliedWeaponDrawn != weaponDrawn && view.State == CharaViewHandle.StateReady)
-        {
+            if (weaponDrawn)
+                view.UseTryonJob();
             view.SetWeaponDrawn(weaponDrawn);
             appliedWeaponDrawn = weaponDrawn;
+            inHandStance = weaponDrawn ? stance : null;
             appliedWeaponVisible = null;
         }
 

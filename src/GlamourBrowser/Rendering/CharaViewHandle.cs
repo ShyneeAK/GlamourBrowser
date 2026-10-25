@@ -75,23 +75,17 @@ public sealed unsafe class CharaViewHandle : IDisposable
         // Used by the game for EquipRestriction checks.
         view->Race = race;
         view->Sex = sex;
-        ownJob = source->CharacterData.ClassJob;
     }
 
-    private byte ownJob;
-
     /// <summary>
-    /// Gives the view's character the job (null: the player's own, taken over at creation), so a drawn weapon is held in
-    /// that job's battle stance. True when it changed: a weapon already in hand has to be drawn anew to take it on.
+    /// Gives the view's character no job, like the game's try-on window (seen with /gbrowser diag): a weapon drawn
+    /// afterwards is held in its own stance instead of the player's job's. Call before drawing.
     /// </summary>
-    public bool SetClassJob(byte? job)
+    public void UseTryonJob()
     {
         var character = view != null && view->State == StateReady ? view->GetCharacter() : null;
-        var wanted = job ?? ownJob;
-        if (character == null || wanted == 0 || character->CharacterData.ClassJob == wanted)
-            return false;
-        character->CharacterData.ClassJob = wanted;
-        return true;
+        if (character != null)
+            character->CharacterData.ClassJob = 0;
     }
 
     /// <summary>Call once per framework tick.</summary>
@@ -286,7 +280,30 @@ public sealed unsafe class CharaViewHandle : IDisposable
         if (view == null)
             return $"slot {Index}: no view";
         return $"slot {Index}: state {view->State}, copied {view->CharacterDataCopied}, loaded {view->CharacterLoaded}, idle {IsIdle}, " +
-               $"ModelData.WeaponHidden {view->ModelData.WeaponHidden} | " + DescribeCharacter(view->GetCharacter());
+               $"ModelData.WeaponHidden {view->ModelData.WeaponHidden} | " + DescribeCharacter(view->GetCharacter())
+               + " || " + DescribeModelData(view);
+    }
+
+    /// <summary>Diagnostics: the view's model data as hex (0x48–0xE0 of the CharaView), to compare views byte by byte.</summary>
+    public static string DescribeModelData(CharaView* view)
+    {
+        if (view == null)
+            return "no model data";
+        var bytes = new ReadOnlySpan<byte>((byte*)view + 0x48, 0xE0 - 0x48);
+        return $"modelData {Convert.ToHexString(bytes)}";
+    }
+
+    /// <summary>Diagnostics: job, animation state and the playing timelines of a character (the battle stance is one of them).</summary>
+    public static string DescribeAnimation(Character* character)
+    {
+        if (character == null)
+            return "no character";
+        var timeline = &character->Timeline;
+        var ids = new System.Text.StringBuilder();
+        foreach (var id in timeline->TimelineSequencer.TimelineIds)
+            ids.Append(id).Append(' ');
+        return $"job {character->CharacterData.ClassJob}, mode {character->Mode}, modelState {timeline->ModelState}, " +
+               $"baseOverride {timeline->BaseOverride}, timelines [{ids.ToString().TrimEnd()}]";
     }
 
     /// <summary>Diagnostics: weapon state, draw flags, scene links and positions of a character's body and weapons.</summary>
@@ -294,7 +311,7 @@ public sealed unsafe class CharaViewHandle : IDisposable
     {
         if (character == null)
             return "no character";
-        var text = $"IsWeaponHidden {character->DrawData.IsWeaponHidden}, IsWeaponDrawn {character->IsWeaponDrawn}, Flags1 {character->DrawData.Flags1:X2}, Flags2 {character->DrawData.Flags2:X2}";
+        var text = $"{DescribeAnimation(character)}, IsWeaponHidden {character->DrawData.IsWeaponHidden}, IsWeaponDrawn {character->IsWeaponDrawn}, Flags1 {character->DrawData.Flags1:X2}, Flags2 {character->DrawData.Flags2:X2}";
         var body = character->GameObject.DrawObject;
         if (body == null)
             return text + ", no body";

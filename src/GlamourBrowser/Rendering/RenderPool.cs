@@ -34,9 +34,14 @@ public sealed unsafe class RenderPool : IDisposable
     // When the weapon is still not in hand, sheathe and draw again every this many frames, at most MaxDrawRetries times.
     private const int DrawRetryFrames = 20;
     private const int MaxDrawRetries = 2;
+    // Sheathing a weapon of another kind before the next weapon tile: at least this long, at most until the timeout.
+    internal const int SheatheMinFrames = 8;
+    internal const int SheatheTimeoutFrames = 90;
+    // The stance of a drawn weapon that is not the tile's own (the outfit's weapon behind an off-hand tile).
+    internal const string OwnWeapon = "own";
     private static readonly TimeSpan IdleRelease = TimeSpan.FromSeconds(5);
 
-    private enum Phase { WaitReady, Apply, Loading, Settle, Pose, Blend, Freeze, Copy }
+    private enum Phase { WaitReady, Apply, Sheathe, Loading, Settle, Pose, Blend, Freeze, Copy }
 
     private sealed class Worker(CharaViewHandle view)
     {
@@ -57,8 +62,9 @@ public sealed unsafe class RenderPool : IDisposable
         public int DrawRetries { get; set; }
         /// <summary>A retry toggled the weapon the other way last frame; this frame toggles it back.</summary>
         public bool RetryPending { get; set; }
-        /// <summary>The job the tile's character holds its weapon as (Core's StanceJob); null: the player's own.</summary>
-        public byte? WeaponJob { get; set; }
+        public TileSubject? Subject { get; set; }
+        /// <summary>The kind of weapon in hand (<see cref="WeaponStance"/>), whose stance it is held in; null when sheathed.</summary>
+        public string? InHandStance { get; set; }
         /// <summary>What the view wears besides the tile's items: the outfit of this look without these slots (a <see cref="SlotMask"/>).</summary>
         public (TileMode Mode, ulong Hash, ushort Except)? DressedAs { get; set; }
         public bool Busy => Key != null;
@@ -69,7 +75,6 @@ public sealed unsafe class RenderPool : IDisposable
     private readonly Func<TileKey, TileSubject?> lookup;
     private readonly AppearanceTracker appearance;
     private readonly Func<EquipSlot, CameraPreset?> cameraFor;
-    private readonly Func<GlamourItem, byte?> stanceJobOf;
     private readonly List<Worker> workers = new();
     private readonly List<CharaViewHandle> suspended = new();
     private readonly Dictionary<TileKey, string> failures = new();
@@ -79,9 +84,8 @@ public sealed unsafe class RenderPool : IDisposable
     private bool freezeWarned;
 
     public RenderPool(TileQueue queue, TileCache<IDalamudTextureWrap> cache, Func<TileKey, TileSubject?> lookup,
-                      AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor, Func<GlamourItem, byte?> stanceJobOf)
+                      AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor)
     {
-        this.stanceJobOf = stanceJobOf;
         this.queue = queue;
         this.cache = cache;
         this.lookup = lookup;
@@ -191,6 +195,50 @@ public sealed unsafe class RenderPool : IDisposable
         }
     }
 
+    /// <summary>Dresses the view for the tile and starts loading it (Loading phase next).</summary>
+    private void Dress(Worker worker, TileKey key, TileSubject subject)
+    {
+        var view = worker.View;
+        // Re-dress when the slots change too, otherwise the previous tile's items (e.g. a hat) stay on the
+        // character. Sets with the same slots as the previous tile only swap their pieces.
+        var except = subject.Slots;
+        var redressed = worker.DressedAs != (key.Mode, key.AppearanceHash, except);
+        if (redressed)
+        {
+            view.ApplyOutfit(appearance.Outfit, key.Mode, except);
+            worker.DressedAs = (key.Mode, key.AppearanceHash, except);
+        }
+        // Sets carry their dyes per slot (custom sets; none for detected ones), items the key's dye.
+        foreach (var piece in subject.Wear)
+        {
+            var (stain0, stain1) = subject is SetSubject set ? set.StainsOf(piece.Slot) : (key.Stain0, key.Stain1);
+            view.SetItem(piece.Slot, piece.Id, stain0, stain1);
+        }
+        // The weapon is drawn or sheathed once the item has loaded (Loading phase), and that has to finish
+        // first (DrawGate in the Pose phase).
+        view.ApplyCamera(cameraFor(subject.CameraSlot));
+        // A view keeps its pose and frozen moment from tile to tile; only a change (or a re-dress, which may
+        // rebuild the character) lets the animation run again and waits for it in the Pose phase.
+        // Weapon tiles always let the animation run: the weapon is attached to the hand by the animation.
+        worker.PoseChanged = redressed || key.WeaponDrawn || worker.LastPose != key.Pose;
+        worker.LastPose = key.Pose;
+        if (worker.PoseChanged)
+        {
+            view.SetAnimationPaused(false);
+            worker.Frozen = false;
+        }
+        if (!view.ApplyIdlePose(key.Pose) && !poseWarned)
+        {
+            // The tile then renders in the standard pose.
+            poseWarned = true;
+            Plugin.Log.Warning($"Idle pose {key.Pose} could not be applied; tiles use the standard pose");
+        }
+        worker.DrawGate = null;
+        worker.RetryPending = false;
+        worker.Frames = 0;
+        worker.Phase = Phase.Loading;
+    }
+
     private void Step(Worker worker)
     {
         var view = worker.View;
@@ -211,46 +259,31 @@ public sealed unsafe class RenderPool : IDisposable
                 }
 
                 worker.Key = key;
-                worker.WeaponJob = subject is ItemSubject { Item: var weapon } ? stanceJobOf(weapon) : null;
+                worker.Subject = subject;
                 worker.Stopwatch.Restart();
-                // Re-dress when the slots change too, otherwise the previous tile's items (e.g. a hat) stay on the
-                // character. Sets with the same slots as the previous tile only swap their pieces.
-                var except = subject.Slots;
-                var redressed = worker.DressedAs != (key.Mode, key.AppearanceHash, except);
-                if (redressed)
-                {
-                    view.ApplyOutfit(appearance.Outfit, key.Mode, except);
-                    worker.DressedAs = (key.Mode, key.AppearanceHash, except);
-                }
-                // Sets carry their dyes per slot (custom sets; none for detected ones), items the key's dye.
-                foreach (var piece in subject.Wear)
-                {
-                    var (stain0, stain1) = subject is SetSubject set ? set.StainsOf(piece.Slot) : (key.Stain0, key.Stain1);
-                    view.SetItem(piece.Slot, piece.Id, stain0, stain1);
-                }
-                // The weapon is drawn or sheathed once the item has loaded (Loading phase), and that has to finish
-                // first (DrawGate in the Pose phase).
-                view.ApplyCamera(cameraFor(subject.CameraSlot));
-                // A view keeps its pose and frozen moment from tile to tile; only a change (or a re-dress, which may
-                // rebuild the character) lets the animation run again and waits for it in the Pose phase.
-                // Weapon tiles always let the animation run: the weapon is attached to the hand by the animation.
-                worker.PoseChanged = redressed || key.WeaponDrawn || worker.LastPose != key.Pose;
-                worker.LastPose = key.Pose;
-                if (worker.PoseChanged)
+                // The game picks the stance when a weapon is drawn and keeps it for the next weapon loaded into the hand:
+                // a weapon of another kind is sheathed first, while nothing loads (a sheathe during a load is ignored),
+                // and drawn anew once the new one has loaded (Loading phase).
+                if (key.WeaponDrawn && view.IsWeaponInHand() && worker.InHandStance != (WeaponStance.Of(subject) ?? OwnWeapon))
                 {
                     view.SetAnimationPaused(false);
                     worker.Frozen = false;
+                    view.SetWeaponDrawn(false);
+                    worker.WeaponDrawn = false;
+                    worker.InHandStance = null;
+                    worker.Frames = 0;
+                    worker.Phase = Phase.Sheathe;
+                    return;
                 }
-                if (!view.ApplyIdlePose(key.Pose) && !poseWarned)
-                {
-                    // The tile then renders in the standard pose.
-                    poseWarned = true;
-                    Plugin.Log.Warning($"Idle pose {key.Pose} could not be applied; tiles use the standard pose");
-                }
-                worker.DrawGate = null;
-                worker.RetryPending = false;
-                worker.Frames = 0;
-                worker.Phase = Phase.Loading;
+                Dress(worker, key, subject);
+                break;
+
+            case Phase.Sheathe:
+                worker.Frames++;
+                // On the back (no item loading), or given up after the timeout: the tile then keeps the old stance.
+                if (worker.Frames < SheatheMinFrames || view.IsWeaponInHand() && worker.Frames < SheatheTimeoutFrames || !view.IsIdle)
+                    return;
+                Dress(worker, worker.Key!.Value, worker.Subject!);
                 break;
 
             case Phase.Loading:
@@ -267,14 +300,11 @@ public sealed unsafe class RenderPool : IDisposable
                 // across item loads, and a toggle can be dropped. The DrawGate waits for the stance to settle.
                 var wantDrawn = worker.Key!.Value.WeaponDrawn;
                 var inHand = view.IsWeaponInHand();
-                // The weapon is held in the stance of the job set on the character: another job than the previous
-                // weapon's means drawing anew, a weapon in hand is sheathed now and drawn on the next frame.
-                var redraw = wantDrawn && view.SetClassJob(worker.WeaponJob) && inHand;
+                if (wantDrawn)
+                    view.UseTryonJob();
                 if (wantDrawn || worker.WeaponDrawn || inHand)
                 {
-                    if (redraw)
-                        view.SetWeaponDrawn(false);
-                    else if (inHand != wantDrawn || worker.WeaponDrawn != wantDrawn)
+                    if (inHand != wantDrawn || worker.WeaponDrawn != wantDrawn)
                         view.SetWeaponDrawn(wantDrawn);
                     if (!wantDrawn)
                     {
@@ -284,8 +314,9 @@ public sealed unsafe class RenderPool : IDisposable
                         worker.PoseChanged = true;
                     }
                     worker.WeaponDrawn = wantDrawn;
+                    worker.InHandStance = wantDrawn ? WeaponStance.Of(worker.Subject) ?? OwnWeapon : null;
                     worker.DrawRetries = 0;
-                    worker.RetryPending = redraw;
+                    worker.RetryPending = false;
                     worker.DrawGate = new DrawGate(DrawMinFrames, DrawStableFrames, DrawTimeoutFrames);
                 }
                 view.ApplyVisibility(showWeapons: true);
