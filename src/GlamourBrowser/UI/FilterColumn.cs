@@ -48,6 +48,21 @@ public sealed class FilterColumn
                 ImGui.SetTooltip("Fehlt: " + string.Join(", ", sources.Index.Failures));
         }
 
+        // The wishlist mode only follows the search; the containers stay readable.
+        if (f.Wishlist)
+            ImGui.TextDisabled("gilt nicht für die Wunschliste");
+        using (ImRaii.Disabled(f.Wishlist))
+            DrawFilterSections(f);
+
+        if (Section.Begin("containers", "Behälter", config))
+        {
+            DrawContainers();
+            Section.End();
+        }
+    }
+
+    private void DrawFilterSections(FilterState f)
+    {
         if (Section.Begin("level", "Level", config))
         {
             var min = f.MinLevel;
@@ -107,12 +122,6 @@ public sealed class FilterColumn
                         state.Filter = f with { Expansions = Toggle(f.Expansions, expansion, on) };
                 }
             }
-            Section.End();
-        }
-
-        if (Section.Begin("containers", "Behälter", config))
-        {
-            DrawContainers();
             Section.End();
         }
     }

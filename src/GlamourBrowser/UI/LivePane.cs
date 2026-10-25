@@ -12,13 +12,13 @@ using GlamourBrowser.Browser;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Sources;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Utility;
 using GlamourBrowser.Sources;
 using GlamourBrowser.Data;
 using GlamourBrowser.Ownership;
 using GlamourBrowser.Rendering;
 using GlamourBrowser.UI.Widgets;
+using GlamourBrowser.Wishlist;
 
 namespace GlamourBrowser.UI;
 
@@ -32,18 +32,17 @@ public sealed unsafe class LivePane
     private readonly JobCatalog jobs;
     private readonly Theme.Theme theme;
     private readonly SourceService sources;
+    private readonly WishlistService wishlist;
     private readonly HashSet<(uint Item, SourceCategory Category)> expanded = new();
     // Pieces of the selected set whose sources are open.
     private readonly HashSet<uint> openPieces = new();
     private const int SourcesPerCategory = 3;
-    private const uint MapIcon = 60561;        // map flag
-    private const uint DutyFinderIcon = 46;    // main menu: duty finder
-    private const uint RecipeIcon = 22;        // main menu: crafting log
 
     public LivePane(BrowserState state, OwnershipService ownership, LivePreview live, CalibrationService calibration, JobCatalog jobs, Theme.Theme theme,
-                    SourceService sources)
+                    SourceService sources, WishlistService wishlist)
     {
         this.sources = sources;
+        this.wishlist = wishlist;
         this.state = state;
         this.ownership = ownership;
         this.live = live;
@@ -162,6 +161,8 @@ public sealed unsafe class LivePane
         DrawLocations(ownership, item);
 
         ImGui.Separator();
+        DrawWishToggle(state.Selected);
+        ImGui.SameLine();
         if (IconButton.Draw("##tryon", 0, FontAwesomeIcon.Tshirt, "Anprobe", theme))
             Plugin.Framework.RunOnFrameworkThread(() => AgentTryon.TryOn(0, item.Id));
         ImGui.SameLine();
@@ -203,6 +204,7 @@ public sealed unsafe class LivePane
         };
         ImGui.TextDisabled($"{progress.Owned}/{progress.Total} · {origin}");
         ImGui.EndGroup();
+        DrawWishToggle(set);
         ImGui.Separator();
 
         var iconSize = new Vector2(ImGui.GetTextLineHeight());
@@ -296,7 +298,12 @@ public sealed unsafe class LivePane
         ImGui.TextUnformatted(source.Title);
         ImGui.SameLine();
         ImGui.TextDisabled(source.Detail);
+        DrawCostAndAction(source, id, theme);
+    }
 
+    /// <summary>The source's cost (currency icon and amount) and its action button, each on the current line when there is one.</summary>
+    public static void DrawCostAndAction(ItemSource source, string id, Theme.Theme theme)
+    {
         if (source.CostItemId != 0 && source.CostAmount > 0)
         {
             ImGui.SameLine();
@@ -306,57 +313,23 @@ public sealed unsafe class LivePane
             ImGui.TextUnformatted(source.CostAmount.ToString("N0"));
         }
 
-        (uint Icon, FontAwesomeIcon Fallback, string Tooltip)? button = source.Action switch
-        {
-            MapFlag => (MapIcon, FontAwesomeIcon.MapMarkerAlt, "Karte"),
-            DutyFinder => (DutyFinderIcon, FontAwesomeIcon.Search, "Inhaltssuche"),
-            OpenRecipe => (RecipeIcon, FontAwesomeIcon.Book, "Rezept"),
-            OpenStore => (0u, FontAwesomeIcon.ShoppingCart, "Mogstation"),
-            _ => null,
-        };
-        if (button is not { } b)
+        if (SourceActions.ButtonFor(source.Action) is not { } b)
             return;
         ImGui.SameLine();
         if (IconButton.Draw($"##action{id}", b.Icon, b.Fallback, b.Tooltip, theme, ImGui.GetTextLineHeight() + 4))
-            Run(source.Action!);
+            SourceActions.Run(source.Action!);
     }
 
-    private static void Run(SourceAction action)
+    /// <summary>The star that puts the item or set on the wishlist (accent frame while listed); grayed out while logged out.</summary>
+    private void DrawWishToggle(TileSubject? subject)
     {
-        Plugin.Framework.RunOnFrameworkThread(() =>
-        {
-            try
-            {
-                // Agents are null-checked: a null agent would crash the game, the catch does not catch access violations.
-                switch (action)
-                {
-                    case MapFlag flag:
-                        Plugin.GameGui.OpenMapWithMapLink(new MapLinkPayload(flag.TerritoryId, flag.MapId, flag.X, flag.Y, 0.05f));
-                        break;
-                    case DutyFinder duty:
-                        var finder = AgentContentsFinder.Instance();
-                        if (finder != null)
-                            finder->OpenRegularDuty(duty.ContentFinderConditionId);
-                        else
-                            Plugin.Log.Warning("Duty finder agent not available");
-                        break;
-                    case OpenStore store:
-                        Util.OpenLink(StoreLinks.ProductUrl(store.StoreId));
-                        break;
-                    case OpenRecipe recipe:
-                        var recipeNote = AgentRecipeNote.Instance();
-                        if (recipeNote != null)
-                            recipeNote->OpenRecipeByRecipeId(recipe.RecipeId);
-                        else
-                            Plugin.Log.Warning("Recipe note agent not available");
-                        break;
-                }
-            }
-            catch (Exception e)
-            {
-                Plugin.Log.Warning(e, $"Source action {action} failed");
-            }
-        });
+        if (subject == null)
+            return;
+        var loggedIn = wishlist.Current != null;
+        var listed = wishlist.IsListed(subject);
+        var tooltip = !loggedIn ? "Nicht eingeloggt" : listed ? "Von der Wunschliste nehmen" : "Auf die Wunschliste";
+        if (IconToggle.Draw("##wish", 0, new Vector2(ImGui.GetFrameHeight()), listed, tooltip, theme, FontAwesomeIcon.Star, enabled: loggedIn))
+            wishlist.Toggle(subject);
     }
 
     private void DrawJobs(GlamourItem item)

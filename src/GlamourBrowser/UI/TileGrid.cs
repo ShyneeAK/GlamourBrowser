@@ -19,10 +19,14 @@ using GlamourBrowser.Ownership;
 using GlamourBrowser.Rendering;
 using GlamourBrowser.Sources;
 using GlamourBrowser.UI.Widgets;
+using GlamourBrowser.Wishlist;
 
 namespace GlamourBrowser.UI;
 
-/// <summary>The tile grid: rounded cards with name, level/source line and trait icons inside the image, plus ownership frame/badge; page controls below.</summary>
+/// <summary>
+/// The tile grid: rounded cards with name, level/source line and trait icons inside the image, plus ownership frame/badge
+/// and the wishlist star; page controls below. In the wishlist mode it can show the plan by source instead.
+/// </summary>
 public sealed class TileGrid
 {
     private const uint ErrorColor = 0xFF4040E0;
@@ -50,14 +54,19 @@ public sealed class TileGrid
     private readonly Theme.Theme theme;
     private readonly SourceService sources;
     private readonly JobCatalog jobs;
+    private readonly WishlistService wishlist;
+    private readonly WishlistPlanView planView;
     private readonly Dictionary<(uint ItemId, SetId Set), TileLabels> labels = new();
     private (float Width, float FontSize, int Ownership, bool SourcesReady) labelsFor;
     private int ownershipVersion;
 
     public TileGrid(BrowserState state, TileCache<IDalamudTextureWrap> cache, RenderPool pool, OwnershipService ownership,
-                    LivePreview live, Configuration config, Theme.Theme theme, SourceService sources, JobCatalog jobs)
+                    LivePreview live, Configuration config, Theme.Theme theme, SourceService sources, JobCatalog jobs,
+                    WishlistService wishlist, WishlistPlanView planView)
     {
         this.sources = sources;
+        this.wishlist = wishlist;
+        this.planView = planView;
         this.jobs = jobs;
         this.theme = theme;
         this.state = state;
@@ -86,6 +95,9 @@ public sealed class TileGrid
 
         if (pool.Status is { } status)
             ImGui.TextColored(new Vector4(1f, 0.8f, 0.3f, 1f), status);
+
+        if (state.Filter.Wishlist && !DrawWishlistHeader())
+            return;
 
         if (state.Filter.Sets && state.Results.Count == 0)
         {
@@ -139,6 +151,41 @@ public sealed class TileGrid
             else
                 state.PreviousPage();
         }
+    }
+
+    /// <summary>The wishlist mode's hints, view switch and filter, or the plan by source; false when no grid follows.</summary>
+    private bool DrawWishlistHeader()
+    {
+        if (wishlist.Current is not { } store)
+        {
+            ImGui.TextDisabled("Nicht eingeloggt");
+            return false;
+        }
+        if (store.Entries.Count == 0)
+        {
+            ImGui.TextDisabled("Noch nichts auf der Wunschliste – Stern in der Item-Karte setzen");
+            return false;
+        }
+
+        var bySource = config.WishlistBySource;
+        if (ImGui.RadioButton("Kacheln", !bySource) && bySource)
+            state.SetWishlistBySource(false);
+        ImGui.SameLine();
+        if (ImGui.RadioButton("Nach Quelle", bySource) && !bySource)
+            state.SetWishlistBySource(true);
+        ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X * 4);
+        var hideDone = config.HideDoneWishes;
+        if (ImGui.Checkbox("Erledigte ausblenden", ref hideDone))
+            state.SetHideDoneWishes(hideDone);
+
+        // Set entries resolve only once the source index is there.
+        if (state.WishlistEntries.Count < store.Entries.Count && !sources.IsReady)
+            ImGui.TextDisabled("Serien werden geladen …");
+        if (!config.WishlistBySource)
+            return true;
+
+        planView.Draw();
+        return false;
     }
 
     /// <summary>Page arrows and number, centered right below the full grid (also when the last page has fewer tiles).</summary>
@@ -256,9 +303,11 @@ public sealed class TileGrid
                 DrawTraitIcons(drawList, subject, text, shadeTop + new Vector2(textX, 6 + lineHeight * 2), size.X - 12, iconSize);
         }
 
+        // The star of a wish sits in the top-left corner; a render failure's marker moves right of it.
+        var markerX = wishlist.IsListed(subject) ? 6 + DrawWishStar(drawList, pos + new Vector2(6, 5)) + 3 : 6f;
         if (pool.Failures.TryGetValue(key, out var error))
         {
-            drawList.AddText(pos + new Vector2(6, 4), ErrorColor, "!");
+            drawList.AddText(pos + new Vector2(markerX, 4), ErrorColor, "!");
             var labelPos = pos + new Vector2(6, 4 + lineHeight);
             var label = Truncate("Renderfehler", size.X - 12);
             drawList.AddText(labelPos, ErrorColor, label);
@@ -279,6 +328,18 @@ public sealed class TileGrid
     }
 
     private bool IsOwned(uint itemId) => ownership.Current?.IsOwned(itemId) ?? false;
+
+    /// <summary>A small star in the theme's amber with a dark shadow, readable on bright renders too. Returns its width.</summary>
+    private float DrawWishStar(ImDrawListPtr drawList, Vector2 at)
+    {
+        using (UiScale.PushIcons())
+        {
+            var glyph = FontAwesomeIcon.Star.ToIconString();
+            drawList.AddText(at + Vector2.One, 0xC0000000, glyph);
+            drawList.AddText(at, theme.Colors.Warning, glyph);
+            return ImGui.CalcTextSize(glyph).X;
+        }
+    }
 
     /// <summary>The tile's texts and icons from the per-subject cache, built on the first frame the tile shows.</summary>
     private TileLabels LabelsFor(TileSubject subject, bool owned, float width)

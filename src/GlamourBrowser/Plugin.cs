@@ -85,10 +85,11 @@ public sealed class Plugin : IDalamudPlugin
         var theme = new UI.Theme.Theme(config);
         var jobs = new JobCatalog(DataManager);
         mainWindow = new MainWindow(
-            new LivePane(browser, ownership, live, calibration, jobs, theme, sources),
+            new LivePane(browser, ownership, live, calibration, jobs, theme, sources, wishlist),
             new TopBar(browser, jobs, config, theme),
             new FilterColumn(browser, ownership, config, sources, theme),
-            new TileGrid(browser, cache, pool, ownership, live, config, theme, sources, jobs),
+            new TileGrid(browser, cache, pool, ownership, live, config, theme, sources, jobs, wishlist,
+                         new WishlistPlanView(browser, ownership, wishlist, sources, live, theme)),
             theme,
             config);
         settingsWindow = new SettingsWindow(config, browser, pool, calibration, theme);

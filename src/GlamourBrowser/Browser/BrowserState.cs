@@ -152,6 +152,9 @@ public sealed class BrowserState
         _ => throw new ArgumentOutOfRangeException(nameof(subject)),
     };
 
+    /// <summary>The catalog item's subject, the same instance the grid shows (null for an item outside the catalog).</summary>
+    public ItemSubject? ItemSubjectFor(uint itemId) => itemSubjects.GetValueOrDefault(itemId);
+
     /// <summary>The item or set a tile key was made for (the render pool's lookup).</summary>
     public TileSubject? SubjectFor(TileKey key) => key.Set.IsSet ? sets.Find(key.Set) : itemSubjects.GetValueOrDefault(key.ItemId);
 
@@ -230,7 +233,8 @@ public sealed class BrowserState
         lock (RenderSync.Lock)
         {
             CurrentPage = ItemFilter.Page(Results, PageIndex, PageSize);
-            if (!appearance.IsValid)
+            // The plan by source shows no tiles: nothing to render, the cached ones stay for switching back.
+            if (!appearance.IsValid || filter.Wishlist && config.WishlistBySource)
             {
                 queue.Clear();
                 return;
