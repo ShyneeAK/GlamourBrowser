@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
@@ -23,7 +24,8 @@ public sealed class MainWindow : Window
     private IDisposable? themeScope;
     private IDisposable? fontScope;
 
-    public MainWindow(LivePane livePane, TopBar topBar, FilterColumn filterColumn, TileGrid grid, Theme.Theme theme, Configuration config)
+    public MainWindow(LivePane livePane, TopBar topBar, FilterColumn filterColumn, TileGrid grid, Theme.Theme theme, Configuration config,
+                      Action openSettings)
         : base("GlamourBrowser##GlamourBrowser")
     {
         this.livePane = livePane;
@@ -33,6 +35,13 @@ public sealed class MainWindow : Window
         this.theme = theme;
         this.config = config;
         SizeConstraints = new WindowSizeConstraints { MinimumSize = new Vector2(1100, 650) };
+        TitleBarButtons.Add(new TitleBarButton
+        {
+            Icon = FontAwesomeIcon.Cog,
+            IconOffset = new Vector2(1.5f, 1),
+            Click = _ => openSettings(),
+            ShowTooltip = () => ImGui.SetTooltip("Einstellungen"),
+        });
     }
 
     public override void PreDraw()

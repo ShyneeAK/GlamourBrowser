@@ -37,6 +37,7 @@ public sealed class BrowserState
     private readonly IReadOnlyDictionary<uint, ItemSubject> itemSubjects;
     private FilterState filter = new();
     private readonly PageMemory pages = new();
+    private readonly PageHistory history = new();
 
     public BrowserState(IReadOnlyList<GlamourItem> catalog, OwnershipService ownership, AppearanceTracker appearance,
                         TileQueue queue, TileCache<IDalamudTextureWrap> cache, RenderPool pool, Configuration config, SourceService sources, SetCatalog sets,
@@ -133,6 +134,14 @@ public sealed class BrowserState
     public void SetTileWeaponsDrawn(bool drawn)
     {
         config.TileWeaponsDrawn = drawn;
+        config.Save();
+        RequestTiles();
+    }
+
+    /// <summary>Fewer pages drop their tiles right away; more keep the ones shown from now on.</summary>
+    public void SetCachedPages(int count)
+    {
+        config.CachedPages = Math.Clamp(count, 0, PageHistory.MaxPages);
         config.Save();
         RequestTiles();
     }
@@ -247,6 +256,7 @@ public sealed class BrowserState
         lock (RenderSync.Lock)
         {
             cache.Clear();
+            history.Clear();
             Refresh();
         }
     }
@@ -260,7 +270,7 @@ public sealed class BrowserState
         }
     }
 
-    /// <summary>Queues the current page first, then the next one; the cache keeps previous, current and next.</summary>
+    /// <summary>Queues the current page first, then the next two; the cache keeps these and the recently shown pages.</summary>
     private void RequestTiles()
     {
         lock (RenderSync.Lock)
@@ -274,11 +284,11 @@ public sealed class BrowserState
             }
 
             var current = CurrentPage.Select(KeyFor).ToList();
-            // Two pages of lookahead, the next one first; the previous page stays cached for paging back.
+            // Two pages of lookahead, the next one first; recently shown pages (also of other slots) stay cached for going back.
             var lookahead = PageKeys(PageIndex + 1).Concat(PageKeys(PageIndex + 2)).ToList();
-            var previous = PageKeys(PageIndex - 1);
+            history.Show(current);
 
-            cache.Retain(current.Concat(lookahead).Concat(previous).ToHashSet());
+            cache.Retain(current.Concat(lookahead).Concat(history.Before(config.CachedPages)).ToHashSet());
             queue.SetRequests(current.Where(k => !cache.TryGet(k, out _)), lookahead.Where(k => !cache.TryGet(k, out _)));
         }
     }

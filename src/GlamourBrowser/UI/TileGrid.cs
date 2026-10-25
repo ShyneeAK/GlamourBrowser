@@ -64,6 +64,7 @@ public sealed class TileGrid
     private readonly CustomSetService customSets;
     private readonly CustomSetEditor editor;
     private readonly GlamourPlateBridge plates;
+    private readonly MemoryStats memory;
     // What the last import did, shown next to its button for a moment.
     private (string Text, DateTime At)? importStatus;
     // A custom set keeps its id while it changes: its content hash and name are part of the key.
@@ -73,8 +74,10 @@ public sealed class TileGrid
 
     public TileGrid(BrowserState state, TileCache<IDalamudTextureWrap> cache, RenderPool pool, OwnershipService ownership,
                     LivePreview live, Configuration config, Theme.Theme theme, SourceService sources, JobCatalog jobs,
-                    WishlistService wishlist, WishlistPlanView planView, CustomSetService customSets, CustomSetEditor editor, GlamourPlateBridge plates)
+                    WishlistService wishlist, WishlistPlanView planView, CustomSetService customSets, CustomSetEditor editor, GlamourPlateBridge plates,
+                    MemoryStats memory)
     {
+        this.memory = memory;
         this.sources = sources;
         this.wishlist = wishlist;
         this.planView = planView;
@@ -147,6 +150,9 @@ public sealed class TileGrid
         var spacing = ImGui.GetStyle().ItemSpacing.X;
         // Names are drawn inside the tile, so no extra label row is needed; the page controls below take one row.
         var pagerHeight = ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.Y;
+        // The debug memory line takes one more row below the page controls.
+        if (config.ShowMemoryStats)
+            pagerHeight += ImGui.GetTextLineHeightWithSpacing();
         state.UpdateLayout(avail.X, avail.Y - pagerHeight, spacing, 0);
 
         var layout = state.Layout;
@@ -319,6 +325,19 @@ public sealed class TileGrid
         ImGui.SameLine();
         if (ImGui.ArrowButton("##next", ImGuiDir.Right))
             state.NextPage();
+
+        if (config.ShowMemoryStats)
+            DrawMemoryStats(gridTopLeft.X, gridWidth);
+    }
+
+    /// <summary>The debug memory line, centered below the page controls.</summary>
+    private void DrawMemoryStats(float left, float gridWidth)
+    {
+        memory.Update();
+        ImGui.SetCursorPosX(left + MathF.Max(0, (gridWidth - ImGui.CalcTextSize(memory.Line).X) / 2));
+        ImGui.TextDisabled(memory.Line);
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip(MemoryStats.Tooltip);
     }
 
     private const string WeaponsLabel = "Waffen gezogen";

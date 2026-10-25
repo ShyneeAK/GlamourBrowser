@@ -103,6 +103,14 @@ public sealed class SettingsWindow : Window
             config.Save();
         }
 
+        var cachedPages = config.CachedPages;
+        if (ImGui.SliderInt("Seiten im Cache", ref cachedPages, 0, PageHistory.MaxPages, "%d", ImGuiSliderFlags.AlwaysClamp))
+            state.SetCachedPages(cachedPages);
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip("Wie viele zuletzt angezeigte Seiten gerendert bleiben, auch beim Wechsel zwischen Slots und Modi.\n"
+                             + "Zurück zu einer solchen Seite zeigt die Bilder sofort. Die nächsten zwei Seiten werden immer vorausgerendert.\n"
+                             + "Mehr Seiten brauchen mehr Grafikspeicher.");
+
         ImGui.Separator();
         ImGui.TextDisabled("Live-Ansicht");
         var rotate = config.RotateSensitivity;
@@ -121,6 +129,17 @@ public sealed class SettingsWindow : Window
 
         ImGui.Separator();
         DrawCameraPresets();
+
+        ImGui.Separator();
+        ImGui.TextDisabled("Debug");
+        var memory = config.ShowMemoryStats;
+        if (ImGui.Checkbox("Speicheranzeige unter dem Raster", ref memory))
+        {
+            config.ShowMemoryStats = memory;
+            config.Save();
+        }
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip("Zeigt unter den Kacheln, wie viel Grafikspeicher der Kachel-Cache belegt, dazu VRAM und RAM des Spiels.");
     }
 
     private void DrawCameraPresets()

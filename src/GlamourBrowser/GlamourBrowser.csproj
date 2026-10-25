@@ -15,5 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\GlamourBrowser.Core\GlamourBrowser.Core.csproj" />
     <ProjectReference Include="..\GlamourBrowser.Sources\GlamourBrowser.Sources.csproj" />
+    <!-- Ships with Dalamud; only for the VRAM figures of the debug memory line. -->
+    <Reference Include="TerraFX.Interop.Windows" Private="false" />
   </ItemGroup>
 </Project>

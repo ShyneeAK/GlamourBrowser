@@ -60,6 +60,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly Configuration config;
     private readonly CalibrationService calibration;
     private readonly SourceService sources;
+    private readonly MemoryStats memoryStats;
     private bool paused;
 
     public Plugin()
@@ -88,6 +89,9 @@ public sealed class Plugin : IDalamudPlugin
         UI.UiScale.Set(config.UiScale);
         var theme = new UI.Theme.Theme(config);
         var editor = new CustomSetEditor(browser, customSets, live, variants, appearance);
+        memoryStats = new MemoryStats(cache);
+        // Before the main window: its title bar button opens it.
+        settingsWindow = new SettingsWindow(config, browser, pool, calibration, theme);
         plates = new GlamourPlate.GlamourPlateBridge(variants, ownership, dyes, id => browser.ItemOf(id)?.Name ?? $"Item {id}",
             id => browser.ItemOf(id)?.DyeCount ?? 0);
         mainWindow = new MainWindow(
@@ -96,10 +100,11 @@ public sealed class Plugin : IDalamudPlugin
             new TopBar(browser, jobs, config, theme),
             new FilterColumn(browser, ownership, config, sources, theme),
             new TileGrid(browser, cache, pool, ownership, live, config, theme, sources, jobs, wishlist,
-                         new WishlistPlanView(browser, ownership, wishlist, sources, live, theme, customSets), customSets, editor, plates),
+                         new WishlistPlanView(browser, ownership, wishlist, sources, live, theme, customSets), customSets, editor, plates,
+                         memoryStats),
             theme,
-            config);
-        settingsWindow = new SettingsWindow(config, browser, pool, calibration, theme);
+            config,
+            settingsWindow.Toggle);
         windowSystem.AddWindow(mainWindow);
         windowSystem.AddWindow(settingsWindow);
 
@@ -212,6 +217,7 @@ public sealed class Plugin : IDalamudPlugin
             pool.Dispose();
             cache.Dispose();
         }).Wait();
+        memoryStats.Dispose();
         appearance.Dispose();
 
         armoireReader.Dispose();

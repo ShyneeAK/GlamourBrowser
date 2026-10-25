@@ -13,6 +13,15 @@ public sealed class TileCache<T> : IDisposable where T : class, IDisposable
 
     public bool TryGet(TileKey key, out T? texture) => textures.TryGetValue(key, out texture);
 
+    /// <summary>A figure summed over the cached textures (their memory, for the debug line).</summary>
+    public long Sum(Func<T, long> of)
+    {
+        var total = 0L;
+        foreach (var texture in textures.Values)
+            total += of(texture);
+        return total;
+    }
+
     public void Add(TileKey key, T texture)
     {
         if (keep != null && !keep.Contains(key))

@@ -18,6 +18,10 @@ public sealed class Configuration : IPluginConfiguration
     public int Rows { get; set; } = 3;
     public TileMode TileMode { get; set; } = TileMode.CurrentOutfit;
     public int ParallelViews { get; set; } = 3;
+    /// <summary>How many recently shown pages stay rendered besides the current one and the two ahead, 0–20.</summary>
+    public int CachedPages { get; set; } = 3;
+    /// <summary>The memory line (tile cache, VRAM, RAM) under the tile grid.</summary>
+    public bool ShowMemoryStats { get; set; }
 
     public AccentColor Accent { get; set; } = AccentColor.Blue;
     public SortOrder Sort { get; set; } = SortOrder.Level;

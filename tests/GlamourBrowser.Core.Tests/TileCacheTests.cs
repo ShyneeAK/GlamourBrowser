@@ -4,10 +4,21 @@ namespace GlamourBrowser.Core.Tests;
 
 public class TileCacheTests
 {
-    private sealed class FakeTexture : IDisposable
+    private sealed class FakeTexture(long size = 0) : IDisposable
     {
+        public long Size { get; } = size;
         public bool Disposed { get; private set; }
         public void Dispose() => Disposed = true;
+    }
+
+    [Fact]
+    public void Sum_AddsUpTheCachedTextures()
+    {
+        using var cache = new TileCache<FakeTexture>();
+        cache.Add(Key(1), new FakeTexture(100));
+        cache.Add(Key(2), new FakeTexture(23));
+
+        Assert.Equal(123, cache.Sum(t => t.Size));
     }
 
     private static TileKey Key(uint id) => new(id, 0, 0, TileMode.CurrentOutfit, 1, 192, TileKey.StandardPose);
