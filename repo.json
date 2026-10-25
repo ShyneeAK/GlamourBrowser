@@ -3,7 +3,7 @@
     "Author": "ShyneeAK",
     "Name": "GlamourBrowser",
     "InternalName": "GlamourBrowser",
-    "AssemblyVersion": "0.1.0.0",
+    "AssemblyVersion": "0.1.1.0",
     "Description": "Zeigt alle ausruestbaren Items als Seiten-Raster mit gerenderten Bildern des eigenen Charakters, filterbar, mit Besitzstatus und Fundort pro Item.",
     "ApplicableVersion": "any",
     "RepoUrl": "https://github.com/ShyneeAK/GlamourBrowser",
@@ -16,12 +16,13 @@
     "LoadSync": false,
     "CanUnloadAsync": false,
     "LoadPriority": 0,
+    "IconUrl": "https://raw.githubusercontent.com/ShyneeAK/GlamourBrowser/main/src/GlamourBrowser/images/icon.png",
     "Punchline": "Glamour-Raster mit gerenderten Charakter-Kacheln.",
     "AcceptsFeedback": true,
-    "DownloadLinkInstall": "https://github.com/ShyneeAK/GlamourBrowser/releases/download/v0.1.0.0/latest.zip",
-    "DownloadLinkUpdate": "https://github.com/ShyneeAK/GlamourBrowser/releases/download/v0.1.0.0/latest.zip",
-    "DownloadLinkTesting": "https://github.com/ShyneeAK/GlamourBrowser/releases/download/v0.1.0.0/latest.zip",
+    "DownloadLinkInstall": "https://github.com/ShyneeAK/GlamourBrowser/releases/download/v0.1.1.0/latest.zip",
+    "DownloadLinkUpdate": "https://github.com/ShyneeAK/GlamourBrowser/releases/download/v0.1.1.0/latest.zip",
+    "DownloadLinkTesting": "https://github.com/ShyneeAK/GlamourBrowser/releases/download/v0.1.1.0/latest.zip",
     "IsTestingExclusive": false,
-    "LastUpdate": 1792944625
+    "LastUpdate": 1792945047
   }
 ]
