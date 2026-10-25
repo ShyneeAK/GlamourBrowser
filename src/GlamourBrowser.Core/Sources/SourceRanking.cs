@@ -38,6 +38,10 @@ public static class SourceRanking
         return result;
     }
 
+    /// <summary>The categories that share an icon with <paramref name="category"/>, best first.</summary>
+    public static IReadOnlyList<SourceCategory> GroupOf(SourceCategory category)
+        => Groups.FirstOrDefault(g => g.Contains(category)) ?? [category];
+
     public static SourceCategory? Top(IReadOnlySet<SourceCategory> categories)
     {
         var icons = Icons(categories);

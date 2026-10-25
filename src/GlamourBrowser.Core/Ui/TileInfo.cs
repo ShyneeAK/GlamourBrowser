@@ -1,3 +1,4 @@
+using System.Text;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Sources;
 
@@ -17,6 +18,37 @@ public static class TileInfo
         Tradability.Tradable => "Handelbar",
         _ => "Gebunden",
     };
+
+    /// <summary>
+    /// Tooltip of a tile's source icon: the sources of every category of the icon's group the item has, best category
+    /// first, each with its detail (boss, chest, place); a long list is cut off after <paramref name="maxEntries"/>.
+    /// </summary>
+    public static string SourceTooltip(SourceCategory shown, IReadOnlyList<ItemSource> sources, int maxEntries = 6)
+    {
+        var text = new StringBuilder();
+        var listed = 0;
+        var skipped = 0;
+        foreach (var category in SourceRanking.GroupOf(shown))
+        {
+            var entries = sources.Where(s => s.Category == category)
+                .Select(s => s.Detail.Length > 0 ? $"{s.Title} · {s.Detail}" : s.Title)
+                .Distinct()
+                .ToList();
+            var room = Math.Min(entries.Count, maxEntries - listed);
+            skipped += entries.Count - Math.Max(0, room);
+            if (room <= 0)
+                continue;
+            if (text.Length > 0)
+                text.Append('\n');
+            text.Append(SourceCategories.DisplayName(category));
+            foreach (var entry in entries.Take(room))
+                text.Append("\n  ").Append(entry);
+            listed += room;
+        }
+        if (skipped > 0)
+            text.Append($"\n  … und {skipped} weitere");
+        return text.Length > 0 ? text.ToString() : SourceCategories.DisplayName(shown);
+    }
 
     /// <summary>For owned items: where the item is (first place, plus how many more).</summary>
     public static string OwnedLine(int level, IReadOnlyList<string> places) => places.Count switch

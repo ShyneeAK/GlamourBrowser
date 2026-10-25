@@ -9,6 +9,7 @@ using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility;
 using GlamourBrowser.Browser;
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Layout;
 using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Core.Sources;
 using GlamourBrowser.Core.Ui;
@@ -20,7 +21,7 @@ using GlamourBrowser.UI.Widgets;
 
 namespace GlamourBrowser.UI;
 
-/// <summary>The tile grid: rounded cards with name, level/source line and trait icons inside the image, plus ownership frame/badge.</summary>
+/// <summary>The tile grid: rounded cards with name, level/source line and trait icons inside the image, plus ownership frame/badge; page controls below.</summary>
 public sealed class TileGrid
 {
     private const uint ErrorColor = 0xFF4040E0;
@@ -71,8 +72,9 @@ public sealed class TileGrid
 
         var avail = ImGui.GetContentRegionAvail();
         var spacing = ImGui.GetStyle().ItemSpacing.X;
-        // Names are drawn inside the tile, so no extra label row is needed.
-        state.UpdateLayout(avail.X, avail.Y, spacing, 0);
+        // Names are drawn inside the tile, so no extra label row is needed; the page controls below take one row.
+        var pagerHeight = ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.Y;
+        state.UpdateLayout(avail.X, avail.Y - pagerHeight, spacing, 0);
 
         var layout = state.Layout;
         if (layout.TileWidth <= 0)
@@ -81,6 +83,7 @@ public sealed class TileGrid
             return;
         }
 
+        var gridTopLeft = ImGui.GetCursorPos();
         var page = state.CurrentPage;
         for (var i = 0; i < page.Count; i++)
         {
@@ -88,6 +91,7 @@ public sealed class TileGrid
                 ImGui.SameLine();
             DrawTile(page[i], new Vector2(layout.TileWidth, layout.TileHeight));
         }
+        DrawPager(gridTopLeft, layout);
 
         if (ImGui.IsWindowHovered() && ImGui.GetIO().MouseWheel is var wheel && wheel != 0)
         {
@@ -96,6 +100,26 @@ public sealed class TileGrid
             else
                 state.PreviousPage();
         }
+    }
+
+    /// <summary>Page arrows and number, centered right below the full grid (also when the last page has fewer tiles).</summary>
+    private void DrawPager(Vector2 gridTopLeft, PageLayoutResult layout)
+    {
+        var style = ImGui.GetStyle();
+        var gridWidth = config.Columns * layout.TileWidth + (config.Columns - 1) * style.ItemSpacing.X;
+        var gridHeight = config.Rows * layout.TileHeight + (config.Rows - 1) * style.ItemSpacing.Y;
+        var pageText = $"Seite {state.PageIndex + 1} / {state.PageCount}";
+        var arrow = ImGui.GetFrameHeight();
+        var width = arrow * 2 + ImGui.CalcTextSize(pageText).X + style.ItemSpacing.X * 2;
+        ImGui.SetCursorPos(gridTopLeft + new Vector2(MathF.Max(0, (gridWidth - width) / 2), gridHeight + style.ItemSpacing.Y));
+        if (ImGui.ArrowButton("##prev", ImGuiDir.Left))
+            state.PreviousPage();
+        ImGui.SameLine();
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextUnformatted(pageText);
+        ImGui.SameLine();
+        if (ImGui.ArrowButton("##next", ImGuiDir.Right))
+            state.NextPage();
     }
 
     private const string WeaponsLabel = "Waffen gezogen";
@@ -223,45 +247,47 @@ public sealed class TileGrid
     private void DrawTraitIcons(ImDrawListPtr drawList, GlamourItem item, IReadOnlySet<SourceCategory>? categories, Vector2 min, float width, float iconSize)
     {
         var colors = theme.Colors;
-        var icons = new List<(Action<Vector2> Draw, string Tooltip)>();
+        // Tooltips are built only for the hovered icon.
+        var icons = new List<(Action<Vector2> Draw, Func<string> Tooltip)>();
         if (item.DyeCount > 0)
             icons.Add((at =>
             {
                 GameIcon.DrawAt(drawList, TraitIcons.Dye, at, new Vector2(iconSize), FontAwesomeIcon.PaintBrush, colors.TextMuted);
                 drawList.AddText(ImGui.GetFont(), ImGui.GetFontSize() * 0.75f, at + new Vector2(iconSize * 0.6f, iconSize * 0.35f), colors.Text, item.DyeCount.ToString());
-            }, TileInfo.DyeText(item.DyeCount)));
+            }, () => TileInfo.DyeText(item.DyeCount)));
         if (item.Trade != Tradability.Bound)
         {
             var (tradeIcon, glyph) = item.Trade == Tradability.Marketable
                 ? (TraitIcons.Marketable, FontAwesomeIcon.Store)
                 : (TraitIcons.Tradable, FontAwesomeIcon.ExchangeAlt);
-            icons.Add((at => GameIcon.DrawAt(drawList, tradeIcon, at, new Vector2(iconSize), glyph, colors.TextMuted), TileInfo.TradeText(item.Trade)));
+            icons.Add((at => GameIcon.DrawAt(drawList, tradeIcon, at, new Vector2(iconSize), glyph, colors.TextMuted), () => TileInfo.TradeText(item.Trade)));
         }
         // The job/role icon stands apart, right-aligned.
-        (Action<Vector2> Draw, string Tooltip)? right = null;
+        (Action<Vector2> Draw, Func<string> Tooltip)? right = null;
         var badge = JobBadges.For(JobBadges.CollapseClasses(item.ClassJobIds, jobs.ParentOf), jobs.GroupOf, jobs.All.Count);
         if (badge.Kind != JobBadgeKind.None)
         {
             var job = badge.Kind == JobBadgeKind.Job ? jobs.Find(badge.JobId) : null;
             var icon = job?.IconId ?? JobCatalog.RoleIcon(badge.Group);
             var name = job?.Name ?? JobGroups.DisplayName(badge.Group);
-            right = (at => GameIcon.DrawAt(drawList, icon, at, new Vector2(iconSize), FontAwesomeIcon.User, colors.TextMuted), name);
+            right = (at => GameIcon.DrawAt(drawList, icon, at, new Vector2(iconSize), FontAwesomeIcon.User, colors.TextMuted), () => name);
         }
         if (categories != null)
         {
             foreach (var category in SourceRanking.Icons(categories))
-                icons.Add((at => DrawSourceIcon(drawList, category, at, iconSize, colors.TextMuted), SourceCategories.DisplayName(category)));
+                icons.Add((at => DrawSourceIcon(drawList, category, at, iconSize, colors.TextMuted),
+                           () => TileInfo.SourceTooltip(category, sources.Index.SourcesOf(item.Id))));
         }
 
         const float spacing = 3f;
         var (fit, showRight) = TileInfo.FitRow(icons.Count, right != null, iconSize, spacing, width);
         var windowHovered = ImGui.IsWindowHovered();
-        void Place((Action<Vector2> Draw, string Tooltip) icon, Vector2 at)
+        void Place((Action<Vector2> Draw, Func<string> Tooltip) icon, Vector2 at)
         {
             icon.Draw(at);
             // Only the icon itself shows a tooltip; the rest of the tile has none.
             if (windowHovered && ImGui.IsMouseHoveringRect(at, at + new Vector2(iconSize)))
-                ImGui.SetTooltip(icon.Tooltip);
+                ImGui.SetTooltip(icon.Tooltip());
         }
         for (var i = 0; i < fit; i++)
             Place(icons[i], min + new Vector2(i * (iconSize + spacing), 0));

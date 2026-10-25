@@ -14,7 +14,7 @@ using GlamourBrowser.UI.Widgets;
 
 namespace GlamourBrowser.UI;
 
-/// <summary>Search, job popup, tile mode, grid size, paging, filter-column toggle and the active filter chips.</summary>
+/// <summary>Search, job popup, tile mode, grid size, hit count, filter-column toggle and the active filter chips (paging sits below the grid).</summary>
 public sealed class TopBar
 {
     private readonly BrowserState state;
@@ -88,19 +88,9 @@ public sealed class TopBar
         if (gridChanged)
             state.SetGrid(columns, rows);
 
-        // Paging and hits stay together as one unit.
-        var pageText = $"Seite {state.PageIndex + 1} / {state.PageCount}";
         var hitsText = $"{state.Results.Count} Treffer";
-        var arrow = ImGui.GetFrameHeight();
-        NextOnLine(arrow * 2 + ImGui.CalcTextSize(pageText).X + ImGui.CalcTextSize(hitsText).X + spacing * 3);
-        if (ImGui.ArrowButton("##prev", ImGuiDir.Left))
-            state.PreviousPage();
-        ImGui.SameLine();
-        ImGui.TextUnformatted(pageText);
-        ImGui.SameLine();
-        if (ImGui.ArrowButton("##next", ImGuiDir.Right))
-            state.NextPage();
-        ImGui.SameLine();
+        NextOnLine(ImGui.CalcTextSize(hitsText).X);
+        ImGui.AlignTextToFramePadding();
         ImGui.TextDisabled(hitsText);
 
         DrawChips();

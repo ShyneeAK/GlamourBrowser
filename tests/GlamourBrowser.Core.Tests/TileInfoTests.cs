@@ -54,4 +54,35 @@ public class TileInfoTests
         Assert.Equal((0, true), TileInfo.FitRow(3, true, 16, 2, 20));
         Assert.Equal((0, false), TileInfo.FitRow(3, true, 16, 2, 10));
     }
+
+    private static ItemSource Src(SourceCategory category, string title, string detail = "") => new(category, title, detail);
+
+    [Fact]
+    public void SourceTooltip_ListsTheSourcesOfTheIconsCategory()
+    {
+        var sources = new[] { Src(SourceCategory.Dungeon, "Sastasha", "Boss 2"), Src(SourceCategory.Dungeon, "Die Tam-Tara-Gruft", "Truhe 1"),
+                              Src(SourceCategory.GilVendor, "Krämer", "Limsa Lominsa (9,8, 11,3)") };
+        Assert.Equal("Dungeon\n  Sastasha · Boss 2\n  Die Tam-Tara-Gruft · Truhe 1", TileInfo.SourceTooltip(SourceCategory.Dungeon, sources));
+    }
+
+    [Fact]
+    public void SourceTooltip_AlsoTheOtherCategoriesOfTheGroup_BestFirst()
+    {
+        var sources = new[] { Src(SourceCategory.Dungeon, "Sastasha", "Boss 2"), Src(SourceCategory.Trial, "Ifrit", "Drop") };
+        Assert.Equal("Prüfung\n  Ifrit · Drop\nDungeon\n  Sastasha · Boss 2", TileInfo.SourceTooltip(SourceCategory.Trial, sources));
+    }
+
+    [Fact]
+    public void SourceTooltip_SkipsDuplicates_AndEmptyDetails()
+    {
+        var sources = new[] { Src(SourceCategory.Quest, "Ein neuer Anfang"), Src(SourceCategory.Quest, "Ein neuer Anfang") };
+        Assert.Equal("Quest\n  Ein neuer Anfang", TileInfo.SourceTooltip(SourceCategory.Quest, sources));
+    }
+
+    [Fact]
+    public void SourceTooltip_CutsOffLongLists()
+    {
+        var sources = Enumerable.Range(1, 8).Select(i => Src(SourceCategory.Dungeon, $"D{i}")).ToArray();
+        Assert.Equal("Dungeon\n  D1\n  D2\n  D3\n  … und 5 weitere", TileInfo.SourceTooltip(SourceCategory.Dungeon, sources, maxEntries: 3));
+    }
 }
