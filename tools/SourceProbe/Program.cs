@@ -51,7 +51,7 @@ if (args.Contains("--sets"))
     HashSet<uint> ArmourOf(GlamourSet set) => set.Pieces.Where(p => armour.Contains(p.Slot)).Select(p => p.ItemId).ToHashSet();
     var dresserArmour = sets.Where(s => s.Id.Kind == SetKind.Dresser).Select(ArmourOf).ToList();
     Check("Ao Oni-Set (45275) mit 5 Teilen", sets.Any(s => s.Id == new SetId(SetKind.Dresser, 45275) && s.Name == "Ao Oni-Set" && s.Pieces.Count == 5));
-    Check("Asuran-Serie des Spähens mit 5 Teilen", sets.Any(s => s.Name == "Asuran-Serie des Spähens" && s.Pieces.Count == 5));
+    Check("Asuran-Set des Spähens mit 5 Teilen", sets.Any(s => s.Name == "Asuran-Set des Spähens" && s.Pieces.Count == 5));
     Check("keine Modell-Serie mit den Rüstungsteilen eines Kommoden-Sets",
         !sets.Where(s => s.Id.Kind == SetKind.Model).Any(m => dresserArmour.Any(d => d.SetEquals(ArmourOf(m)))));
     Console.WriteLine(index.HasFailures ? "Failures: " + string.Join(", ", index.Failures) : "No failures");

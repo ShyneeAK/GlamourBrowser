@@ -12,6 +12,9 @@ namespace GlamourBrowser.Sources;
 /// </summary>
 public sealed class SourceIndexBuilder(GameData data, IReadOnlySet<uint> relevantItems, Action<string> log, CancellationToken cancel = default)
 {
+    /// <summary>The family name of the set detection in <see cref="SourceIndex.Failures"/>.</summary>
+    public const string SetsFamily = "Ausrüstungs-Sets";
+
     public SourceIndex Build()
     {
         var builder = new SourceIndex.Builder();
@@ -46,7 +49,7 @@ public sealed class SourceIndexBuilder(GameData data, IReadOnlySet<uint> relevan
             builder.InheritFromContainers(coffers, id => items.TryGetRow(id, out var item) ? item.Name.ExtractText() : "");
         });
         Run(builder, "Varianten", () => builder.MergeVariants(VariantSheet.BaseOf(data)));
-        Run(builder, "Serien", () =>
+        Run(builder, SetsFamily, () =>
         {
             var (items, dresser, mogStation) = SetSheets.Read(data);
             builder.SetSets(SetDetection.Build(items, dresser, mogStation));

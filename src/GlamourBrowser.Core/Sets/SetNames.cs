@@ -20,16 +20,16 @@ public static class SetNames
     }
 
     /// <summary>
-    /// "Asuran-Serie des Spähens": the common start without its separator, "-Serie", and the common ending from
+    /// "Asuran-Set des Spähens": the common start without its separator, "-Set", and the common ending from
     /// " des "/" der " on. Null when the names share no start (German adjective endings often prevent one).
     /// </summary>
     public static string? FromCommonStart(IReadOnlyList<string> names)
     {
         var start = CommonStart(names);
-        return start.Length == 0 ? null : start[..^1] + "-Serie" + CommonEnding(names);
+        return start.Length == 0 ? null : start[..^1] + "-Set" + CommonEnding(names);
     }
 
-    public static string Fallback(string pieceName) => $"{Clean(pieceName)} (Serie)";
+    public static string Fallback(string pieceName) => $"{Clean(pieceName)} (Set)";
 
     /// <summary>The ending all names share, from its first " des " or " der " on (" des Spähens"); empty when there is none.</summary>
     public static string CommonEnding(IReadOnlyList<string> names)

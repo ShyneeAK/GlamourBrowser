@@ -77,7 +77,7 @@ public class FilterChipsTests
     public void SetsChip_RemovesSetMode()
     {
         var chip = Assert.Single(Chips(new FilterState { Sets = true }));
-        Assert.Equal("Serien", chip.Label);
+        Assert.Equal("Ausrüstungs-Sets", chip.Label);
         Assert.False(chip.WithoutThis.Sets);
     }
 

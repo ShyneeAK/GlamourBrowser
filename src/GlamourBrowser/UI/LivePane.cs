@@ -200,7 +200,7 @@ public sealed unsafe class LivePane
         {
             SetKind.Dresser => "Kommoden-Set",
             SetKind.MogStation => "Mogstation-Set",
-            _ => "Serie",
+            _ => "Ausrüstungs-Set",
         };
         ImGui.TextDisabled($"{progress.Owned}/{progress.Total} · {origin}");
         ImGui.EndGroup();

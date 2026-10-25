@@ -52,14 +52,14 @@ public class SetDetectionTests
     }
 
     [Fact]
-    public void Model_NameFromCommonStart() => Assert.Equal("Asuran-Serie des Spähens", Assert.Single(Build(Asuran())).Name);
+    public void Model_NameFromCommonStart() => Assert.Equal("Asuran-Set des Spähens", Assert.Single(Build(Asuran())).Name);
 
     [Fact]
     public void Model_NameFallsBackToBody()
     {
         var set = Assert.Single(Build([Candidate(10, "Gordische Krone der Magie", Head), Candidate(11, "Gordischer Talar der Magie", Body),
                                        Candidate(12, "Gordische Hose der Magie", Legs)]));
-        Assert.Equal("Gordischer Talar der Magie (Serie)", set.Name);
+        Assert.Equal("Gordischer Talar der Magie (Set)", set.Name);
     }
 
     [Fact]
@@ -117,7 +117,7 @@ public class SetDetectionTests
     {
         var items = new[] { Candidate(100, "Straßen-Kappe", Head, set: 1), Candidate(101, "Straßen-Oberteil", Body, set: 2), Candidate(102, "Straßen-Schuhe", Feet, set: 3) };
         var set = Assert.Single(Build(items, mog: [new SheetSet(new SetId(SetKind.MogStation, 1000321), "", [100, 101, 102])]));
-        Assert.Equal("Straßen-Serie", set.Name);
+        Assert.Equal("Straßen-Set", set.Name);
     }
 
     [Fact]

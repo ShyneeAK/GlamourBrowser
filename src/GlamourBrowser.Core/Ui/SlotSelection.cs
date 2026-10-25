@@ -23,7 +23,7 @@ public static class SlotSelection
     public static FilterState SelectSlot(FilterState filter, EquipSlot slot, bool additive)
         => filter with { Slots = Toggle(filter.Slots, slot, additive), Sets = false, Wishlist = false };
 
-    /// <summary>A click on "Serien": switches the set mode; switching it on clears the slots, which do not apply to sets, and ends the wishlist mode.</summary>
+    /// <summary>A click on "Ausrüstungs-Sets": switches the set mode; switching it on clears the slots, which do not apply to sets, and ends the wishlist mode.</summary>
     public static FilterState ToggleSets(FilterState filter)
         => filter.Sets ? filter with { Sets = false } : filter with { Sets = true, Slots = new HashSet<EquipSlot>(), Wishlist = false };
 

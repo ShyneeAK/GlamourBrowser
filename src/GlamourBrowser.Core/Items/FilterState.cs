@@ -15,7 +15,7 @@ public sealed record FilterState
     public string SearchText { get; init; } = "";
     public IReadOnlySet<EquipSlot> Slots { get; init; } = new HashSet<EquipSlot>();
 
-    /// <summary>The grid shows whole sets instead of single items (the "Serien" entry of the slot bar).</summary>
+    /// <summary>The grid shows whole sets instead of single items (the "Ausrüstungs-Sets" entry of the slot bar).</summary>
     public bool Sets { get; init; }
 
     /// <summary>The grid shows the wishlist (the star of the slot bar); only the search applies.</summary>

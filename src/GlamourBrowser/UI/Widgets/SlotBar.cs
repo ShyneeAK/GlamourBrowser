@@ -11,7 +11,7 @@ namespace GlamourBrowser.UI.Widgets;
 
 /// <summary>
 /// Row of slot icons: click selects only that slot (again clears), Ctrl+click adds or removes. The last two icons
-/// switch to the set mode ("Serien") and the wishlist mode ("Wunschliste").
+/// switch to the set mode ("Ausrüstungs-Sets") and the wishlist mode ("Wunschliste").
 /// </summary>
 public static class SlotBar
 {
@@ -36,7 +36,7 @@ public static class SlotBar
             }
         }
         ImGui.SameLine();
-        if (IconToggle.Draw($"{id}-sets", 0, new Vector2(edge), filter.Sets, "Serien", theme, FontAwesomeIcon.LayerGroup))
+        if (IconToggle.Draw($"{id}-sets", 0, new Vector2(edge), filter.Sets, "Ausrüstungs-Sets", theme, FontAwesomeIcon.LayerGroup))
         {
             filter = SlotSelection.ToggleSets(filter);
             changed = true;

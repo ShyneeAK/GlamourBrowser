@@ -25,7 +25,7 @@ public static class FilterChips
         }
 
         if (state.Sets)
-            chips.Add(new FilterChip("Serien", state with { Sets = false }));
+            chips.Add(new FilterChip("Ausrüstungs-Sets", state with { Sets = false }));
 
         foreach (var slot in Enum.GetValues<EquipSlot>().Where(state.Slots.Contains))
             chips.Add(new FilterChip(slotName(slot), state with { Slots = state.Slots.Where(s => s != slot).ToHashSet() }));

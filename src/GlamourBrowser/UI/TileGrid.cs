@@ -111,12 +111,12 @@ public sealed class TileGrid
         {
             if (!sources.IsReady)
             {
-                ImGui.TextDisabled("Serien werden geladen …");
+                ImGui.TextDisabled("Ausrüstungs-Sets werden geladen …");
                 return;
             }
-            if (sources.Index.Failures.Contains("Serien"))
+            if (sources.Index.Failures.Contains(SourceIndexBuilder.SetsFamily))
             {
-                ImGui.TextDisabled("Serien konnten nicht geladen werden");
+                ImGui.TextDisabled("Ausrüstungs-Sets konnten nicht geladen werden");
                 return;
             }
         }
@@ -192,7 +192,7 @@ public sealed class TileGrid
 
         // Set entries resolve only once the source index is there.
         if (state.WishlistEntries.Count < store.Entries.Count && !sources.IsReady)
-            ImGui.TextDisabled("Serien werden geladen …");
+            ImGui.TextDisabled("Ausrüstungs-Sets werden geladen …");
         if (bySource)
         {
             planView.Draw();
