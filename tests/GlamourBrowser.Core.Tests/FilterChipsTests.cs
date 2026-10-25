@@ -76,4 +76,16 @@ public class FilterChipsTests
         Assert.Equal("Serien", chip.Label);
         Assert.False(chip.WithoutThis.Sets);
     }
+
+    [Fact]
+    public void WishlistChip_RemovesWishlistMode()
+    {
+        var chip = Assert.Single(Chips(new FilterState { Wishlist = true }));
+        Assert.Equal("Wunschliste", chip.Label);
+        Assert.False(chip.WithoutThis.Wishlist);
+    }
+
+    [Fact]
+    public void WishlistChip_ComesBeforeTheSetsChip()
+        => Assert.Equal(["Suche: robe", "Wunschliste", "Serien"], Chips(new FilterState { SearchText = "robe", Sets = true, Wishlist = true }).Select(c => c.Label));
 }

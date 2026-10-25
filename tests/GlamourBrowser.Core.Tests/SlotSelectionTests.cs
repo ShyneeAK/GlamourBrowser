@@ -39,4 +39,34 @@ public class SlotSelectionTests
         Assert.False(state.Sets);
         Assert.Equal(Set(EquipSlot.Head), state.Slots);
     }
+
+    [Fact]
+    public void ToggleWishlist_TurnsOffSetsAndSlots()
+    {
+        var on = SlotSelection.ToggleWishlist(new FilterState { Sets = true, Slots = Set(EquipSlot.Head), SearchText = "robe" });
+        Assert.True(on.Wishlist);
+        Assert.False(on.Sets);
+        Assert.Empty(on.Slots);
+        Assert.Equal("robe", on.SearchText);
+
+        var off = SlotSelection.ToggleWishlist(on);
+        Assert.False(off.Wishlist);
+        Assert.False(off.Sets);
+    }
+
+    [Fact]
+    public void SelectSlot_LeavesWishlistMode()
+    {
+        var state = SlotSelection.SelectSlot(new FilterState { Wishlist = true }, EquipSlot.Head, additive: false);
+        Assert.False(state.Wishlist);
+        Assert.Equal(Set(EquipSlot.Head), state.Slots);
+    }
+
+    [Fact]
+    public void ToggleSets_LeavesWishlistMode()
+    {
+        var state = SlotSelection.ToggleSets(new FilterState { Wishlist = true });
+        Assert.True(state.Sets);
+        Assert.False(state.Wishlist);
+    }
 }

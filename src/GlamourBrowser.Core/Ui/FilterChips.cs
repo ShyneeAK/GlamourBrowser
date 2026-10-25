@@ -17,6 +17,9 @@ public static class FilterChips
         if (state.SearchText.Trim().Length > 0)
             chips.Add(new FilterChip($"Suche: {state.SearchText.Trim()}", state with { SearchText = "" }));
 
+        if (state.Wishlist)
+            chips.Add(new FilterChip("Wunschliste", state with { Wishlist = false }));
+
         if (state.Sets)
             chips.Add(new FilterChip("Serien", state with { Sets = false }));
 

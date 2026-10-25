@@ -19,11 +19,15 @@ public static class SlotSelection
         return result;
     }
 
-    /// <summary>A click on a slot of the slot bar: <see cref="Toggle"/>, and the set mode ends.</summary>
+    /// <summary>A click on a slot of the slot bar: <see cref="Toggle"/>, and the set and wishlist modes end.</summary>
     public static FilterState SelectSlot(FilterState filter, EquipSlot slot, bool additive)
-        => filter with { Slots = Toggle(filter.Slots, slot, additive), Sets = false };
+        => filter with { Slots = Toggle(filter.Slots, slot, additive), Sets = false, Wishlist = false };
 
-    /// <summary>A click on "Serien": switches the set mode; switching it on clears the slots, which do not apply to sets.</summary>
+    /// <summary>A click on "Serien": switches the set mode; switching it on clears the slots, which do not apply to sets, and ends the wishlist mode.</summary>
     public static FilterState ToggleSets(FilterState filter)
-        => filter.Sets ? filter with { Sets = false } : filter with { Sets = true, Slots = new HashSet<EquipSlot>() };
+        => filter.Sets ? filter with { Sets = false } : filter with { Sets = true, Slots = new HashSet<EquipSlot>(), Wishlist = false };
+
+    /// <summary>A click on "Wunschliste": switches the wishlist mode; switching it on ends the set mode and clears the slots.</summary>
+    public static FilterState ToggleWishlist(FilterState filter)
+        => filter.Wishlist ? filter with { Wishlist = false } : filter with { Wishlist = true, Sets = false, Slots = new HashSet<EquipSlot>() };
 }

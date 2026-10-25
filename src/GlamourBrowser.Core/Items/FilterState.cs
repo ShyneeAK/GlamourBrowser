@@ -17,6 +17,9 @@ public sealed record FilterState
 
     /// <summary>The grid shows whole sets instead of single items (the "Serien" entry of the slot bar).</summary>
     public bool Sets { get; init; }
+
+    /// <summary>The grid shows the wishlist (the star of the slot bar); only the search applies.</summary>
+    public bool Wishlist { get; init; }
     public uint? ClassJobId { get; init; }
     public int MinLevel { get; init; } = 1;
     public int MaxLevel { get; init; } = 100;
