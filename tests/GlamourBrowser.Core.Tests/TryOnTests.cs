@@ -184,6 +184,25 @@ public class TryOnTests
     }
 
     [Fact]
+    public void KeyHash_FollowsEveryChange()
+    {
+        var tryOn = new TryOn(Basis);
+        var hashes = new List<uint> { tryOn.KeyHash(0) };
+
+        tryOn.Put(Item(20, EquipSlot.Body), default);
+        hashes.Add(tryOn.KeyHash(0));
+        tryOn.SetStain(EquipSlot.Body, 1, 9, 2);
+        hashes.Add(tryOn.KeyHash(0));
+        tryOn.SetBasis([Piece(EquipSlot.Feet, 70)]);
+        hashes.Add(tryOn.KeyHash(0));
+        tryOn.Reset(Basis);
+        hashes.Add(tryOn.KeyHash(0));
+
+        Assert.Equal(hashes.Count - 1, hashes.Skip(1).Where((h, i) => h != hashes[i]).Count());
+        Assert.Equal(hashes[0], hashes[^1]);
+    }
+
+    [Fact]
     public void KeyHash_SameWhenOnlyExceptedSlotsChange()
     {
         var tryOn = new TryOn(Basis);

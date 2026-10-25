@@ -212,7 +212,7 @@ public sealed class BrowserState
     {
         var (stain0, stain1) = TileDyes.For(item, TileDye);
         var stance = StanceFor(item);
-        return new(item.Id, stain0, stain1, config.TileMode, LookHash(SlotMask.Of([item.Slot])), RenderWidth,
+        return new(item.Id, stain0, stain1, config.TileMode, LookHash(SlotMask.Of(item.Slot)), RenderWidth,
                    stance.WeaponDrawn ? TileKey.StandardPose : stance.Pose, stance.WeaponDrawn);
     }
 

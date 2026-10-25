@@ -104,10 +104,20 @@ public sealed class Plugin : IDalamudPlugin
         var theme = new UI.Theme.Theme(config);
         var editor = new CustomSetEditor(browser, customSets, live, variants, appearance);
         live.ItemOf = browser.ItemOf;
-        // The live view wears the try-on; while a set is edited its draft over the try-on's basis (known pieces only).
-        live.Look = () => editor.Draft is { } draft
-            ? Looks.Overlay(tryOn.Basis(), draft.Pieces.Where(p => browser.ItemOf(p.ItemId) != null).ToList())
-            : tryOn.TryOn.Pieces;
+        // The live view wears the try-on; while a set is edited its draft over the try-on's basis (known pieces only),
+        // built again only when the basis or the draft changed (both hand out a new list then).
+        (IReadOnlyList<CustomPiece> Basis, IReadOnlyList<CustomPiece> Draft, IReadOnlyList<CustomPiece> Look)? editorLook = null;
+        live.Look = () =>
+        {
+            if (editor.Draft is not { } draft)
+                return tryOn.TryOn.Pieces;
+            if (editorLook is not { } cached || !ReferenceEquals(cached.Basis, tryOn.TryOn.Basis) || !ReferenceEquals(cached.Draft, draft.Pieces))
+            {
+                var known = draft.Pieces.Where(p => browser.ItemOf(p.ItemId) != null).ToList();
+                editorLook = cached = (tryOn.TryOn.Basis, draft.Pieces, Looks.Overlay(tryOn.TryOn.Basis, known));
+            }
+            return cached.Look;
+        };
         memoryStats = new MemoryStats(cache);
         // Before the main window: its title bar button opens it.
         settingsWindow = new SettingsWindow(config, browser, pool, calibration, theme);

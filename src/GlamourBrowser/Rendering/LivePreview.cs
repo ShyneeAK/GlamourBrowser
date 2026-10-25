@@ -28,6 +28,9 @@ public sealed unsafe class LivePreview : IDisposable
     private CharaViewHandle? suspended;
     // The look's hash with face and body: any change of the try-on, the draft or the character dresses again.
     private (uint Look, ulong Customize, CameraPreset? Camera)? applied;
+    // The last look and its hash: the try-on hands out the same list until it changes, so it is hashed once per change.
+    private IReadOnlyList<CustomPiece>? hashedLook;
+    private uint lookHash;
     private byte? appliedPose;
     private float rotateX, rotateY, panX, panY, zoom;
     private bool reset;
@@ -136,8 +139,13 @@ public sealed unsafe class LivePreview : IDisposable
 
         // The selection only frames the look: its slot's camera, the body's without one (like sets).
         var look = Look();
+        if (!ReferenceEquals(look, hashedLook))
+        {
+            hashedLook = look;
+            lookHash = Looks.Hash(look);
+        }
         var camera = cameraFor(subject?.CameraSlot ?? EquipSlot.Body);
-        var wanted = (Looks.Hash(look), appearance.CustomizeHash, camera);
+        var wanted = (lookHash, appearance.CustomizeHash, camera);
 
         // The game picks the stance when a weapon is drawn and keeps it for the next weapon loaded into the hand: before
         // another kind of weapon loads, the drawn one is sheathed (only while nothing loads), and drawn anew below.

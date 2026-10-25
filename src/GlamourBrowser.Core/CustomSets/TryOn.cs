@@ -12,6 +12,8 @@ public sealed class TryOn
 {
     private readonly CustomSetDraft clicked = new(null, "", []);
     private IReadOnlyList<CustomPiece>? pieces;
+    // Key hashes per excepted slots, asked for every tile on every frame; dropped on any change.
+    private readonly Dictionary<ushort, uint> keyHashes = new();
 
     public TryOn(IReadOnlyList<CustomPiece> basis) => Basis = basis.ToList();
 
@@ -93,7 +95,12 @@ public sealed class TryOn
     }
 
     /// <summary>The look's hash without the slots a tile replaces anyway: its part of the tile key.</summary>
-    public uint KeyHash(ushort exceptSlots) => Looks.Hash(Pieces, exceptSlots);
+    public uint KeyHash(ushort exceptSlots)
+    {
+        if (!keyHashes.TryGetValue(exceptSlots, out var hash))
+            keyHashes[exceptSlots] = hash = Looks.Hash(Pieces, exceptSlots);
+        return hash;
+    }
 
     private void Dye(EquipSlot slot, GlamourItem item, DyePair dye)
     {
@@ -105,6 +112,7 @@ public sealed class TryOn
     private void OnChanged()
     {
         pieces = null;
+        keyHashes.Clear();
         Changed?.Invoke();
     }
 }
