@@ -124,7 +124,8 @@ public sealed unsafe class LivePreview : IDisposable
         }
 
         // With the weapon drawn the battle stance is the base animation: an idle pose override would hide it.
-        var pose = config.UseIdlePose && !WeaponDrawn ? appearance.IdlePose : TileKey.StandardPose;
+        var (weaponDrawn, weaponVisible) = LiveWeapons.Effective(subject, WeaponDrawn, WeaponVisible);
+        var pose = config.UseIdlePose && !weaponDrawn ? appearance.IdlePose : TileKey.StandardPose;
         if (appliedPose != pose && view.State == CharaViewHandle.StateReady)
         {
             view.ApplyIdlePose(pose);
@@ -132,16 +133,16 @@ public sealed unsafe class LivePreview : IDisposable
         }
 
         // Visibility has to be applied after the new items have loaded.
-        if (appliedWeaponVisible != WeaponVisible && view.IsIdle)
+        if (appliedWeaponVisible != weaponVisible && view.IsIdle)
         {
-            view.ApplyVisibility(WeaponVisible);
-            appliedWeaponVisible = WeaponVisible;
+            view.ApplyVisibility(weaponVisible);
+            appliedWeaponVisible = weaponVisible;
         }
 
-        if (appliedWeaponDrawn != WeaponDrawn && view.State == CharaViewHandle.StateReady)
+        if (appliedWeaponDrawn != weaponDrawn && view.State == CharaViewHandle.StateReady)
         {
-            view.SetWeaponDrawn(WeaponDrawn);
-            appliedWeaponDrawn = WeaponDrawn;
+            view.SetWeaponDrawn(weaponDrawn);
+            appliedWeaponDrawn = weaponDrawn;
             appliedWeaponVisible = null;
         }
 

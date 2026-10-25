@@ -1,3 +1,4 @@
+using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Sets;
 using static GlamourBrowser.Core.Items.EquipSlot;
@@ -83,4 +84,12 @@ public class SetSubjectTests
         Assert.Equal(Head, new ItemSubject(item).CameraSlot);
         Assert.Equal(SlotMask.Of([Head, Body]), set.Slots);
     }
+
+    [Fact]
+    public void LiveWeapons_SetsAlwaysShowTheWeaponSheathed()
+        => Assert.Equal((false, true), LiveWeapons.Effective(Subject(Item(1, MainHand), Item(2, Body)), drawn: true, visible: false));
+
+    [Fact]
+    public void LiveWeapons_ItemsKeepTheToggles()
+        => Assert.Equal((true, false), LiveWeapons.Effective(new ItemSubject(Item(1, MainHand)), drawn: true, visible: false));
 }
