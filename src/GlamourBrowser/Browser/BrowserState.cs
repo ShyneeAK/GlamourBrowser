@@ -146,6 +146,13 @@ public sealed class BrowserState
         RequestTiles();
     }
 
+    public void SetLookaheadPages(int count)
+    {
+        config.LookaheadPages = Math.Clamp(count, 0, Lookahead.MaxPages);
+        config.Save();
+        RequestTiles();
+    }
+
     public void SetUseIdlePose(bool useIdlePose)
     {
         config.UseIdlePose = useIdlePose;
@@ -270,7 +277,7 @@ public sealed class BrowserState
         }
     }
 
-    /// <summary>Queues the current page first, then the next two; the cache keeps these and the recently shown pages.</summary>
+    /// <summary>Queues the current page first, then the ones ahead; the cache keeps these and the recently shown pages.</summary>
     private void RequestTiles()
     {
         lock (RenderSync.Lock)
@@ -284,8 +291,8 @@ public sealed class BrowserState
             }
 
             var current = CurrentPage.Select(KeyFor).ToList();
-            // Two pages of lookahead, the next one first; recently shown pages (also of other slots) stay cached for going back.
-            var lookahead = PageKeys(PageIndex + 1).Concat(PageKeys(PageIndex + 2)).ToList();
+            // The pages ahead render the next one first; recently shown pages (also of other slots) stay cached for going back.
+            var lookahead = Lookahead.Pages(PageIndex, PageCount, config.LookaheadPages).SelectMany(PageKeys).ToList();
             history.Show(current);
 
             cache.Retain(current.Concat(lookahead).Concat(history.Before(config.CachedPages)).ToHashSet());

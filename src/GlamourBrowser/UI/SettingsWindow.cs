@@ -108,8 +108,14 @@ public sealed class SettingsWindow : Window
             state.SetCachedPages(cachedPages);
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip("Wie viele zuletzt angezeigte Seiten gerendert bleiben, auch beim Wechsel zwischen Slots und Modi.\n"
-                             + "Zurück zu einer solchen Seite zeigt die Bilder sofort. Die nächsten zwei Seiten werden immer vorausgerendert.\n"
-                             + "Mehr Seiten brauchen mehr Grafikspeicher.");
+                             + "Zurück zu einer solchen Seite zeigt die Bilder sofort. Mehr Seiten brauchen mehr Grafikspeicher.");
+
+        var lookahead = config.LookaheadPages;
+        if (ImGui.SliderInt("Seiten vorausrendern", ref lookahead, 0, Lookahead.MaxPages, "%d", ImGuiSliderFlags.AlwaysClamp))
+            state.SetLookaheadPages(lookahead);
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip("Wie viele Seiten nach der aktuellen schon im Voraus gerendert werden, die nächste zuerst.\n"
+                             + "Weiterblättern zeigt die Bilder dann sofort. Mehr Seiten brauchen mehr Grafikspeicher und Renderzeit.");
 
         ImGui.Separator();
         ImGui.TextDisabled("Live-Ansicht");

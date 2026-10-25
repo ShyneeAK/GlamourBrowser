@@ -66,6 +66,13 @@ public sealed class Plugin : IDalamudPlugin
     public Plugin()
     {
         config = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+        if (config.Version < 2)
+        {
+            // Saved before the page cache default went up: the old default would stay otherwise.
+            config.CachedPages = 8;
+            config.Version = 2;
+            config.Save();
+        }
         calibration = new CalibrationService(config);
         var (catalog, variants) = ItemCatalogLoader.Load(DataManager);
         ownership = new OwnershipService(variants);
