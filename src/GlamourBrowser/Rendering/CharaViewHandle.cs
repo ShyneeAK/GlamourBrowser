@@ -167,10 +167,6 @@ public sealed unsafe class CharaViewHandle : IDisposable
     }
 
     /// <summary>
-    /// The view's absolute camera state. "Rotate" and "pan" move the character inside the view's
-    /// scene (GameObject.Rotation / Position); "zoom" is a distance in the render camera.
-    /// </summary>
-    /// <summary>
     /// Puts the character into an idle pose by overriding its base timeline (setting EmoteController.CPoseState
     /// alone does not change the animation, see the B2 pose spike). The standard pose clears the override.
     /// Returns false when there is no character or setting the override failed.
@@ -200,7 +196,7 @@ public sealed unsafe class CharaViewHandle : IDisposable
 
     public bool SetAnimationPaused(bool paused) => view != null && AnimationFreeze.SetPaused(view->GetCharacter(), paused);
 
-    public (int Active, string Weights) BodyBlend() => view != null ? AnimationFreeze.BodyBlend(view->GetCharacter()) : (0, "");
+    public int BodyBlend() => view != null ? AnimationFreeze.BodyBlend(view->GetCharacter()) : 0;
 
     /// <summary>
     /// Whether the weapon is really in hand: DrawData.Flags2 bit 0x04 (set in the game's try-on window with a drawn
@@ -235,6 +231,10 @@ public sealed unsafe class CharaViewHandle : IDisposable
         return (character->Timeline.TimelineSequencer.TimelineIds[0], character->Timeline.BaseOverride);
     }
 
+    /// <summary>
+    /// The view's absolute camera state. "Rotate" and "pan" move the character inside the view's
+    /// scene (GameObject.Rotation / Position); "zoom" is a distance in the render camera.
+    /// </summary>
     public CameraPreset? ReadCamera()
     {
         var character = ViewCharacter();

@@ -314,7 +314,7 @@ public sealed unsafe class RenderPool : IDisposable
                         worker.DrawRetries++;
                     }
                 }
-                var poseState = worker.DrawGate?.Step(view.TimelineSignature(), view.BodyBlend().Active, view.IsWeaponInHand()) ?? worker.PoseGate!.Step(playing);
+                var poseState = worker.DrawGate?.Step(view.TimelineSignature(), view.BodyBlend(), view.IsWeaponInHand()) ?? worker.PoseGate!.Step(playing);
                 if (poseState == PoseGateState.Wait)
                     return;
                 if (poseState == PoseGateState.Timeout && !poseWarned)
@@ -328,9 +328,9 @@ public sealed unsafe class RenderPool : IDisposable
                 break;
 
             case Phase.Blend:
-                var blend = view.BodyBlend();
+                var activeAnimations = view.BodyBlend();
                 worker.Frames++;
-                if (blend.Active > 1 && worker.Frames <= BlendTimeoutFrames)
+                if (activeAnimations > 1 && worker.Frames <= BlendTimeoutFrames)
                     return;
                 worker.Frames = 0;
                 worker.Phase = Phase.Freeze;

@@ -70,13 +70,13 @@ public sealed class TopBar
         if (ImGui.Combo("##mode", ref mode, ["Aktuelles Outfit", "Unterwäsche"], 2))
             state.SetTileMode((TileMode)mode);
 
-        // Drag fields instead of sliders: no grab knob covering the label.
         NextOnLine(130 * scale);
         ImGui.SetNextItemWidth(130 * scale);
         var sort = (int)config.Sort;
         if (ImGui.Combo("##sort", ref sort, ["Nach Level", "Neueste zuerst"], 2))
             state.SetSort((SortOrder)sort);
 
+        // Drag fields instead of sliders: no grab knob covering the label.
         var columns = config.Columns;
         var rows = config.Rows;
         NextOnLine(160 * scale + spacing);

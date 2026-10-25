@@ -27,20 +27,17 @@ public static unsafe class AnimationFreeze
 
     /// <summary>
     /// Body animations (first partial skeleton) that still carry weight: more than one means a blend from the
-    /// previous animation is still running. Also returns the weights for diagnostics.
+    /// previous animation is still running.
     /// </summary>
-    public static (int Active, string Weights) BodyBlend(Character* character)
+    public static int BodyBlend(Character* character)
     {
         var active = 0;
-        var weights = new System.Collections.Generic.List<string>();
         ForEachControl(character, control =>
         {
-            var weight = control->hkaAnimationControl.Weight;
-            weights.Add(weight.ToString("0.00"));
-            if (weight > 0.01f)
+            if (control->hkaAnimationControl.Weight > 0.01f)
                 active++;
         }, bodyOnly: true);
-        return (active, string.Join("/", weights));
+        return active;
     }
 
     private static float Duration(hkaDefaultAnimationControl* control)
