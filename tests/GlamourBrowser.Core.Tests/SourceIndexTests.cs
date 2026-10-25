@@ -108,4 +108,18 @@ public class SourceIndexTests
         Assert.Equal(2, index.SourcesOf(1).Count);
         Assert.Contains(SourceCategory.GilVendor, index.CategoriesOf(1));
     }
+
+    [Fact]
+    public void InheritFromContainers_ContentsGetTheContainersSources()
+    {
+        var builder = new SourceIndex.Builder();
+        builder.Add(48728, new ItemSource(SourceCategory.MogStation, "Mogstation", "18.00 $", new OpenStore(1087)));
+        builder.InheritFromContainers(new Dictionary<uint, IReadOnlyList<uint>> { [48728] = [47906, 47907], [999] = [47908] },
+                                      id => id == 48728 ? "Azeyma-Ausrüstungskiste" : "?");
+        var index = builder.Build();
+        var source = Assert.Single(index.SourcesOf(47906));
+        Assert.Equal(new ItemSource(SourceCategory.MogStation, "Mogstation", "aus Azeyma-Ausrüstungskiste", new OpenStore(1087)), source);
+        Assert.Single(index.SourcesOf(47907));
+        Assert.Empty(index.SourcesOf(47908));   // a container without sources passes nothing on
+    }
 }

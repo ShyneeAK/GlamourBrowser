@@ -15,6 +15,10 @@ public sealed class SourceIndexBuilder(GameData data, IReadOnlySet<uint> relevan
     public SourceIndex Build()
     {
         var builder = new SourceIndex.Builder();
+        // Coffers holding relevant items take part as well, so their sources can pass on to what they contain.
+        IReadOnlyDictionary<uint, IReadOnlyList<uint>> coffers = new Dictionary<uint, IReadOnlyList<uint>>();
+        Run(builder, "Kisten", () => coffers = CofferContents.Find(data, relevantItems, log));
+        var relevant = relevantItems.Concat(coffers.Keys).ToHashSet();
         ShopNpcResolver? npcs = null;
         Run(builder, "Händler-NPCs", () => npcs = new ShopNpcResolver(data, log));
         if (npcs != null)
@@ -22,20 +26,25 @@ public sealed class SourceIndexBuilder(GameData data, IReadOnlySet<uint> relevan
             foreach (var failure in npcs.Failures)
                 builder.MarkFailure(failure);
             IReadOnlySet<uint> jobGear = new HashSet<uint>();
-            Run(builder, "Job-Ausrüstung", () => jobGear = JobGearItems.Find(data, relevantItems));
-            Run(builder, "Gil-Händler", () => ShopSources.AddGilShops(builder, data, npcs, relevantItems, jobGear));
-            Run(builder, "Staatliche Gesellschaft", () => ShopSources.AddGrandCompany(builder, data, npcs, relevantItems));
-            Run(builder, "Spezialshops", () => ShopSources.AddSpecialShops(builder, data, npcs, relevantItems, jobGear));
+            Run(builder, "Job-Ausrüstung", () => jobGear = JobGearItems.Find(data, relevant));
+            Run(builder, "Gil-Händler", () => ShopSources.AddGilShops(builder, data, npcs, relevant, jobGear));
+            Run(builder, "Staatliche Gesellschaft", () => ShopSources.AddGrandCompany(builder, data, npcs, relevant));
+            Run(builder, "Spezialshops", () => ShopSources.AddSpecialShops(builder, data, npcs, relevant, jobGear));
         }
-        Run(builder, "Inhalte", () => ContentSources.AddDuties(builder, data, relevantItems, log));
-        Run(builder, "Inhalts-Ketten", () => ContentSources.AddDutyChains(builder, data, relevantItems, log));
-        Run(builder, "Quests", () => QuestSources.AddQuests(builder, data, relevantItems));
-        Run(builder, "Errungenschaften", () => QuestSources.AddAchievements(builder, data, relevantItems));
-        Run(builder, "Relikte", () => QuestSources.AddRelics(builder, data, relevantItems, log));
-        Run(builder, "Handwerk", () => MiscSources.AddRecipes(builder, data, relevantItems));
-        Run(builder, "Mogstation", () => MiscSources.AddMogStation(builder, data, relevantItems, log));
-        Run(builder, "Sonstiges", () => MiscSources.AddMisc(builder, data, relevantItems, log));
-        Run(builder, "Patches", () => MiscSources.AddPatches(builder, data, relevantItems, log));
+        Run(builder, "Inhalte", () => ContentSources.AddDuties(builder, data, relevant, log));
+        Run(builder, "Inhalts-Ketten", () => ContentSources.AddDutyChains(builder, data, relevant, log));
+        Run(builder, "Quests", () => QuestSources.AddQuests(builder, data, relevant));
+        Run(builder, "Errungenschaften", () => QuestSources.AddAchievements(builder, data, relevant));
+        Run(builder, "Relikte", () => QuestSources.AddRelics(builder, data, relevant, log));
+        Run(builder, "Handwerk", () => MiscSources.AddRecipes(builder, data, relevant));
+        Run(builder, "Mogstation", () => MiscSources.AddMogStation(builder, data, relevant, log));
+        Run(builder, "Sonstiges", () => MiscSources.AddMisc(builder, data, relevant, log));
+        Run(builder, "Patches", () => MiscSources.AddPatches(builder, data, relevant, log));
+        Run(builder, "Kisten-Inhalt", () =>
+        {
+            var items = data.GetExcelSheet<Lumina.Excel.Sheets.Item>()!;
+            builder.InheritFromContainers(coffers, id => items.TryGetRow(id, out var item) ? item.Name.ExtractText() : "");
+        });
         Run(builder, "Varianten", () => builder.MergeVariants(VariantSheet.BaseOf(data)));
         Run(builder, "Serien", () =>
         {

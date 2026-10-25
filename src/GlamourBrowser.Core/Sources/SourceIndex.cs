@@ -77,6 +77,25 @@ public sealed class SourceIndex
 
         public void SetSets(IReadOnlyList<GlamourSet> value) => sets = value.ToList();
 
+        /// <summary>
+        /// One step deep: every item in a container (coffer, outfit box) gets each source of the container, with
+        /// "aus &lt;container&gt;" as detail, e.g. a coffer sold in the mog station. Run after the source families.
+        /// </summary>
+        public void InheritFromContainers(IReadOnlyDictionary<uint, IReadOnlyList<uint>> contents, Func<uint, string> nameOf)
+        {
+            foreach (var (container, items) in contents)
+            {
+                if (!sources.TryGetValue(container, out var list))
+                    continue;
+                var detail = $"aus {nameOf(container)}";
+                foreach (var source in list.ToList())
+                {
+                    foreach (var item in items)
+                        Add(item, source with { Detail = detail });
+                }
+            }
+        }
+
         /// <summary>Gives every base item the sources of its "+N" variants (getting a variant also gets the look).</summary>
         public void MergeVariants(IReadOnlyDictionary<uint, uint> baseOf)
         {
