@@ -94,23 +94,32 @@ public sealed unsafe class LivePane
             DrawItemCard();
     }
 
-    /// <summary>The item's two dye boxes in the try-on, crossed out where it has no channel; none while it is not worn.</summary>
-    private void DrawDyeBoxes(GlamourItem item)
+    /// <summary>The size of the item's dye fields in the card's top-right corner: two thirds of the item icon.</summary>
+    private static float DyeEdge => 40 * UiScale.Global * 2 / 3;
+
+    /// <summary>The width the item's dye fields take in the card's top-right corner; 0 while it is not worn.</summary>
+    private float DyeBoxesWidth(GlamourItem item)
+        => tryOn.TryOn.SlotOf(item.Id) is { } slot && tryOn.TryOn.PieceIn(slot) != null ? DyeEdge * 2 + ImGui.GetStyle().ItemSpacing.X : 0;
+
+    /// <summary>
+    /// The item's two dye fields in the try-on, large in the card's top-right corner (the cursor stays where it was),
+    /// crossed out where it has no channel; none while it is not worn.
+    /// </summary>
+    private void DrawDyeBoxes(GlamourItem item, Vector2 topRight)
     {
         if (tryOn.TryOn.SlotOf(item.Id) is not { } slot || tryOn.TryOn.PieceIn(slot) is not { } piece)
             return;
         var (first, second) = DyeBoxes.For(item.DyeCount);
-        // A row of its own: behind the buttons and the calibration text they would be cut off in a narrow pane.
-        ImGui.AlignTextToFramePadding();
-        ImGui.TextDisabled(Loc.T("Farbe"));
+        var cursor = ImGui.GetCursorPos();
+        ImGui.SetCursorScreenPos(topRight - new Vector2(DyeBoxesWidth(item), 0));
         var stain0 = piece.Stain0;
-        ImGui.SameLine();
-        if (DyePicker.Draw("##itemdye1", ref stain0, dyes, theme, first))
+        if (DyePicker.Draw("##itemdye1", ref stain0, dyes, theme, first, Loc.T("Farbe 1"), DyeEdge))
             tryOn.TryOn.SetStain(slot, 1, stain0, item.DyeCount);
         var stain1 = piece.Stain1;
         ImGui.SameLine();
-        if (DyePicker.Draw("##itemdye2", ref stain1, dyes, theme, second))
+        if (DyePicker.Draw("##itemdye2", ref stain1, dyes, theme, second, Loc.T("Farbe 2"), DyeEdge))
             tryOn.TryOn.SetStain(slot, 2, stain1, item.DyeCount);
+        ImGui.SetCursorPos(cursor);
     }
 
     /// <summary>Below the live view: back to the try-on's basis (tile mode), or the whole try-on as a new custom set.</summary>
@@ -311,15 +320,22 @@ public sealed unsafe class LivePane
         }
 
         var colors = theme.Colors;
+        // The dye fields sit in the top-right corner; name and level wrap before them.
+        var topRight = ImGui.GetCursorScreenPos() + new Vector2(ImGui.GetContentRegionAvail().X, 0);
+        var wrapAt = ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X - DyeBoxesWidth(item) - ImGui.GetStyle().ItemSpacing.X;
         GameIcon.Draw(item.IconId, new Vector2(40 * UiScale.Global), FontAwesomeIcon.Tshirt, colors.TextMuted);
         ImGui.SameLine();
         ImGui.BeginGroup();
+        ImGui.PushTextWrapPos(wrapAt);
         ImGui.TextWrapped(item.Name);
         var patch = sources.IsReady ? sources.Index.PatchOf(item.Id) : 0;
         // The patch keeps its dot in every language.
-        ImGui.TextDisabled(Loc.F("Level {0}", item.LevelEquip)
-                           + (patch > 0 ? " · " + Loc.F("Patch {0}", patch.ToString("0.0#", CultureInfo.InvariantCulture)) : ""));
+        using (ImRaii.PushColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled)))
+            ImGui.TextWrapped(Loc.F("Level {0}", item.LevelEquip)
+                              + (patch > 0 ? " · " + Loc.F("Patch {0}", patch.ToString("0.0#", CultureInfo.InvariantCulture)) : ""));
+        ImGui.PopTextWrapPos();
         ImGui.EndGroup();
+        DrawDyeBoxes(item, topRight);
 
         DrawTraits(item);
 
@@ -340,7 +356,6 @@ public sealed unsafe class LivePane
             state.ShowInGrid(item);
         ImGui.SameLine();
         DrawCalibration(item);
-        DrawDyeBoxes(item);
 
         ImGui.Separator();
         DrawSources(item);
@@ -501,16 +516,19 @@ public sealed unsafe class LivePane
         if (IconButton.Draw("##garland", 0, FontAwesomeIcon.ExternalLinkAlt, "Garland Tools", theme))
             Util.OpenLink($"https://www.garlandtools.org/db/#item/{item.Id}");
         ImGui.SameLine();
+        ImGui.AlignTextToFramePadding();
         ImGui.TextDisabled("Garland");
         ImGui.SameLine();
         if (IconButton.Draw("##teamcraft", 0, FontAwesomeIcon.ExternalLinkAlt, "Teamcraft", theme))
             Util.OpenLink($"https://ffxivteamcraft.com/db/de/item/{item.Id}");
         ImGui.SameLine();
+        ImGui.AlignTextToFramePadding();
         ImGui.TextDisabled("Teamcraft");
         ImGui.SameLine();
         if (IconButton.Draw("##google", 0, FontAwesomeIcon.Search, Loc.T("Google-Suche nach dem Item-Namen"), theme))
             Util.OpenLink("https://www.google.com/search?q=" + Uri.EscapeDataString(item.Name + " FFXIV"));
         ImGui.SameLine();
+        ImGui.AlignTextToFramePadding();
         ImGui.TextDisabled("Google");
     }
 

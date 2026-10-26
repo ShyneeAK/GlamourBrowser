@@ -16,10 +16,11 @@ public static class DyePicker
 
     /// <param name="enabled">False when the item has no such dye channel: crossed out, no popup.</param>
     /// <param name="label">Put before the dye's name in the tooltip (the tile dye: "Farbe").</param>
-    public static bool Draw(string id, ref byte stain, DyeCatalog dyes, Theme.Theme theme, bool enabled, string? label = null)
+    /// <param name="edge">The field's size; the frame height without one.</param>
+    public static bool Draw(string id, ref byte stain, DyeCatalog dyes, Theme.Theme theme, bool enabled, string? label = null, float? edge = null)
     {
         var colors = theme.Colors;
-        var size = new Vector2(ImGui.GetFrameHeight());
+        var size = new Vector2(edge ?? ImGui.GetFrameHeight());
         var min = ImGui.GetCursorScreenPos();
         var clicked = ImGui.InvisibleButton(id, size) && enabled;
         var hovered = ImGui.IsItemHovered();
