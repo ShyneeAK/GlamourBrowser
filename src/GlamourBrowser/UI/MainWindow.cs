@@ -5,6 +5,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Rendering;
 
 namespace GlamourBrowser.UI;
@@ -40,7 +41,7 @@ public sealed class MainWindow : Window
             Icon = FontAwesomeIcon.Cog,
             IconOffset = new Vector2(1.5f, 1),
             Click = _ => openSettings(),
-            ShowTooltip = () => ImGui.SetTooltip("Einstellungen"),
+            ShowTooltip = () => ImGui.SetTooltip(Loc.T("Einstellungen")),
         });
     }
 
@@ -86,7 +87,7 @@ public sealed class MainWindow : Window
             var gridWidth = MathF.Max(0, ImGui.GetContentRegionAvail().X - filterWidth - (filterWidth > 0 ? spacing : 0));
             if (gridWidth < MinGridWidth * scale)
             {
-                ImGui.TextDisabled("Fenster vergrößern oder die Filterspalte ausblenden");
+                ImGui.TextDisabled(Loc.T("Fenster vergrößern oder die Filterspalte ausblenden"));
             }
             else
             {

@@ -1,4 +1,5 @@
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Ownership;
 
 namespace GlamourBrowser.Core.CustomSets;
@@ -63,10 +64,10 @@ public sealed record TransferReport(int Transferred, int Total, IReadOnlyList<(s
 
 public static class PlateTransfer
 {
-    public const string NotTaken = "vom Spiel nicht übernommen – Kommoden- bzw. Armoire-Liste im Plate-Editor öffnen und erneut übertragen";
-    public const string NotCleared = "vom Spiel nicht geleert – Kommoden- bzw. Armoire-Liste im Plate-Editor öffnen und erneut übertragen";
-    public const string NotDone = "nicht übertragen – Glamour-Plate wurde geschlossen";
-    public const string DyeNotSet = "Farbe vom Spiel nicht vorgemerkt – im Plate-Editor von Hand färben";
+    public static string NotTaken => Loc.T("vom Spiel nicht übernommen – Kommoden- bzw. Armoire-Liste im Plate-Editor öffnen und erneut übertragen");
+    public static string NotCleared => Loc.T("vom Spiel nicht geleert – Kommoden- bzw. Armoire-Liste im Plate-Editor öffnen und erneut übertragen");
+    public static string NotDone => Loc.T("nicht übertragen – Glamour-Plate wurde geschlossen");
+    public static string DyeNotSet => Loc.T("Farbe vom Spiel nicht vorgemerkt – im Plate-Editor von Hand färben");
 
     /// <summary>
     /// What a transfer achieved: the transferred pieces, and a note only where something is wrong or missing (missing
@@ -111,7 +112,7 @@ public static class PlateTransfer
             if ((dresserOf(piece.ItemId) ?? armoireOf(piece.ItemId)) is not { } source)
             {
                 var places = placesOf(piece.ItemId);
-                result.Add(new PlateSlot(slot, piece, null, places.Count > 0 ? $"liegt in: {places[0]}" : "nicht im Besitz"));
+                result.Add(new PlateSlot(slot, piece, null, places.Count > 0 ? Loc.F("liegt in: {0}", places[0]) : Loc.T("nicht im Besitz")));
                 continue;
             }
             result.Add(new PlateSlot(slot, piece, source, null));

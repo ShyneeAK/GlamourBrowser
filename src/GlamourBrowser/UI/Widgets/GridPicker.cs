@@ -2,6 +2,7 @@ using System;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using GlamourBrowser.Core.Layout;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Ui;
 
 namespace GlamourBrowser.UI.Widgets;
@@ -19,7 +20,7 @@ public static class GridPicker
         if (ImGui.Button($"{columns} × {rows}##{id}"))
             ImGui.OpenPopup(id);
         if (ImGui.IsItemHovered())
-            ImGui.SetTooltip("Kacheln pro Seite (Spalten × Zeilen)");
+            ImGui.SetTooltip(Loc.T("Kacheln pro Seite (Spalten × Zeilen)"));
         if (!ImGui.BeginPopup(id))
             return false;
 
@@ -44,7 +45,7 @@ public static class GridPicker
                 drawList.AddRect(min, min + new Vector2(cell), colors.Border, 3f);
             }
         }
-        ImGui.TextUnformatted($"{showColumns} Spalten × {showRows} Zeilen");
+        ImGui.TextUnformatted(Loc.F("{0} Spalten × {1} Zeilen", showColumns, showRows));
 
         var changed = false;
         if (clicked && hovered != null)

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Ui;
 
 namespace GlamourBrowser.UI.Widgets;
@@ -59,7 +60,7 @@ public static class RangeSlider
             (min, max) = (newMin, newMax);
         }
         if (!active && ImGui.IsItemHovered())
-            ImGui.SetTooltip("Griff ziehen oder doppelklicken zum Eintippen");
+            ImGui.SetTooltip(Loc.T("Griff ziehen oder doppelklicken zum Eintippen"));
 
         // Through the style alpha, so the slider fades like every other control when it is disabled.
         var drawList = ImGui.GetWindowDrawList();
@@ -78,18 +79,18 @@ public static class RangeSlider
             // Taken on Enter only: a half-typed number must not be clamped while typing.
             var (typedMin, typedMax) = (min, max);
             ImGui.SetNextItemWidth(110 * UiScale.Global);
-            if (ImGui.InputInt("von", ref typedMin, 1, 10, flags: ImGuiInputTextFlags.EnterReturnsTrue))
+            if (ImGui.InputInt(Loc.T("von"), ref typedMin, 1, 10, flags: ImGuiInputTextFlags.EnterReturnsTrue))
             {
                 (min, max) = RangeTrack.Typed(min, max, upper: false, typedMin, lo, hi);
                 changed = true;
             }
             ImGui.SetNextItemWidth(110 * UiScale.Global);
-            if (ImGui.InputInt("bis", ref typedMax, 1, 10, flags: ImGuiInputTextFlags.EnterReturnsTrue))
+            if (ImGui.InputInt(Loc.T("bis"), ref typedMax, 1, 10, flags: ImGuiInputTextFlags.EnterReturnsTrue))
             {
                 (min, max) = RangeTrack.Typed(min, max, upper: true, typedMax, lo, hi);
                 changed = true;
             }
-            ImGui.TextDisabled("Enter übernimmt");
+            ImGui.TextDisabled(Loc.T("Enter übernimmt"));
             ImGui.EndPopup();
         }
         return changed;

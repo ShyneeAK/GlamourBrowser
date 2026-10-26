@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 using GlamourBrowser.Core.CustomSets;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.GlamourPlate;
 
 namespace GlamourBrowser.UI;
@@ -21,11 +22,11 @@ public static class PlateTransferUi
         var ready = plates.IsEditorOpen && !plates.IsTransferring && pieces.Count > 0;
         using (ImRaii.Disabled(!ready))
         {
-            if (ImGui.Button("In Glamour-Plate übertragen"))
+            if (ImGui.Button(Loc.T("In Glamour-Plate übertragen")))
                 plates.Start(pieces);
         }
         if (!plates.IsEditorOpen && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip("Glamour-Plate im Spiel zum Bearbeiten öffnen");
+            ImGui.SetTooltip(Loc.T("Glamour-Plate im Spiel zum Bearbeiten öffnen"));
 
         if (plates.LastResult is not { HasProblems: false } done)
             return;
@@ -35,7 +36,7 @@ public static class PlateTransferUi
             return;
         }
         ImGui.SameLine();
-        ImGui.TextDisabled(done.Transferred == 1 ? "Übertragen: 1 Teil" : $"Übertragen: {done.Transferred} Teile");
+        ImGui.TextDisabled(done.Transferred == 1 ? Loc.T("Übertragen: 1 Teil") : Loc.F("Übertragen: {0} Teile", done.Transferred));
     }
 
     /// <summary>Draw once per frame where it is always visible: shows what went wrong or is missing after a transfer.</summary>
@@ -61,9 +62,9 @@ public static class PlateTransferUi
             return;
 
         if (result.EditorClosed)
-            ImGui.TextUnformatted("Glamour-Plate ist nicht geöffnet");
+            ImGui.TextUnformatted(Loc.T("Glamour-Plate ist nicht geöffnet"));
         if (!result.EditorClosed || result.Transferred > 0)
-            ImGui.TextUnformatted($"{result.Transferred} von {result.Total} Teilen übertragen");
+            ImGui.TextUnformatted(Loc.F("{0} von {1} Teilen übertragen", result.Transferred, result.Total));
         foreach (var (name, reason) in result.Notes)
         {
             ImGui.TextUnformatted(name);

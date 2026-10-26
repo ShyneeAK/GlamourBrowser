@@ -1,4 +1,5 @@
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Localization;
 
 namespace GlamourBrowser.Core.CustomSets;
 
@@ -7,7 +8,7 @@ namespace GlamourBrowser.Core.CustomSets;
 public sealed class CustomSetStore(ulong contentId, IReadOnlyDictionary<uint, uint>? variants = null)
 {
     public const int MaxNameLength = 40;
-    public const string DefaultName = "Neues Set";
+    public static string DefaultName => Loc.T("Neues Set");
 
     private readonly List<CustomSet> sets = new();
 

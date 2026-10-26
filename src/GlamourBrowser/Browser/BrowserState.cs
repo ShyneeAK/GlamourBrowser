@@ -120,6 +120,38 @@ public sealed class BrowserState
 
     public void ShowLastPage() => GoToPage(PageCount - 1);
 
+    /// <summary>
+    /// The item's slot in the item mode, on the page with its tile, to browse on from there. The other filters stay
+    /// unless they hide the item; then only its slot is filtered. False when it has no tile even so.
+    /// </summary>
+    public bool ShowInGrid(GlamourItem item)
+    {
+        lock (RenderSync.Lock)
+        {
+            Filter = filter with { Mode = BrowseMode.Items, Slots = new HashSet<EquipSlot> { item.Slot } };
+            var index = IndexOf(item.Id);
+            if (index < 0)
+            {
+                Filter = new FilterState { Slots = new HashSet<EquipSlot> { item.Slot } };
+                index = IndexOf(item.Id);
+            }
+            if (index < 0)
+                return false;
+            GoToPage(index / PageSize);
+            return true;
+        }
+
+        int IndexOf(uint id)
+        {
+            for (var i = 0; i < Results.Count; i++)
+            {
+                if (Results[i] is ItemSubject { Item.Id: var found } && found == id)
+                    return i;
+            }
+            return -1;
+        }
+    }
+
     public void SetGrid(int columns, int rows)
     {
         // The page's first item stays in view; remembered pages of other slots no longer match the page size.

@@ -1,4 +1,5 @@
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Sources;
 
 namespace GlamourBrowser.Core.Ui;
@@ -18,7 +19,7 @@ public static class FilterChips
         var chips = new List<FilterChip>();
 
         if (state.SearchText.Trim().Length > 0)
-            chips.Add(new FilterChip($"Suche: {state.SearchText.Trim()}", state with { SearchText = "" }));
+            chips.Add(new FilterChip(Loc.F("Suche: {0}", state.SearchText.Trim()), state with { SearchText = "" }));
 
         if (state.Mode != BrowseMode.Items)
             chips.Add(new FilterChip(BrowseModes.DisplayName(state.Mode), state with { Mode = BrowseMode.Items }));
@@ -34,26 +35,26 @@ public static class FilterChips
             foreach (var part in jobParts(state.Jobs))
                 chips.Add(new FilterChip(part.Label, state with { Jobs = state.Jobs.Where(j => !part.Ids.Contains(j)).ToHashSet() }));
             if (state.JobsExclusive)
-                chips.Add(new FilterChip("Nur job-exklusive", state with { JobsExclusive = false }));
+                chips.Add(new FilterChip(Loc.T("Nur job-exklusive"), state with { JobsExclusive = false }));
         }
 
         if (state.MinLevel != defaults.MinLevel || state.MaxLevel != defaults.MaxLevel)
-            chips.Add(new FilterChip($"Level {state.MinLevel}–{state.MaxLevel}", state with { MinLevel = defaults.MinLevel, MaxLevel = defaults.MaxLevel }));
+            chips.Add(new FilterChip(Loc.F("Level {0}–{1}", state.MinLevel, state.MaxLevel), state with { MinLevel = defaults.MinLevel, MaxLevel = defaults.MaxLevel }));
 
         if (state.DyeableOnly)
-            chips.Add(new FilterChip("Nur Färbbare", state with { DyeableOnly = false }));
+            chips.Add(new FilterChip(Loc.T("Nur Färbbare"), state with { DyeableOnly = false }));
 
         string Name(byte id) => dyeName?.Invoke(id) ?? id.ToString();
         if (state.Dye.First != 0)
-            chips.Add(new FilterChip($"Farbe 1: {Name(state.Dye.First)}", state with { Dye = state.Dye with { First = 0 } }));
+            chips.Add(new FilterChip(Loc.F("Farbe 1: {0}", Name(state.Dye.First)), state with { Dye = state.Dye with { First = 0 } }));
         if (state.Dye.Second != 0)
-            chips.Add(new FilterChip($"Farbe 2: {Name(state.Dye.Second)}", state with { Dye = state.Dye with { Second = 0 } }));
+            chips.Add(new FilterChip(Loc.F("Farbe 2: {0}", Name(state.Dye.Second)), state with { Dye = state.Dye with { Second = 0 } }));
 
         if (state.Ownership != OwnershipFilter.All)
-            chips.Add(new FilterChip(state.Ownership == OwnershipFilter.Owned ? "Habe ich" : "Fehlt mir", state with { Ownership = OwnershipFilter.All }));
+            chips.Add(new FilterChip(Loc.T(state.Ownership == OwnershipFilter.Owned ? "Habe ich" : "Fehlt mir"), state with { Ownership = OwnershipFilter.All }));
 
         if (!state.WearableOnly)
-            chips.Add(new FilterChip("Auch nicht tragbare", state with { WearableOnly = true }));
+            chips.Add(new FilterChip(Loc.T("Auch nicht tragbare"), state with { WearableOnly = true }));
 
         foreach (var category in Enum.GetValues<SourceCategory>().Where(state.Categories.Contains))
             chips.Add(new FilterChip(SourceCategories.DisplayName(category), state with { Categories = state.Categories.Where(c => c != category).ToHashSet() }));

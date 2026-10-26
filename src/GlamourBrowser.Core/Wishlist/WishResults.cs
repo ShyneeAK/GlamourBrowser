@@ -1,4 +1,5 @@
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Sets;
 
 namespace GlamourBrowser.Core.Wishlist;
@@ -41,9 +42,9 @@ public static class WishResults
         if (shown > 0 || resolved == 0 && loading)
             return null;
         if (resolved == 0)
-            return "Keine Einträge im Katalog gefunden";
+            return Loc.T("Keine Einträge im Katalog gefunden");
         if (searchText.Trim().Length > 0)
-            return "Keine Treffer";
-        return hideDone ? "Alles erledigt" : null;
+            return Loc.T("Keine Treffer");
+        return hideDone ? Loc.T("Alles erledigt") : null;
     }
 }

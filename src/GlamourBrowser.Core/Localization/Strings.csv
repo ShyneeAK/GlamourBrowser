@@ -1,2 +1,338 @@
 de,en,fr,ja
-"Klassen/Jobs","Classes/Jobs","Classes/Jobs","クラス/ジョブ"
++ Neues Set,+ New Set,+ Nouvel ensemble,+ 新規セット
+1 Farbkanal,1 dye channel,1 canal de teinture,染色1箇所
+1 Teil,1 piece,1 pièce,1点
+A Realm Reborn,A Realm Reborn,A Realm Reborn,新生エオルゼア
+Abbrechen,Cancel,Annuler,キャンセル
+Abdunkeln,Dim,Assombrir,暗くする
+Aktuelles Outfit,Current outfit,Tenue actuelle,現在の装備
+Akzentfarbe,Accent color,Couleur d'accentuation,アクセントカラー
+Alle,All,Tous,すべて
+Alle Glamour-Plates importieren,Import all glamour plates,Importer toutes les tenues de mirage,すべてのミラージュプレートを取り込む
+Alle Jobs,All jobs,Tous les jobs,すべてのジョブ
+Alle Jobs von {0} wählen,Select all {0} jobs,Sélectionner tous les jobs du groupe {0},{0}のジョブをすべて選択
+Alle Klassen,All classes,Toutes les classes,全クラス
+Alle Quellen,All sources,Toutes les sources,すべての入手方法
+Alle zurücksetzen,Reset all,Tout réinitialiser,すべてリセット
+Alles erledigt,All done,Tout est terminé,すべて完了
+Allianz-Raid,Alliance Raid,Raid en alliance,アライアンスレイド
+Als Set speichern,Save as set,Enregistrer comme ensemble,セットとして保存
+Als ‚{0}‘ gespeichert,Saved as “{0}”,Enregistré sous « {0} »,「{0}」として保存しました
+"An: nur Ausrüstung, die für die gewählten Jobs gemacht ist (keine, die auch andere Jobs tragen)",On: only gear made for the chosen jobs (none that other jobs can wear too),Activé : uniquement l'équipement conçu pour les jobs choisis (aucun que d'autres jobs peuvent aussi porter),オン: 選んだジョブ専用の装備のみ(他のジョブも装備できるものは除く)
+Anprobe,Try On,Essayer,試着
+Armoire,Armoire,Bahut,アーモワール
+Armreife,Bracelets,Bracelets,腕
+Arsenal,Armoury Chest,Arsenal,アーマリーチェスト
+Auch nicht tragbare,Include unwearable,Inclure non équipables,装備不可も含む
+Auf die Wunschliste,Add to the wishlist,Ajouter à la liste de souhaits,ほしい物リストに追加
+aus {0},from {0},de {0},{0}から
+"Aus: alles, was einer der gewählten Jobs tragen kann",Off: everything one of the chosen jobs can wear,Désactivé : tout ce qu'un des jobs choisis peut porter,オフ: 選んだジョブのいずれかが装備できるものすべて
+Ausgerüstet,Equipped,Équipé,装備中
+Ausrüstungs-Set,Gear set,Ensemble d'équipement,装備セット
+Ausrüstungs-Sets,Gear Sets,Ensembles d'équipement,装備セット
+Ausrüstungs-Sets konnten nicht geladen werden,Gear sets could not be loaded,Impossible de charger les ensembles d'équipement,装備セットを読み込めませんでした
+Ausrüstungs-Sets werden geladen …,Loading gear sets …,Chargement des ensembles d'équipement…,装備セットを読み込み中…
+Bearbeiten,Edit,Modifier,編集
+Behälter,Containers,Conteneurs,保管場所
+Beine,Legs,Jambes,脚
+Belohnung,Reward,Récompense,報酬
+Bernstein,Amber,Ambre,アンバー
+Besitz,Ownership,Possession,所持
+bis,to,à,上限
+Blau,Blue,Bleu,青
+Boss {0},Boss {0},Boss {0},ボス{0}
+Chat-Link: schreibt einen Item-Link in deinen eigenen Chat und kopiert den Namen.,Chat link: writes an item link into your own chat and copies the name.,Lien de discussion : écrit un lien d'objet dans votre propre fenêtre de discussion et copie le nom.,チャットリンク：自分のチャットにアイテムリンクを表示し、名前をコピーします。
+Dawntrail,Dawntrail,Dawntrail,黄金のレガシー
+Debug,Debug,Débogage,デバッグ
+Drehen,Rotate,Rotation,回転
+Drop,Drop,Butin,ドロップ
+Dungeon,Dungeon,Donjon,ダンジョン
+Eigene Sets konnten nicht geladen werden,Your sets could not be loaded,Impossible de charger vos ensembles,マイセットを読み込めませんでした
+Eigenes Set,Custom set,Ensemble personnalisé,マイセット
+Einige Quellen konnten nicht geladen werden,Some sources could not be loaded,Certaines sources n'ont pas pu être chargées,一部の入手方法を読み込めませんでした
+Einstellungen,Settings,Paramètres,設定
+Endwalker,Endwalker,Endwalker,暁月のフィナーレ
+Enter übernimmt,Enter applies,Entrée pour valider,Enterで確定
+Entfernen,Remove,Retirer,外す
+Erledigte ausblenden,Hide completed,Masquer les objets obtenus,入手済みを非表示
+Errungenschaft,Achievement,Haut fait,アチーブメント
+Errungenschaften,Achievements,Hauts faits,アチーブメント
+Erste Seite,First page,Première page,最初のページ
+Erweiterung,Expansion,Extension,拡張パッケージ
+Farbe,Dye,Teinture,カララント
+Farbe 1,Dye 1,Teinture 1,カララント1
+Farbe 1: {0},Dye 1: {0},Teinture 1 : {0},カララント1: {0}
+Farbe 2,Dye 2,Teinture 2,カララント2
+Farbe 2: {0},Dye 2: {0},Teinture 2 : {0},カララント2: {0}
+Farbe vom Spiel nicht vorgemerkt – im Plate-Editor von Hand färben,dye not set by the game – dye it by hand in the plate editor,teinture non prise en compte par le jeu – teignez à la main dans l'éditeur de tenue,カララントがゲームに反映されませんでした – プレート編集で手動で染色してください
+Farbe {0},Dye {0},Teinture {0},カララント{0}
+Fatal-Raid,Ultimate Raid,Raid fatal,レイド（絶）
+FATE,FATE,ALEA,F.A.T.E.
+FATE-Händler,FATE vendors,Marchands ALEA,F.A.T.E.商人
+Fehlend {0} von {1},Missing {0} of {1},Manquant : {0} sur {1},未入手 {0}/{1}
+Fehlt mir,Missing,Manquant,未所持
+Fehlt: {0},Missing: {0},Manquant : {0},欠落: {0}
+Fenster vergrößern oder die Filterspalte ausblenden,Enlarge the window or hide the filter column,Agrandissez la fenêtre ou masquez la colonne des filtres,ウィンドウを広げるか、フィルター欄を隠してください
+Fenster vergrößern oder weniger Kacheln wählen,Enlarge the window or choose fewer tiles,Agrandissez la fenêtre ou choisissez moins de tuiles,ウィンドウを広げるか、タイルの数を減らしてください
+Fernkampf,Ranged,Distance physique,遠隔物理DPS
+Field Operation,Field Operation,Exploration de zone,特殊フィールド探索
+Filterspalte ausblenden,Hide the filter column,Masquer la colonne des filtres,フィルター欄を隠す
+Filterspalte einblenden,Show the filter column,Afficher la colonne des filtres,フィルター欄を表示
+Fundort: {0} (Stand {1:dd.MM. HH:mm}),Location: {0} (as of {1:dd.MM. HH:mm}),Emplacement : {0} (au {1:dd.MM. HH:mm}),保管場所：{0}（{1:dd.MM. HH:mm}時点）
+Färbbar (1 Farbkanal),Dyeable (1 channel),Teignable (1 canal),染色可能（1か所）
+Färbbar ({0} Farbkanäle),Dyeable ({0} channels),Teignable ({0} canaux),染色可能（{0}か所）
+Färbbar ({0}),Dyeable ({0}),Teinturable ({0}),染色可（{0}）
+Füße,Feet,Pieds,足
+Ganz übernommen wird die Sprache nach einem Neustart des Plugins.,The language is fully applied after the plugin is restarted.,La langue sera entièrement appliquée après un redémarrage du plugin.,言語はプラグインの再起動後に完全に反映されます。
+Ganzes Set anziehen,Put on the whole set,Équiper l'ensemble complet,セット全体を装備
+Gebunden,Untradable,Non échangeable,トレード不可
+Gehilfe {0},Retainer {0},Servant {0},リテイナー {0}
+Gehört zu keinem Ausrüstungs-Set,Not part of any gear set,Ne fait partie d'aucun ensemble d'équipement,どの装備セットにも含まれていません
+Gewinnung,Obtained,Obtention,入手
+Gil-Händler,Gil vendors,Marchands (gils),ギル商人
+gilt nicht für die Wunschliste,does not apply to the Wishlist,ne s'applique pas à la Liste de souhaits,ほしい物リストには適用されません
+gilt nicht für Meine Sets,does not apply to My Sets,ne s'applique pas à Mes ensembles,マイセットには適用されません
+gilt nur für einzelne Items,applies to single items only,ne s'applique qu'aux objets individuels,個別のアイテムにのみ適用されます
+Glamour-Plate,Glamour Plate,Tenue de mirage,ミラージュプレート
+Glamour-Plate im Spiel zum Bearbeiten öffnen,Open a glamour plate for editing in the game,Ouvrez une tenue de mirage en modification dans le jeu,ゲーム内でミラージュプレートの編集画面を開いてください
+Glamour-Plate ist nicht geöffnet,The glamour plate is not open,La tenue de mirage n'est pas ouverte,ミラージュプレートが開かれていません
+Glamour-Plate {0},Glamour Plate {0},Tenue de mirage {0},ミラージュプレート{0}
+Glamour-Plates zuerst an der Kommode öffnen,Open the glamour plates at the Glamour Dresser first,Ouvrez d'abord les tenues de mirage à la commode à mirages,先にミラージュドレッサーでミラージュプレートを開いてください
+Gold Saucer,Gold Saucer,Gold Saucer,ゴールドソーサー
+Google-Suche nach dem Item-Namen,Google search for the item name,Recherche Google du nom de l'objet,アイテム名でGoogle検索
+Griff ziehen oder doppelklicken zum Eintippen,"Drag a handle, or double-click to type the values","Faites glisser une poignée, ou double-cliquez pour saisir les valeurs",ハンドルをドラッグ、またはダブルクリックで数値を入力
+Habe ich,Owned,Possédé,所持
+Halskette,Necklace,Collier,首
+Handelbar,Tradable,Échangeable,トレード可能
+Handwerk,Crafting,Artisanat,製作
+Heavensward,Heavensward,Heavensward,蒼天のイシュガルド
+Heiler,Healer,Soigneur,ヒーラー
+Hände,Hands,Mains,手
+Händler,Vendor,Marchand,商人
+Händler (Gil),Vendor (Gil),Marchand (gils),商人（ギル）
+Händler-NPCs,Vendor NPCs,PNJ marchands,商人NPC
+Händler-Orte,Vendor locations,Emplacements des marchands,商人の場所
+Händler-Orte (Supplemental),Vendor locations (Supplemental),Emplacements des marchands (Supplemental),商人の場所（Supplemental）
+Händler-Zuordnung (Supplemental),Vendor assignment (Supplemental),Attribution des marchands (Supplemental),商人の割り当て（Supplemental）
+In der Slot-Auswahl zeigen: springt zur Seite mit diesem Item,Show in the slot view: jumps to the page with this item,Afficher dans la vue par emplacement : va à la page de cet objet,部位一覧で表示：このアイテムのページへ移動
+In Glamour-Plate übertragen,Transfer to glamour plate,Transférer vers la tenue de mirage,ミラージュプレートに転送
+Inhalte,Duties,Missions,コンテンツ
+Inhalts-Ketten,Duty chains,Chaînes de missions,コンテンツ経由
+Inhaltssuche,Duty Finder,Outil de recherche de mission,コンテンツファインダー
+Inventar,Inventory,Inventaire,所持品
+Item {0},Item {0},Objet {0},アイテム{0}
+Items,Items,Objets,アイテム
+Job-Ausrüstung,Job Gear,Équipement de job,ジョブ専用装備
+"Kachel-Cache: gerenderte Kacheln dieses Plugins (aktuelle, vorausgerenderte und zuletzt gesehene Seiten), Größe geschätzt.
+VRAM: Grafikspeicher, den das ganze Spiel belegt / den es nutzen darf.
+RAM: Arbeitsspeicher des Spielprozesses.
+.NET: verwalteter Speicher von Dalamud und allen Plugins zusammen.","Tile cache: tiles rendered by this plugin (current, pre-rendered and recently seen pages), size estimated.
+VRAM: graphics memory the whole game uses / may use.
+RAM: working memory of the game process.
+.NET: managed memory of Dalamud and all plugins combined.","Cache des tuiles : tuiles rendues par ce plugin (pages actuelles, pré-rendues et récemment vues), taille estimée.
+VRAM : mémoire graphique utilisée / utilisable par l'ensemble du jeu.
+RAM : mémoire vive du processus du jeu.
+.NET : mémoire gérée de Dalamud et de tous les plugins réunis.","タイルキャッシュ: このプラグインが描画したタイル（現在・先読み・最近表示したページ）、サイズは推定値。
+VRAM: ゲーム全体が使用中 / 使用可能なグラフィックメモリ。
+RAM: ゲームプロセスのメモリ使用量。
+.NET: Dalamudと全プラグインのマネージドメモリの合計。"
+Kachel-Cache: {0} Kacheln ≈ {1},Tile cache: {0} tiles ≈ {1},Cache des tuiles : {0} tuiles ≈ {1},タイルキャッシュ: {0}枚 ≈ {1}
+Kachel-Modus,Tile mode,Mode des tuiles,タイル表示
+Kacheln,Tiles,Tuiles,タイル
+Kacheln pro Seite (Spalten × Zeilen),Tiles per page (columns × rows),Tuiles par page (colonnes × lignes),1ページのタイル数(列 × 行)
+"Kalibriert wird in der Live-Ansicht: Item eines Slots auswählen, Ansicht einstellen, „Kamera-Position festlegen“ klicken.","Calibration happens in the live view: select an item of a slot, adjust the view, click “Set camera position”.","Le calibrage se fait dans la vue en direct : sélectionnez un objet d'un emplacement, réglez la vue, puis cliquez sur « Définir la position de la caméra ».",調整はライブビューで行います。部位のアイテムを選び、表示を整えてから「カメラ位置を設定」をクリックしてください。
+Kamera-Kalibrierung dieses Charakters,Camera calibration for this character,Calibrage de la caméra pour ce personnage,このキャラクターのカメラ調整
+Kamera-Position festlegen für ({0}),Set camera position for ({0}),Définir la position de la caméra pour ({0}),（{0}）のカメラ位置を設定
+Kamera-Position für ({0}) zurücksetzen,Reset camera position for ({0}),Réinitialiser la position de la caméra pour ({0}),（{0}）のカメラ位置をリセット
+Karte,Map,Carte,マップ
+Kein Item ausgewählt,No item selected,Aucun objet sélectionné,アイテムが選択されていません
+Kein Render-Platz frei (Plätze 5–7 belegt).,No free render slot (slots 5–7 in use).,Aucun emplacement de rendu libre (emplacements 5–7 occupés).,空いている描画枠がありません（枠5～7が使用中）。
+Keine Einträge im Katalog gefunden,No entries found in the catalog,Aucune entrée trouvée dans le catalogue,カタログに該当する項目がありません
+Keine Farbe,No dye,Aucune teinture,カララントなし
+keine Farbe,No dye,Aucune teinture,カララントなし
+Keine Quelle bekannt,No known source,Aucune source connue,入手方法不明
+Keine Textur,No texture,Aucune texture,テクスチャがありません
+Keine Treffer,No results,Aucun résultat,該当なし
+Kisten,Coffers,Coffres,コファー
+Kisten-Inhalt,Coffer contents,Contenu des coffres,コファーの中身
+Klassen/Jobs,Classes/Jobs,Classes/Jobs,クラス/ジョブ
+Klick: auswählen,Click: select,Clic : sélectionner,クリック：選択
+Kommode,Glamour Dresser,Commode à mirages,ミラージュドレッサー
+Kommoden-Set,Glamour Dresser set,Ensemble de la commode à mirages,ミラージュドレッサーのセット
+Kopf,Head,Tête,頭
+Kopieren fehlgeschlagen,Copying failed,Échec de la copie,コピーに失敗しました
+Kundschafter,Retainer,Servant,リテイナー
+Körper,Body,Torse,胴
+Leer,Empty,Vide,空
+leer,empty,vide,空き
+Letzte Seite,Last page,Dernière page,最後のページ
+Level,Level,Niveau,レベル
+Level {0},Level {0},Niveau {0},Lv{0}
+Level {0}–{1},Level {0}–{1},Niveau {0}–{1},レベル {0}–{1}
+liegt in: {0},stored in: {0},se trouve dans : {0},保管場所: {0}
+"Links ziehen: drehen
+Rechts ziehen: verschieben
+Mausrad: Zoom
+Doppelklick: zurücksetzen","Left drag: rotate
+Right drag: pan
+Mouse wheel: zoom
+Double-click: reset","Glisser (clic gauche) : pivoter
+Glisser (clic droit) : déplacer
+Molette : zoom
+Double-clic : réinitialiser","左ドラッグ：回転
+右ドラッグ：移動
+マウスホイール：ズーム
+ダブルクリック：リセット"
+Live-Ansicht,Live view,Vue en direct,ライブビュー
+Live-Ansicht wird vorbereitet …,Preparing live view …,Préparation de la vue en direct…,ライブビューを準備中…
+Lv. {0},Lv. {0},Niv. {0},Lv{0}
+Löschen,Delete,Supprimer,削除
+Magie,Magic,Distance magique,遠隔魔法DPS
+Marken & Token,Marks & Tokens,Marques et jetons,トークン
+Marktbrett,Market Board,Tableau des ventes,マーケットボード
+Meine Idle-Pose,My idle pose,Ma posture d'attente,自分の待機ポーズ
+Meine Sets,My Sets,Mes ensembles,マイセット
+Mogstation,Mog Station,Boutique Mog,モグステーション
+Mogstation-Set,Mog Station set,Ensemble de la Boutique Mog,モグステーションのセット
+Monster,Monster,Monstre,モンスター
+Nach Level,By level,Par niveau,レベル順
+Nach Quelle,By source,Par source,入手方法別
+Nahkampf,Melee,Mêlée,近接DPS
+Nebenhand,Off Hand,Arme secondaire,副兵装
+Neues Set,New Set,Nouvel ensemble,新規セット
+Neueste zuerst,Newest first,Plus récents d'abord,新しい順
+Nicht eingeloggt,Not logged in,Non connecté,ログインしていません
+nicht färbbar,not dyeable,non teintable,染色不可
+Nicht färbbar,Not dyeable,Non teinturable,染色不可
+nicht im Besitz,not owned,non possédé,未所持
+Nicht im Besitz,Not owned,Non possédé,未所持
+nicht übertragen – Glamour-Plate wurde geschlossen,not transferred – the glamour plate was closed,non transféré – la tenue de mirage a été fermée,未転送 – ミラージュプレートが閉じられました
+Noch keine eigenen Sets – „+ Neues Set“ anklicken,No sets of your own yet – click “+ New Set”,Aucun ensemble personnel pour l'instant – cliquez sur « + Nouvel ensemble »,マイセットはまだありません ―「+ 新規セット」をクリックしてください
+Noch nichts auf der Wunschliste – Stern auf einer Kachel oder in der Item-Karte setzen,Nothing on the wishlist yet – set the star on a tile or in the item card,Rien dans la liste de souhaits pour l'instant – cochez l'étoile sur une tuile ou dans la fiche de l'objet,ほしい物リストはまだ空です ― タイルかアイテムカードの星を付けてください
+Nur Färbbare,Dyeable only,Teintables uniquement,染色可能のみ
+Nur für mich tragbar,Wearable by me only,Portables par moi uniquement,自分が装備可能なもののみ
+Nur job-exklusive,Job-exclusive only,Exclusifs au job uniquement,ジョブ専用のみ
+Ohrringe,Earrings,Boucles d'oreilles,耳
+Ort unbekannt,Location unknown,Lieu inconnu,場所不明
+Parallele Ansichten,Parallel views,Vues parallèles,並列ビュー数
+Patch {0},Patch {0},Patch {0},パッチ{0}
+Patches,Patches,Patchs,パッチ
+Pausiert,Paused,En pause,一時停止中
+Plate {0} · 1 Teil,Plate {0} · 1 piece,Tenue {0} · 1 pièce,プレート{0}・1点
+Plate {0} · {1} Teile,Plate {0} · {1} pieces,Tenue {0} · {1} pièces,プレート{0}・{1}点
+Pose,Pose,Pose,ポーズ
+Prüfung,Trial,Défi,討伐・討滅戦
+PvP,PvP,JcJ,PvP
+Quelle,Source,Source,入手方法
+Quelle unbekannt,Source unknown,Source inconnue,入手方法不明
+Quellen,Sources,Sources,入手方法
+Quellen werden geladen …,Loading sources …,Chargement des sources…,入手方法を読み込み中…
+Quest,Quest,Quête,クエスト
+Quests,Quests,Quêtes,クエスト
+Raid (Episch),Raid (Savage),Raid (sadique),レイド（零式）
+Raid (Normal),Raid (Normal),Raid (normal),レイド（ノーマル）
+Relikte,Relics,Reliques,レリック
+Reliktwaffe,Relic Weapon,Arme relique,レリックウェポン
+Reliktwerkzeug,Relic Tool,Outil relique,レリックツール
+Render-Plätze werden gerade vom Spiel genutzt (Gruppen-Portraits).,Render slots are currently in use by the game (party portraits).,Les emplacements de rendu sont actuellement utilisés par le jeu (portraits de groupe).,描画枠はゲームが使用中です（パーティのポートレート）。
+Renderfehler,Render error,Erreur de rendu,描画エラー
+Renderfehler: {0},Render error: {0},Erreur de rendu : {0},描画エラー: {0}
+Rezept,Recipe,Recette,レシピ
+Ring links,Left Ring,Bague gauche,左指
+Ring rechts,Right Ring,Bague droite,右指
+Ringe,Rings,Bagues,指
+Rosé,Rose,Rose,ローズ
+Saison-Event,Seasonal Event,Événement saisonnier,シーズナルイベント
+Sammeln,Gathering,Récolte,採集
+Satteltasche,Saddlebag,Sacoches,チョコボかばん
+Satteltasche (Premium),Saddlebag (Premium),Sacoches (premium),チョコボかばん（拡張）
+Schatzkiste,Treasure Coffer,Coffre au trésor,宝箱
+Schild/Nebenhand,Off Hand,Arme secondaire,副兵装
+Scrips,Scrips,Assignats,スクリップ
+Seite {0} / {1},Page {0} / {1},Page {0} / {1},{0} / {1} ページ
+Seiten im Cache,Cached pages,Pages en cache,キャッシュするページ数
+Seiten vorausrendern,Pre-render pages,Pages pré-rendues,先行描画するページ数
+Set „{0}“ löschen?,Delete set “{0}”?,Supprimer l'ensemble « {0} » ?,セット「{0}」を削除しますか？
+Shadowbringers,Shadowbringers,Shadowbringers,漆黒のヴィランズ
+Shop,Shop,Boutique,ショップ
+Shynees Glamour Dresser – Einstellungen,Shynees Glamour Dresser – Settings,Shynees Glamour Dresser – Paramètres,Shynees Glamour Dresser – 設定
+Sonstige Inhalte,Other Duties,Autres missions,その他のコンテンツ
+Sonstiges,Other,Autres,その他
+Spalten,Columns,Colonnes,列
+Speicheranzeige unter dem Raster,Memory display below the grid,Affichage de la mémoire sous la grille,グリッドの下にメモリ使用量を表示
+Speichern,Save,Enregistrer,保存
+Spezialshops,Special shops,Boutiques spéciales,特殊ショップ
+Sprache,Language,Langue,言語
+Staatliche Gesellschaft,Grand Company,Grande Compagnie,グランドカンパニー
+Standard,Default,Par défaut,標準
+Stormblood,Stormblood,Stormblood,紅蓮のリベレーター
+Stufe {0},Stage {0},Étape {0},第{0}段階
+Suche: {0},Search: {0},Recherche : {0},検索: {0}
+Suchen …,Search …,Rechercher…,検索…
+Tank,Tank,Tank,タンク
+Tomestones,Tomestones,Mémoquartz,トームストーン
+Truhe {0},Chest {0},Coffre {0},宝箱{0}
+Türkis,Turquoise,Turquoise,ターコイズ
+UI-Skalierung,UI scale,Échelle de l'interface,UIスケール
+Unbekanntes Item,Unknown item,Objet inconnu,不明なアイテム
+Unternehmung,Venture,Tâche,リテイナーベンチャー
+Unterwäsche,Underwear,Sous-vêtements,下着
+Varianten,Variants,Variantes,バリエーション
+Verschieben,Pan,Déplacement,移動
+Verwerfen,Discard,Abandonner,破棄
+Violett,Violet,Violet,紫
+Visier schließen (nur Helme mit Visier),Close visor (only helmets with a visor),Baisser la visière (uniquement les casques à visière),バイザーを閉じる（バイザー付きの頭防具のみ）
+Visier öffnen,Open visor,Relever la visière,バイザーを開く
+vom Spiel nicht geleert – Kommoden- bzw. Armoire-Liste im Plate-Editor öffnen und erneut übertragen,not cleared by the game – open the Glamour Dresser or Armoire list in the plate editor and transfer again,non vidé par le jeu – ouvrez la liste de la commode à mirages ou du bahut dans l'éditeur de tenue et transférez à nouveau,ゲームで解除されませんでした – プレート編集でミラージュドレッサーまたはアーモワールの一覧を開き、もう一度転送してください
+vom Spiel nicht übernommen – Kommoden- bzw. Armoire-Liste im Plate-Editor öffnen und erneut übertragen,not taken by the game – open the Glamour Dresser or Armoire list in the plate editor and transfer again,non repris par le jeu – ouvrez la liste de la commode à mirages ou du bahut dans l'éditeur de tenue et transférez à nouveau,ゲームに反映されませんでした – プレート編集でミラージュドレッサーまたはアーモワールの一覧を開き、もう一度転送してください
+von,from,de,下限
+Von der Wunschliste nehmen,Remove from the wishlist,Retirer de la liste de souhaits,ほしい物リストから外す
+Waffe,Main Hand,Arme principale,主兵装
+Waffe anzeigen,Show weapon,Afficher l'arme,武器を表示
+Waffe ausblenden,Hide weapon,Masquer l'arme,武器を非表示
+Waffe wegstecken,Sheathe weapon,Rengainer,武器をしまう
+Waffe ziehen,Draw weapon,Dégainer,武器を抜く
+Waffen gezogen,Weapons drawn,Armes dégainées,抜刀状態
+"Waffen-Kacheln mit gezogener Waffe: jede Kachel spielt das Ziehen ab, das Rendern dauert deutlich länger.","Weapon tiles with the weapon drawn: every tile plays the draw animation, so rendering takes considerably longer.","Tuiles d'armes avec l'arme dégainée : chaque tuile joue l'animation pour dégainer, le rendu prend nettement plus de temps.",武器のタイルを抜刀状態で表示します。タイルごとに抜刀モーションを再生するため、描画にかなり時間がかかります。
+weitere ({0}) …,more ({0}) …,plus ({0})…,さらに表示（{0}）…
+Wie der Client ({0}),Same as the client ({0}),Comme le client ({0}),クライアントと同じ ({0})
+Wie viele Kacheln gleichzeitig gerendert werden (Standard 3).,How many tiles are rendered at the same time (default 3).,Nombre de tuiles rendues simultanément (3 par défaut).,同時に描画するタイルの数です(標準: 3)。
+"Wie viele Seiten nach der aktuellen schon im Voraus gerendert werden, die nächste zuerst.
+Weiterblättern zeigt die Bilder dann sofort. Mehr Seiten brauchen mehr Grafikspeicher und Renderzeit.","How many pages after the current one are rendered in advance, the next one first.
+Paging forward then shows the images at once. More pages need more video memory and render time.","Nombre de pages après la page actuelle rendues à l'avance, la suivante en premier.
+Passer aux pages suivantes affiche alors les images immédiatement. Plus de pages demandent plus de mémoire graphique et de temps de rendu.","現在のページの後、何ページ分を先に描画しておくか(次のページから順に)。
+ページを進めると画像がすぐに表示されます。ページ数が多いほどビデオメモリと描画時間が増えます。"
+"Wie viele zuletzt angezeigte Seiten gerendert bleiben, auch beim Wechsel zwischen Slots und Modi.
+Zurück zu einer solchen Seite zeigt die Bilder sofort. Mehr Seiten brauchen mehr Grafikspeicher.","How many recently shown pages stay rendered, also when switching between slots and modes.
+Going back to such a page shows the images at once. More pages need more video memory.","Nombre de pages récemment affichées qui restent rendues, même en changeant d'emplacement ou de mode.
+Revenir à l'une de ces pages affiche les images immédiatement. Plus de pages demandent plus de mémoire graphique.","最近表示したページを何ページ分描画済みのまま保持するか(部位やモードを切り替えても保持されます)。
+そのページに戻ると画像がすぐに表示されます。ページ数が多いほどビデオメモリを多く使います。"
+Wunschliste,Wishlist,Liste de souhaits,ほしい物リスト
+Wunschliste konnte nicht geladen werden,The wishlist could not be loaded,Impossible de charger la liste de souhaits,ほしい物リストを読み込めませんでした
+"Zeigt unter den Kacheln, wie viel Grafikspeicher der Kachel-Cache belegt, dazu VRAM und RAM des Spiels.","Shows below the tiles how much video memory the tile cache uses, plus the game's VRAM and RAM.","Affiche sous les tuiles la mémoire graphique occupée par le cache des tuiles, ainsi que la VRAM et la RAM du jeu.",タイルの下に、タイルキャッシュが使用しているビデオメモリと、ゲームのVRAM・RAM使用量を表示します。
+Zeilen,Rows,Lignes,行
+Zeitüberschreitung beim Laden,Timed out while loading,Délai de chargement dépassé,読み込みがタイムアウトしました
+Zoom,Zoom,Zoom,ズーム
+"Zurück auf aktuelles Outfit bzw. Unterwäsche, je nach Kachel-Modus","Back to the current outfit or underwear, depending on the tile mode","Revenir à la tenue actuelle ou aux sous-vêtements, selon le mode des tuiles",タイルモードに応じて、現在の装備または下着に戻します
+Zurücksetzen,Reset,Réinitialiser,リセット
+{0} (Set),{0} (Set),{0} (ensemble),{0}（セット）
+{0} abwählen,Deselect {0},Désélectionner {0},{0}の選択を解除
+{0} anziehen: {1},Put on {0}: {1},Équiper ({0}) : {1},{0}を装備: {1}
+{0} Farbkanäle,{0} dye channels,{0} canaux de teinture,染色{0}箇所
+"{0} Sets importiert, {1} übersprungen","{0} sets imported, {1} skipped","{0} ensembles importés, {1} ignorés",{0}件のセットを取り込み、{1}件をスキップ
+{0} Spalten × {1} Zeilen,{0} columns × {1} rows,{0} colonnes × {1} lignes,{0}列 × {1}行
+{0} Teile,{0} pieces,{0} pièces,{0}点
+{0} Treffer,{0} results,{0} résultats,{0}件
+{0} von {1} Teilen übertragen,{0} of {1} pieces transferred,{0} pièce(s) sur {1} transférée(s),{1}点中{0}点を転送しました
+{0} · Auswahl,{0} · Optional reward,{0} · Au choix,{0} · 選択報酬
+{0}: kalibriert,{0}: calibrated,{0} : calibré,{0}: 調整済み
+{0}: noch nie geöffnet,{0}: never opened,{0} : jamais ouvert,{0}: まだ開いていません
+{0}: Standard,{0}: default,{0} : par défaut,{0}: 標準
+{0}: Standardansicht,{0}: default view,{0} : vue par défaut,{0}：標準ビュー
+Änderungen verwerfen?,Discard changes?,Abandonner les modifications ?,変更を破棄しますか？
+Öffnet Shynees Glamour Dresser (kurz: /sgd).,Opens Shynees Glamour Dresser (short: /sgd).,Ouvre Shynees Glamour Dresser (raccourci : /sgd).,Shynees Glamour Dresserを開きます（短縮: /sgd）。
+Öffnet Shynees Glamour Dresser.,Opens Shynees Glamour Dresser.,Ouvre Shynees Glamour Dresser.,Shynees Glamour Dresserを開きます。
+über {0},via {0},via {0},{0}経由
+Übertragen: 1 Teil,Transferred: 1 piece,Transféré : 1 pièce,転送済み：1点
+Übertragen: {0} Teile,Transferred: {0} pieces,Transférées : {0} pièces,転送済み：{0}点
+… und {0} weitere,… and {0} more,… et {0} de plus,…ほか{0}件

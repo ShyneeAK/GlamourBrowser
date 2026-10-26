@@ -4,6 +4,7 @@ using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using GlamourBrowser.Core.Ownership;
+using GlamourBrowser.Core.Localization;
 
 namespace GlamourBrowser.Ownership;
 
@@ -31,7 +32,7 @@ public sealed unsafe class ArmoireReader : IDisposable
             .Where(row => row.Item.RowId != 0 && cabinet->IsItemInCabinet(row.RowId))
             .Select(row => row.Item.RowId)
             .ToList();
-        service.Submit(new ContainerSnapshot(new ContainerId(ContainerKind.Armoire, ""), "Armoire", DateTimeOffset.Now, items));
+        service.Submit(new ContainerSnapshot(new ContainerId(ContainerKind.Armoire, ""), Loc.T("Armoire"), DateTimeOffset.Now, items));
     }
 
     public void Dispose()

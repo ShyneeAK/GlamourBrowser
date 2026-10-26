@@ -1,3 +1,5 @@
+using GlamourBrowser.Core.Localization;
+
 namespace GlamourBrowser.Core.Ui;
 
 /// <summary>Job groups in display order.</summary>
@@ -38,7 +40,7 @@ public static class JobGroups
         };
     }
 
-    public static string DisplayName(JobGroup group) => group switch
+    public static string DisplayName(JobGroup group) => Loc.T(group switch
     {
         JobGroup.Tank => "Tank",
         JobGroup.Healer => "Heiler",
@@ -47,5 +49,5 @@ public static class JobGroups
         JobGroup.Magic => "Magie",
         JobGroup.Crafter => "Handwerk",
         _ => "Sammeln",
-    };
+    });
 }

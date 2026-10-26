@@ -8,6 +8,7 @@ using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using GlamourBrowser.Browser;
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Core.Sources;
 using GlamourBrowser.Core.Ui;
@@ -48,14 +49,14 @@ public sealed class TopBar
             config.Save();
         }
         if (ImGui.IsItemHovered())
-            ImGui.SetTooltip(config.FilterColumnVisible ? "Filterspalte ausblenden" : "Filterspalte einblenden");
+            ImGui.SetTooltip(config.FilterColumnVisible ? Loc.T("Filterspalte ausblenden") : Loc.T("Filterspalte einblenden"));
 
         // Follow external changes (e.g. a removed search chip) unless the user is typing.
         if (!searchActive)
             search = state.Filter.SearchText;
         NextOnLine(180 * scale);
         ImGui.SetNextItemWidth(180 * scale);
-        if (ImGui.InputTextWithHint("##search", "Suchen …", ref search, 100))
+        if (ImGui.InputTextWithHint("##search", Loc.T("Suchen …"), ref search, 100))
             state.Filter = state.Filter with { SearchText = search };
         searchActive = ImGui.IsItemActive();
 
@@ -65,7 +66,7 @@ public sealed class TopBar
         NextOnLine(130 * scale);
         ImGui.SetNextItemWidth(130 * scale);
         var mode = (int)config.TileMode;
-        if (ImGui.Combo("##mode", ref mode, ["Aktuelles Outfit", "Unterwäsche"], 2))
+        if (ImGui.Combo("##mode", ref mode, [Loc.T("Aktuelles Outfit"), Loc.T("Unterwäsche")], 2))
             state.SetTileMode((TileMode)mode);
 
         NextOnLine(130 * scale);
@@ -73,7 +74,7 @@ public sealed class TopBar
         var sort = (int)config.Sort;
         using (ImRaii.Disabled(onlySearch))
         {
-            if (ImGui.Combo("##sort", ref sort, ["Nach Level", "Neueste zuerst"], 2))
+            if (ImGui.Combo("##sort", ref sort, [Loc.T("Nach Level"), Loc.T("Neueste zuerst")], 2))
                 state.SetSort((SortOrder)sort);
         }
         DisabledHint(onlySearch);
@@ -85,7 +86,7 @@ public sealed class TopBar
         if (GridPicker.Draw("gridsize", ref columns, ref rows, theme))
             state.SetGrid(columns, rows);
 
-        var hitsText = $"{state.Results.Count} Treffer";
+        var hitsText = Loc.F("{0} Treffer", state.Results.Count);
         NextOnLine(ImGui.CalcTextSize(hitsText).X);
         ImGui.AlignTextToFramePadding();
         ImGui.TextDisabled(hitsText);
@@ -122,8 +123,9 @@ public sealed class TopBar
                 state.Filter = chips[i].WithoutThis;
         }
 
-        NextOnLine(ImGui.CalcTextSize("Alle zurücksetzen").X + ImGui.GetStyle().FramePadding.X * 2);
-        if (ImGui.SmallButton("Alle zurücksetzen"))
+        var resetAll = Loc.T("Alle zurücksetzen");
+        NextOnLine(ImGui.CalcTextSize(resetAll).X + ImGui.GetStyle().FramePadding.X * 2);
+        if (ImGui.SmallButton(resetAll))
             state.Filter = new FilterState();
     }
 

@@ -6,6 +6,7 @@ using Dalamud.Interface.Utility.Raii;
 using GlamourBrowser.Browser;
 using GlamourBrowser.Core.CustomSets;
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.CustomSets;
 using GlamourBrowser.Data;
 using GlamourBrowser.GlamourPlate;
@@ -50,11 +51,11 @@ public sealed class SetEditorPane
         // The actions stay above the slot list, which scrolls on its own when the pane is short.
         using (ImRaii.Disabled(!editor.CanSave))
         {
-            if (ImGui.Button("Speichern"))
+            if (ImGui.Button(Loc.T("Speichern")))
                 editor.Save();
         }
         ImGui.SameLine();
-        if (ImGui.Button("Verwerfen"))
+        if (ImGui.Button(Loc.T("Verwerfen")))
             editor.Discard();
         ImGui.SameLine();
         PlateTransferUi.DrawButton(plates, draft.Pieces);
@@ -95,7 +96,7 @@ public sealed class SetEditorPane
         // The name fills the row up to the dye fields and the remove button.
         var spacing = ImGui.GetStyle().ItemSpacing.X;
         var width = MathF.Max(40, ImGui.GetContentRegionAvail().X - size.X * 3 - spacing * 3);
-        var label = piece == null ? "leer" : item?.Name ?? "Unbekanntes Item";
+        var label = piece == null ? Loc.T("leer") : item?.Name ?? Loc.T("Unbekanntes Item");
         using (ImRaii.PushColor(ImGuiCol.Text, colors.TextMuted, piece == null))
         {
             if (ImGui.Selectable($"{label}##slot", editor.SelectedSlot == slot, ImGuiSelectableFlags.None, new Vector2(width, size.Y)))
@@ -114,7 +115,7 @@ public sealed class SetEditorPane
         ImGui.SameLine();
         using (ImRaii.Disabled(piece == null))
         {
-            if (IconButton.Draw("##remove", 0, FontAwesomeIcon.Times, "Entfernen", theme))
+            if (IconButton.Draw("##remove", 0, FontAwesomeIcon.Times, Loc.T("Entfernen"), theme))
                 editor.Remove(slot);
         }
     }
@@ -141,15 +142,15 @@ public sealed class SetEditorPane
         }
         if (!ImGui.BeginPopup(popup))
             return;
-        ImGui.TextUnformatted("Änderungen verwerfen?");
-        if (ImGui.Button("Verwerfen"))
+        ImGui.TextUnformatted(Loc.T("Änderungen verwerfen?"));
+        if (ImGui.Button(Loc.T("Verwerfen")))
         {
             editor.Answer(true);
             discardAsked = false;
             ImGui.CloseCurrentPopup();
         }
         ImGui.SameLine();
-        if (ImGui.Button("Abbrechen"))
+        if (ImGui.Button(Loc.T("Abbrechen")))
         {
             editor.Answer(false);
             discardAsked = false;

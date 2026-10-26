@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Plugin.Services;
 using Lumina.Excel.Sheets;
+using GlamourBrowser.Core.Localization;
 
 namespace GlamourBrowser.Data;
 
@@ -32,7 +33,7 @@ public sealed class DyeCatalog
 
     public IReadOnlyList<uint> ItemsOf(byte id) => Find(id)?.Items ?? [];
 
-    public string NameOf(byte id) => id == 0 ? "keine Farbe" : Find(id)?.Name ?? $"Farbe {id}";
+    public string NameOf(byte id) => id == 0 ? Loc.T("keine Farbe") : Find(id)?.Name ?? Loc.F("Farbe {0}", id);
 
     /// <summary>The sheet holds RGB; ImGui wants ABGR.</summary>
     private static uint Abgr(uint rgb) => 0xFF000000 | (rgb & 0xFF) << 16 | (rgb & 0xFF00) | (rgb >> 16 & 0xFF);

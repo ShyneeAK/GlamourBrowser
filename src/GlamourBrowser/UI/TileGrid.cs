@@ -10,6 +10,7 @@ using Dalamud.Interface.Utility;
 using GlamourBrowser.Browser;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Layout;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Sources;
@@ -128,13 +129,13 @@ public sealed class TileGrid
         // Logged out the render pool pauses too; the wishlist mode says why it is empty.
         if (state.Filter.Mode == BrowseMode.Wishlist && wishlist.Current == null)
         {
-            ImGui.TextDisabled(wishlist.LoadFailed ? "Wunschliste konnte nicht geladen werden" : "Nicht eingeloggt");
+            ImGui.TextDisabled(wishlist.LoadFailed ? Loc.T("Wunschliste konnte nicht geladen werden") : Loc.T("Nicht eingeloggt"));
             return;
         }
 
         if (pool.IsPaused)
         {
-            ImGui.TextDisabled("Pausiert");
+            ImGui.TextDisabled(Loc.T("Pausiert"));
             return;
         }
 
@@ -143,7 +144,7 @@ public sealed class TileGrid
 
         if (state.Filter.Mode == BrowseMode.MySets && customSets.Current == null)
         {
-            ImGui.TextDisabled(customSets.LoadFailed ? "Eigene Sets konnten nicht geladen werden" : "Nicht eingeloggt");
+            ImGui.TextDisabled(customSets.LoadFailed ? Loc.T("Eigene Sets konnten nicht geladen werden") : Loc.T("Nicht eingeloggt"));
             return;
         }
 
@@ -157,12 +158,12 @@ public sealed class TileGrid
         {
             if (!sources.IsReady)
             {
-                ImGui.TextDisabled("Ausrüstungs-Sets werden geladen …");
+                ImGui.TextDisabled(Loc.T("Ausrüstungs-Sets werden geladen …"));
                 return;
             }
             if (sources.Index.Failures.Contains(SourceIndexBuilder.SetsFamily))
             {
-                ImGui.TextDisabled("Ausrüstungs-Sets konnten nicht geladen werden");
+                ImGui.TextDisabled(Loc.T("Ausrüstungs-Sets konnten nicht geladen werden"));
                 return;
             }
         }
@@ -179,7 +180,7 @@ public sealed class TileGrid
         var layout = state.Layout;
         if (layout.TileWidth <= 0)
         {
-            ImGui.TextDisabled("Fenster vergrößern oder weniger Kacheln wählen");
+            ImGui.TextDisabled(Loc.T("Fenster vergrößern oder weniger Kacheln wählen"));
             return;
         }
 
@@ -219,13 +220,13 @@ public sealed class TileGrid
         if (customSets.Current is not { } store)
             return false;
 
-        if (ImGui.Button("+ Neues Set"))
+        if (ImGui.Button(Loc.T("+ Neues Set")))
             ImGui.OpenPopup("##newset");
         if (ImGui.BeginPopup("##newset"))
         {
-            if (ImGui.Selectable("Leer"))
+            if (ImGui.Selectable(Loc.T("Leer")))
                 editor.StartNew(CustomSetStore.DefaultName, []);
-            if (ImGui.Selectable("Aktuelles Outfit"))
+            if (ImGui.Selectable(Loc.T("Aktuelles Outfit")))
                 editor.StartFromOutfit();
             DrawPlateStart();
             ImGui.EndPopup();
@@ -234,14 +235,14 @@ public sealed class TileGrid
         ImGui.SameLine();
         using (ImRaii.Disabled(!plates.PlatesLoaded))
         {
-            if (ImGui.Button("Alle Glamour-Plates importieren"))
+            if (ImGui.Button(Loc.T("Alle Glamour-Plates importieren")))
             {
                 var (imported, skipped) = plates.ImportAll(store, IsKnown);
-                importStatus = ($"{imported} Sets importiert, {skipped} übersprungen", DateTime.Now);
+                importStatus = (Loc.F("{0} Sets importiert, {1} übersprungen", imported, skipped), DateTime.Now);
             }
         }
         if (!plates.PlatesLoaded && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip("Glamour-Plates zuerst an der Kommode öffnen");
+            ImGui.SetTooltip(Loc.T("Glamour-Plates zuerst an der Kommode öffnen"));
         if (importStatus is { } status && DateTime.Now - status.At < TimeSpan.FromSeconds(5))
         {
             ImGui.SameLine();
@@ -250,12 +251,12 @@ public sealed class TileGrid
 
         if (store.Sets.Count == 0)
         {
-            ImGui.TextDisabled("Noch keine eigenen Sets – „+ Neues Set“ anklicken");
+            ImGui.TextDisabled(Loc.T("Noch keine eigenen Sets – „+ Neues Set“ anklicken"));
             return false;
         }
         if (state.Results.Count == 0)
         {
-            ImGui.TextDisabled(state.MySets.Count == 0 ? "Keine Einträge im Katalog gefunden" : "Keine Treffer");
+            ImGui.TextDisabled(state.MySets.Count == 0 ? Loc.T("Keine Einträge im Katalog gefunden") : Loc.T("Keine Treffer"));
             return false;
         }
         return true;
@@ -266,19 +267,19 @@ public sealed class TileGrid
     /// <summary>The start point "Glamour-Plate": one entry per saved plate with its number of pieces, once the game has the plates.</summary>
     private void DrawPlateStart()
     {
-        if (!ImGui.BeginMenu("Glamour-Plate", plates.PlatesLoaded))
+        if (!ImGui.BeginMenu(Loc.T("Glamour-Plate"), plates.PlatesLoaded))
         {
             if (!plates.PlatesLoaded && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-                ImGui.SetTooltip("Glamour-Plates zuerst an der Kommode öffnen");
+                ImGui.SetTooltip(Loc.T("Glamour-Plates zuerst an der Kommode öffnen"));
             return;
         }
         for (var i = 0; i < plates.PlateCount; i++)
         {
             if (plates.ReadPlate(i, IsKnown) is not { } pieces)
                 continue;
-            if (ImGui.MenuItem($"Plate {i + 1} · {(pieces.Count == 1 ? "1 Teil" : $"{pieces.Count} Teile")}"))
+            if (ImGui.MenuItem(pieces.Count == 1 ? Loc.F("Plate {0} · 1 Teil", i + 1) : Loc.F("Plate {0} · {1} Teile", i + 1, pieces.Count)))
             {
-                editor.StartNew($"Glamour-Plate {i + 1}", pieces);
+                editor.StartNew(Loc.F("Glamour-Plate {0}", i + 1), pieces);
                 ImGui.CloseCurrentPopup();
             }
         }
@@ -290,33 +291,33 @@ public sealed class TileGrid
     {
         if (wishlist.Current is not { } store)
         {
-            ImGui.TextDisabled(wishlist.LoadFailed ? "Wunschliste konnte nicht geladen werden" : "Nicht eingeloggt");
+            ImGui.TextDisabled(wishlist.LoadFailed ? Loc.T("Wunschliste konnte nicht geladen werden") : Loc.T("Nicht eingeloggt"));
             return false;
         }
         if (store.Entries.Count == 0)
         {
-            ImGui.TextDisabled("Noch nichts auf der Wunschliste – Stern auf einer Kachel oder in der Item-Karte setzen");
+            ImGui.TextDisabled(Loc.T("Noch nichts auf der Wunschliste – Stern auf einer Kachel oder in der Item-Karte setzen"));
             return false;
         }
 
         var bySource = config.WishlistBySource;
-        if (ImGui.RadioButton("Kacheln", !bySource) && bySource)
+        if (ImGui.RadioButton(Loc.T("Kacheln"), !bySource) && bySource)
             state.SetWishlistBySource(false);
         ImGui.SameLine();
-        if (ImGui.RadioButton("Nach Quelle", bySource) && !bySource)
+        if (ImGui.RadioButton(Loc.T("Nach Quelle"), bySource) && !bySource)
             state.SetWishlistBySource(true);
         // The plan lists only missing pieces anyway.
         if (!bySource)
         {
             ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X * 4);
             var hideDone = config.HideDoneWishes;
-            if (ImGui.Checkbox("Erledigte ausblenden", ref hideDone))
+            if (ImGui.Checkbox(Loc.T("Erledigte ausblenden"), ref hideDone))
                 state.SetHideDoneWishes(hideDone);
         }
 
         // Set entries resolve only once the source index is there (the plan says it loads on its own).
         if (!bySource && state.WishlistEntries.Count < store.Entries.Count && !sources.IsReady)
-            ImGui.TextDisabled("Ausrüstungs-Sets werden geladen …");
+            ImGui.TextDisabled(Loc.T("Ausrüstungs-Sets werden geladen …"));
         if (bySource)
         {
             planView.Draw(editor);
@@ -341,7 +342,7 @@ public sealed class TileGrid
         var style = ImGui.GetStyle();
         var gridWidth = config.Columns * layout.TileWidth + (config.Columns - 1) * style.ItemSpacing.X;
         var gridHeight = config.Rows * layout.TileHeight + (config.Rows - 1) * style.ItemSpacing.Y;
-        var pageText = $"Seite {state.PageIndex + 1} / {state.PageCount}";
+        var pageText = Loc.F("Seite {0} / {1}", state.PageIndex + 1, state.PageCount);
         var arrow = ImGui.GetFrameHeight();
         var width = arrow * 4 + ImGui.CalcTextSize(pageText).X + style.ItemSpacing.X * 4;
         var below = MathF.Max(style.ItemSpacing.Y, (room - gridHeight - arrow) / 2);
@@ -354,7 +355,7 @@ public sealed class TileGrid
                 state.ShowFirstPage();
         }
         if (!first && ImGui.IsItemHovered())
-            ImGui.SetTooltip("Erste Seite");
+            ImGui.SetTooltip(Loc.T("Erste Seite"));
         ImGui.SameLine();
         if (ImGui.ArrowButton("##prev", ImGuiDir.Left))
             state.PreviousPage();
@@ -371,7 +372,7 @@ public sealed class TileGrid
                 state.ShowLastPage();
         }
         if (!last && ImGui.IsItemHovered())
-            ImGui.SetTooltip("Letzte Seite");
+            ImGui.SetTooltip(Loc.T("Letzte Seite"));
 
         if (config.ShowMemoryStats)
         {
@@ -390,8 +391,8 @@ public sealed class TileGrid
             ImGui.SetTooltip(MemoryStats.Tooltip);
     }
 
-    private const string WeaponsLabel = "Waffen gezogen";
-    private const string DimLabel = "Abdunkeln";
+    private static string WeaponsLabel => Loc.T("Waffen gezogen");
+    private static string DimLabel => Loc.T("Abdunkeln");
 
     private static float CheckboxWidth(string label) => ImGui.GetFrameHeight() + ImGui.GetStyle().ItemInnerSpacing.X + ImGui.CalcTextSize(label).X;
 
@@ -431,7 +432,7 @@ public sealed class TileGrid
         using (UiScale.PushIcons())
             ImGui.TextColored(new Vector4(1f, 0.8f, 0.3f, 1f), FontAwesomeIcon.ExclamationTriangle.ToIconString());
         if (ImGui.IsItemHovered())
-            ImGui.SetTooltip("Waffen-Kacheln mit gezogener Waffe: jede Kachel spielt das Ziehen ab, das Rendern dauert deutlich länger.");
+            ImGui.SetTooltip(Loc.T("Waffen-Kacheln mit gezogener Waffe: jede Kachel spielt das Ziehen ab, das Rendern dauert deutlich länger."));
 
         ImGui.SameLine();
         ImGui.SetCursorPosY(rowY);
@@ -526,7 +527,7 @@ public sealed class TileGrid
         {
             DrawWishStar(drawList, starPos, listed ? colors.Warning : overStar ? colors.Text : (colors.TextMuted & 0x00FFFFFF) | 0xA0000000);
             if (overStar)
-                ImGui.SetTooltip(listed ? "Von der Wunschliste nehmen" : "Auf die Wunschliste");
+                ImGui.SetTooltip(listed ? Loc.T("Von der Wunschliste nehmen") : Loc.T("Auf die Wunschliste"));
         }
         // The star's place stays reserved while it can show, so the marker does not jump when the tile is hovered.
         var markerX = showStar || canWish ? 6 + starSize.X + 3 : 6f;
@@ -534,11 +535,11 @@ public sealed class TileGrid
         {
             drawList.AddText(pos + new Vector2(markerX, 4), ErrorColor, "!");
             var labelPos = pos + new Vector2(6, 4 + lineHeight);
-            var label = Truncate("Renderfehler", size.X - 12);
+            var label = Truncate(Loc.T("Renderfehler"), size.X - 12);
             drawList.AddText(labelPos, ErrorColor, label);
             // Like the trait icons, only the marker itself shows a tooltip: the reason of the failure.
             if (hovered && !overStar && ImGui.IsMouseHoveringRect(pos, labelPos + ImGui.CalcTextSize(label)))
-                ImGui.SetTooltip($"Renderfehler: {error}");
+                ImGui.SetTooltip(Loc.F("Renderfehler: {0}", error));
         }
         drawList.PopClipRect();
 
@@ -572,7 +573,7 @@ public sealed class TileGrid
             case ItemSubject { Item: var item }:
                 var sets = state.SetsOf(item.Id);
                 if (sets.Count == 0)
-                    ImGui.TextDisabled(sources.IsReady ? "Gehört zu keinem Ausrüstungs-Set" : "Ausrüstungs-Sets werden geladen …");
+                    ImGui.TextDisabled(sources.IsReady ? Loc.T("Gehört zu keinem Ausrüstungs-Set") : Loc.T("Ausrüstungs-Sets werden geladen …"));
                 else if (sets.Count == 1)
                 {
                     ImGui.TextDisabled(sets[0].Name);
@@ -601,11 +602,11 @@ public sealed class TileGrid
         foreach (var piece in set.Pieces.Where(p => p.Id != except))
         {
             var worn = editor.Draft?.PieceIn(piece.Slot)?.ItemId == piece.Id || !editor.IsOpen && tryOn.TryOn.SlotOf(piece.Id) != null;
-            if (ImGui.MenuItem($"{SlotNames.Full(piece.Slot)} anziehen: {piece.Name}##{piece.Id}", "", worn))
+            if (ImGui.MenuItem(Loc.F("{0} anziehen: {1}", SlotNames.Full(piece.Slot), piece.Name) + $"##{piece.Id}", "", worn))
                 PutOn(state.ItemSubjectFor(piece.Id) ?? new ItemSubject(piece));
         }
         ImGui.Separator();
-        if (ImGui.MenuItem("Ganzes Set anziehen"))
+        if (ImGui.MenuItem(Loc.T("Ganzes Set anziehen")))
             PutOn(set);
     }
 

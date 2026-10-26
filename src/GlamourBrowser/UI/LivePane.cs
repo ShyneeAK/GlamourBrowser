@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
@@ -11,6 +12,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using GlamourBrowser.Browser;
 using GlamourBrowser.Core.CustomSets;
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Sources;
 using Dalamud.Utility;
@@ -98,7 +100,7 @@ public sealed unsafe class LivePane
         var (first, second) = DyeBoxes.For(item.DyeCount);
         // A row of its own: behind the buttons and the calibration text they would be cut off in a narrow pane.
         ImGui.AlignTextToFramePadding();
-        ImGui.TextDisabled("Farbe");
+        ImGui.TextDisabled(Loc.T("Farbe"));
         var stain0 = piece.Stain0;
         ImGui.SameLine();
         if (DyePicker.Draw("##itemdye1", ref stain0, dyes, theme, first))
@@ -114,11 +116,11 @@ public sealed unsafe class LivePane
     {
         using (ImRaii.Disabled(!tryOn.TryOn.HasChanges))
         {
-            if (ImGui.Button("Zurücksetzen"))
+            if (ImGui.Button(Loc.T("Zurücksetzen")))
                 tryOn.Reset();
         }
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip("Zurück auf aktuelles Outfit bzw. Unterwäsche, je nach Kachel-Modus");
+            ImGui.SetTooltip(Loc.T("Zurück auf aktuelles Outfit bzw. Unterwäsche, je nach Kachel-Modus"));
 
         ImGui.SameLine();
         var store = customSets.Current;
@@ -126,7 +128,7 @@ public sealed unsafe class LivePane
         var hasKnownPiece = tryOn.TryOn.Pieces.Any(p => state.ItemOf(p.ItemId) != null);
         using (ImRaii.Disabled(store == null || !hasKnownPiece))
         {
-            if (ImGui.Button("Als Set speichern") && store != null)
+            if (ImGui.Button(Loc.T("Als Set speichern")) && store != null)
             {
                 store.Add(CustomSetStore.DefaultName, tryOn.TryOn.Pieces, DateTimeOffset.Now);
                 savedAt = DateTime.UtcNow;
@@ -135,7 +137,7 @@ public sealed unsafe class LivePane
         if (savedAt is { } at && DateTime.UtcNow - at < TimeSpan.FromSeconds(3))
         {
             ImGui.SameLine();
-            ImGui.TextDisabled("Als ‚Neues Set‘ gespeichert");
+            ImGui.TextDisabled(Loc.F("Als ‚{0}‘ gespeichert", CustomSetStore.DefaultName));
         }
 
         DrawWornPieces();
@@ -163,7 +165,7 @@ public sealed unsafe class LivePane
             }
             first = false;
             var selected = state.Selected is ItemSubject { Item.Id: var id } && id == piece.ItemId;
-            if (IconToggle.Draw($"##worn{(int)piece.Slot}", subject.Item.IconId, size, selected, $"{SlotNames.Full(piece.Slot)}: {subject.Name}\nKlick: auswählen",
+            if (IconToggle.Draw($"##worn{(int)piece.Slot}", subject.Item.IconId, size, selected, $"{SlotNames.Full(piece.Slot)}: {subject.Name}\n" + Loc.T("Klick: auswählen"),
                     theme, FontAwesomeIcon.Tshirt))
             {
                 state.Selected = subject;
@@ -184,7 +186,7 @@ public sealed unsafe class LivePane
         {
             ImGui.Dummy(area);
             drawList.AddRectFilled(origin, origin + area, colors.Card, 8f);
-            const string hint = "Live-Ansicht wird vorbereitet …";
+            var hint = Loc.T("Live-Ansicht wird vorbereitet …");
             drawList.AddText(origin + (area - ImGui.CalcTextSize(hint)) / 2, colors.TextMuted, hint);
             return;
         }
@@ -226,16 +228,16 @@ public sealed unsafe class LivePane
         var buttonPos = pos + new Vector2(8, 8);
         var step = new Vector2(0, ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.Y);
         ImGui.SetCursorScreenPos(buttonPos);
-        if (IconButton.Draw("##visor", 0, FontAwesomeIcon.HardHat, live.VisorClosed ? "Visier öffnen" : "Visier schließen (nur Helme mit Visier)", theme))
+        if (IconButton.Draw("##visor", 0, FontAwesomeIcon.HardHat, live.VisorClosed ? Loc.T("Visier öffnen") : Loc.T("Visier schließen (nur Helme mit Visier)"), theme))
             live.VisorClosed = !live.VisorClosed;
         if (state.Selected is not SetSubject)
         {
             ImGui.SetCursorScreenPos(buttonPos += step);
-            if (IconButton.Draw("##draw", 0, FontAwesomeIcon.FistRaised, live.WeaponDrawn ? "Waffe wegstecken" : "Waffe ziehen", theme))
+            if (IconButton.Draw("##draw", 0, FontAwesomeIcon.FistRaised, live.WeaponDrawn ? Loc.T("Waffe wegstecken") : Loc.T("Waffe ziehen"), theme))
                 live.WeaponDrawn = !live.WeaponDrawn;
             ImGui.SetCursorScreenPos(buttonPos + step);
             if (IconButton.Draw("##weaponvisible", 0, live.WeaponVisible ? FontAwesomeIcon.EyeSlash : FontAwesomeIcon.Eye,
-                    live.WeaponVisible ? "Waffe ausblenden" : "Waffe anzeigen", theme))
+                    live.WeaponVisible ? Loc.T("Waffe ausblenden") : Loc.T("Waffe anzeigen"), theme))
                 live.WeaponVisible = !live.WeaponVisible;
         }
         ImGui.SetCursorScreenPos(origin + new Vector2(0, area.Y + ImGui.GetStyle().ItemSpacing.Y));
@@ -260,7 +262,7 @@ public sealed unsafe class LivePane
         using (UiScale.PushIcons())
             drawList.AddText(min, hovered ? theme.Colors.Text : theme.Colors.TextMuted, glyph);
         if (hovered)
-            ImGui.SetTooltip("Links ziehen: drehen\nRechts ziehen: verschieben\nMausrad: Zoom\nDoppelklick: zurücksetzen");
+            ImGui.SetTooltip(Loc.T("Links ziehen: drehen\nRechts ziehen: verschieben\nMausrad: Zoom\nDoppelklick: zurücksetzen"));
     }
 
     private void DrawItemCard()
@@ -272,7 +274,7 @@ public sealed unsafe class LivePane
         }
         if (state.Selected is not ItemSubject { Item: var item })
         {
-            ImGui.TextDisabled("Kein Item ausgewählt");
+            ImGui.TextDisabled(Loc.T("Kein Item ausgewählt"));
             return;
         }
 
@@ -282,7 +284,9 @@ public sealed unsafe class LivePane
         ImGui.BeginGroup();
         ImGui.TextWrapped(item.Name);
         var patch = sources.IsReady ? sources.Index.PatchOf(item.Id) : 0;
-        ImGui.TextDisabled($"Level {item.LevelEquip}" + (patch > 0 ? $" · Patch {patch:0.0#}" : ""));
+        // The patch keeps its dot in every language.
+        ImGui.TextDisabled(Loc.F("Level {0}", item.LevelEquip)
+                           + (patch > 0 ? " · " + Loc.F("Patch {0}", patch.ToString("0.0#", CultureInfo.InvariantCulture)) : ""));
         ImGui.EndGroup();
 
         DrawTraits(item);
@@ -291,14 +295,17 @@ public sealed unsafe class LivePane
         DrawLocations(ownership, item);
 
         ImGui.Separator();
-        if (IconButton.Draw("##tryon", 0, FontAwesomeIcon.Tshirt, "Anprobe", theme))
+        if (IconButton.Draw("##tryon", 0, FontAwesomeIcon.Tshirt, Loc.T("Anprobe"), theme))
             Plugin.Framework.RunOnFrameworkThread(() => AgentTryon.TryOn(0, item.Id));
         ImGui.SameLine();
-        if (IconButton.Draw("##chatlink", 0, FontAwesomeIcon.CommentDots, "Chat-Link: schreibt einen Item-Link in deinen eigenen Chat und kopiert den Namen.", theme))
+        if (IconButton.Draw("##chatlink", 0, FontAwesomeIcon.CommentDots, Loc.T("Chat-Link: schreibt einen Item-Link in deinen eigenen Chat und kopiert den Namen."), theme))
         {
             Plugin.ChatGui.Print(new SeStringBuilder().AddText("Shynees Glamour Dresser: ").AddItemLink(item.Id, false).Build());
             ImGui.SetClipboardText(item.Name);
         }
+        ImGui.SameLine();
+        if (IconButton.Draw("##showingrid", 0, FontAwesomeIcon.Crosshairs, Loc.T("In der Slot-Auswahl zeigen: springt zur Seite mit diesem Item"), theme))
+            state.ShowInGrid(item);
         ImGui.SameLine();
         DrawCalibration(item);
         DrawDyeBoxes(item);
@@ -320,10 +327,10 @@ public sealed unsafe class LivePane
         ImGui.TextWrapped(set.Name);
         var origin = set.Set.Id.Kind switch
         {
-            SetKind.Dresser => "Kommoden-Set",
-            SetKind.MogStation => "Mogstation-Set",
-            SetKind.Custom => "Eigenes Set",
-            _ => "Ausrüstungs-Set",
+            SetKind.Dresser => Loc.T("Kommoden-Set"),
+            SetKind.MogStation => Loc.T("Mogstation-Set"),
+            SetKind.Custom => Loc.T("Eigenes Set"),
+            _ => Loc.T("Ausrüstungs-Set"),
         };
         ImGui.TextDisabled($"{progress.Owned}/{progress.Total} · {origin}");
         ImGui.EndGroup();
@@ -331,7 +338,7 @@ public sealed unsafe class LivePane
         if (set.Set.Id.Kind == SetKind.Custom)
         {
             ImGui.SameLine();
-            if (IconButton.Draw("##editset", 0, FontAwesomeIcon.Pen, "Bearbeiten", theme) && customSets.Current?.Find(set.Set.Id.Value) is { } stored)
+            if (IconButton.Draw("##editset", 0, FontAwesomeIcon.Pen, Loc.T("Bearbeiten"), theme) && customSets.Current?.Find(set.Set.Id.Value) is { } stored)
                 editor.StartEdit(stored);
             ImGui.SameLine();
             DrawDeleteButton(set);
@@ -394,12 +401,12 @@ public sealed unsafe class LivePane
     /// <summary>Deletes a custom set after asking.</summary>
     private void DrawDeleteButton(SetSubject set)
     {
-        if (IconButton.Draw("##deleteset", 0, FontAwesomeIcon.Trash, "Löschen", theme))
+        if (IconButton.Draw("##deleteset", 0, FontAwesomeIcon.Trash, Loc.T("Löschen"), theme))
             ImGui.OpenPopup("##deleteset-confirm");
         if (!ImGui.BeginPopup("##deleteset-confirm"))
             return;
-        ImGui.TextUnformatted($"Set „{set.Name}“ löschen?");
-        if (ImGui.Button("Löschen"))
+        ImGui.TextUnformatted(Loc.F("Set „{0}“ löschen?", set.Name));
+        if (ImGui.Button(Loc.T("Löschen")))
         {
             customSets.Current?.Remove(set.Set.Id.Value);
             state.Selected = null;
@@ -407,7 +414,7 @@ public sealed unsafe class LivePane
             ImGui.CloseCurrentPopup();
         }
         ImGui.SameLine();
-        if (ImGui.Button("Abbrechen"))
+        if (ImGui.Button(Loc.T("Abbrechen")))
             ImGui.CloseCurrentPopup();
         ImGui.EndPopup();
     }
@@ -425,16 +432,16 @@ public sealed unsafe class LivePane
 
     private void DrawSources(GlamourItem item)
     {
-        ImGui.TextUnformatted("Quellen");
+        ImGui.TextUnformatted(Loc.T("Quellen"));
         if (!sources.IsReady)
         {
-            ImGui.TextDisabled("Quellen werden geladen …");
+            ImGui.TextDisabled(Loc.T("Quellen werden geladen …"));
             return;
         }
 
         var all = sources.Index.SourcesOf(item.Id);
         if (all.Count == 0)
-            ImGui.TextDisabled("Keine Quelle bekannt");
+            ImGui.TextDisabled(Loc.T("Keine Quelle bekannt"));
 
         var iconSize = new Vector2(ImGui.GetTextLineHeight());
         foreach (var group in all.GroupBy(s => s.Category).OrderBy(g => g.Key))
@@ -453,7 +460,7 @@ public sealed unsafe class LivePane
                 for (var i = 0; i < shown.Count; i++)
                     DrawSource(shown[i], $"{group.Key}-{i}");
 
-                if (list.Count > SourcesPerCategory && !expanded.Contains(key) && ImGui.SmallButton($"weitere ({list.Count - SourcesPerCategory}) …##more{group.Key}"))
+                if (list.Count > SourcesPerCategory && !expanded.Contains(key) && ImGui.SmallButton(Loc.F("weitere ({0}) …", list.Count - SourcesPerCategory) + $"##more{group.Key}"))
                     expanded.Add(key);
             }
         }
@@ -469,7 +476,7 @@ public sealed unsafe class LivePane
         ImGui.SameLine();
         ImGui.TextDisabled("Teamcraft");
         ImGui.SameLine();
-        if (IconButton.Draw("##google", 0, FontAwesomeIcon.Search, "Google-Suche nach dem Item-Namen", theme))
+        if (IconButton.Draw("##google", 0, FontAwesomeIcon.Search, Loc.T("Google-Suche nach dem Item-Namen"), theme))
             Util.OpenLink("https://www.google.com/search?q=" + Uri.EscapeDataString(item.Name + " FFXIV"));
         ImGui.SameLine();
         ImGui.TextDisabled("Google");
@@ -513,8 +520,8 @@ public sealed unsafe class LivePane
             return;
         var loggedIn = wishlist.Current != null;
         var listed = wishlist.IsListed(subject);
-        var tooltip = !loggedIn ? wishlist.LoadFailed ? "Wunschliste konnte nicht geladen werden" : "Nicht eingeloggt"
-                    : listed ? "Von der Wunschliste nehmen" : "Auf die Wunschliste";
+        var tooltip = !loggedIn ? wishlist.LoadFailed ? Loc.T("Wunschliste konnte nicht geladen werden") : Loc.T("Nicht eingeloggt")
+                    : listed ? Loc.T("Von der Wunschliste nehmen") : Loc.T("Auf die Wunschliste");
         if (IconToggle.Draw("##wish", SlotIcons.Wishlist, new Vector2(ImGui.GetFrameHeight()), listed, tooltip, theme, FontAwesomeIcon.Star, enabled: loggedIn))
             wishlist.Toggle(subject);
     }
@@ -523,7 +530,7 @@ public sealed unsafe class LivePane
     {
         if (item.ClassJobIds.Count >= 40)
         {
-            ImGui.TextDisabled("Alle Klassen");
+            ImGui.TextDisabled(Loc.T("Alle Klassen"));
             return;
         }
 
@@ -545,7 +552,7 @@ public sealed unsafe class LivePane
         var contentId = Plugin.PlayerState.ContentId;
         var slotName = SlotNames.All.FirstOrDefault(s => s.Slot == item.Slot).Name ?? item.Slot.ToString();
 
-        if (IconButton.Draw("##calibrate", 0, FontAwesomeIcon.Camera, $"Kamera-Position festlegen für ({slotName})", theme)
+        if (IconButton.Draw("##calibrate", 0, FontAwesomeIcon.Camera, Loc.F("Kamera-Position festlegen für ({0})", slotName), theme)
             && live.CaptureCamera() is { } preset)
         {
             calibration.Set(contentId, item.Slot, preset);
@@ -556,13 +563,13 @@ public sealed unsafe class LivePane
         if (calibrated)
         {
             ImGui.SameLine();
-            if (IconButton.Draw("##calibration-reset", 0, FontAwesomeIcon.Undo, $"Kamera-Position für ({slotName}) zurücksetzen", theme)
+            if (IconButton.Draw("##calibration-reset", 0, FontAwesomeIcon.Undo, Loc.F("Kamera-Position für ({0}) zurücksetzen", slotName), theme)
                 && calibration.Remove(contentId, item.Slot))
                 state.InvalidateTiles();
         }
         ImGui.SameLine();
         ImGui.AlignTextToFramePadding();
-        ImGui.TextDisabled(calibrated ? $"{slotName}: kalibriert" : $"{slotName}: Standardansicht");
+        ImGui.TextDisabled(calibrated ? Loc.F("{0}: kalibriert", slotName) : Loc.F("{0}: Standardansicht", slotName));
     }
 
     public static void DrawLocations(OwnershipService ownership, GlamourItem item)
@@ -570,11 +577,11 @@ public sealed unsafe class LivePane
         var locations = ownership.Current?.LocationsOf(item.Id) ?? [];
         if (locations.Count == 0)
         {
-            ImGui.TextDisabled("Nicht im Besitz");
+            ImGui.TextDisabled(Loc.T("Nicht im Besitz"));
             return;
         }
         foreach (var l in locations)
-            ImGui.TextUnformatted($"Fundort: {l.DisplayName} (Stand {l.Seen:dd.MM. HH:mm})");
+            ImGui.TextUnformatted(Loc.F("Fundort: {0} (Stand {1:dd.MM. HH:mm})", l.DisplayName, l.Seen));
     }
 
     /// <summary>Dye channels and tradability with icons, matching the tile's trait icons.</summary>
@@ -584,13 +591,13 @@ public sealed unsafe class LivePane
         var size = new Vector2(ImGui.GetTextLineHeight());
         GameIcon.Draw(item.DyeCount > 0 ? TraitIcons.Dye : 0, size, FontAwesomeIcon.PaintBrush, colors.TextMuted);
         ImGui.SameLine();
-        ImGui.TextUnformatted(item.DyeCount > 0 ? $"Färbbar ({DyeText(item.DyeCount)})" : "Nicht färbbar");
+        ImGui.TextUnformatted(item.DyeCount > 0 ? Loc.F("Färbbar ({0})", DyeText(item.DyeCount)) : Loc.T("Nicht färbbar"));
         ImGui.SameLine();
         var (tradeIcon, glyph, text) = item.Trade switch
         {
-            Tradability.Marketable => (TraitIcons.Marketable, FontAwesomeIcon.Store, "Marktbrett"),
-            Tradability.Tradable => (TraitIcons.Tradable, FontAwesomeIcon.ExchangeAlt, "Handelbar"),
-            _ => (0u, FontAwesomeIcon.Lock, "Gebunden"),
+            Tradability.Marketable => (TraitIcons.Marketable, FontAwesomeIcon.Store, Loc.T("Marktbrett")),
+            Tradability.Tradable => (TraitIcons.Tradable, FontAwesomeIcon.ExchangeAlt, Loc.T("Handelbar")),
+            _ => (0u, FontAwesomeIcon.Lock, Loc.T("Gebunden")),
         };
         GameIcon.Draw(tradeIcon, size, glyph, colors.TextMuted);
         ImGui.SameLine();
@@ -599,8 +606,8 @@ public sealed unsafe class LivePane
 
     private static string DyeText(int count) => count switch
     {
-        0 => "nicht färbbar",
-        1 => "1 Farbkanal",
-        _ => $"{count} Farbkanäle",
+        0 => Loc.T("nicht färbbar"),
+        1 => Loc.T("1 Farbkanal"),
+        _ => Loc.F("{0} Farbkanäle", count),
     };
 }

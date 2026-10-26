@@ -1,3 +1,4 @@
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Sources;
 using Lumina;
 using Lumina.Excel.Sheets;
@@ -17,7 +18,7 @@ public static class QuestSources
                 continue;
             var genre = quest.JournalGenre.IsValid ? quest.JournalGenre.Value : default;
             var category = quest.JournalGenre.IsValid ? QuestCategory.From(genre.JournalCategory.RowId) : SourceCategory.Quest;
-            var detail = quest.JournalGenre.IsValid ? genre.Name.ExtractText() : "Quest";
+            var detail = quest.JournalGenre.IsValid ? genre.Name.ExtractText() : Loc.T("Quest");
             var title = quest.Name.ExtractText();
 
             foreach (var reward in quest.Reward)
@@ -28,7 +29,7 @@ public static class QuestSources
             foreach (var reward in quest.OptionalItemReward)
             {
                 if (relevant.Contains(reward.RowId))
-                    builder.Add(reward.RowId, new ItemSource(category, title, $"{detail} · Auswahl"));
+                    builder.Add(reward.RowId, new ItemSource(category, title, Loc.F("{0} · Auswahl", detail)));
             }
         }
     }
@@ -38,7 +39,7 @@ public static class QuestSources
         foreach (var achievement in data.GetExcelSheet<Achievement>()!)
         {
             if (relevant.Contains(achievement.Item.RowId))
-                builder.Add(achievement.Item.RowId, new ItemSource(SourceCategory.Achievement, achievement.Name.ExtractText(), "Belohnung"));
+                builder.Add(achievement.Item.RowId, new ItemSource(SourceCategory.Achievement, achievement.Name.ExtractText(), Loc.T("Belohnung")));
         }
     }
 
@@ -49,13 +50,13 @@ public static class QuestSources
             foreach (var itemId in new[] { relic.ItemId, relic.OffhandItemId })
             {
                 if (relevant.Contains(itemId))
-                    builder.Add(itemId, new ItemSource(SourceCategory.JobGear, "Reliktwaffe", $"Stufe {relic.Stage}"));
+                    builder.Add(itemId, new ItemSource(SourceCategory.JobGear, Loc.T("Reliktwaffe"), Loc.F("Stufe {0}", relic.Stage)));
             }
         }
         foreach (var relic in SupplementalCsv.Load<RelicTool>(data, CsvLoader.RelicToolResourceName, log))
         {
             if (relevant.Contains(relic.ItemId))
-                builder.Add(relic.ItemId, new ItemSource(SourceCategory.JobGear, "Reliktwerkzeug", $"Stufe {relic.Stage}"));
+                builder.Add(relic.ItemId, new ItemSource(SourceCategory.JobGear, Loc.T("Reliktwerkzeug"), Loc.F("Stufe {0}", relic.Stage)));
         }
     }
 }

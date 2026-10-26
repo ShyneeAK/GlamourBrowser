@@ -1,3 +1,5 @@
+using GlamourBrowser.Core.Localization;
+
 namespace GlamourBrowser.Core.Sources;
 
 /// <summary>Where an item comes from, in display order.</summary>
@@ -28,7 +30,7 @@ public enum SourceCategory
 
 public static class SourceCategories
 {
-    public static string DisplayName(SourceCategory category) => category switch
+    public static string DisplayName(SourceCategory category) => Loc.T(category switch
     {
         SourceCategory.Crafting => "Handwerk",
         SourceCategory.Dungeon => "Dungeon",
@@ -51,5 +53,5 @@ public static class SourceCategories
         SourceCategory.PvP => "PvP",
         SourceCategory.MogStation => "Mogstation",
         _ => "Sonstiges",
-    };
+    });
 }

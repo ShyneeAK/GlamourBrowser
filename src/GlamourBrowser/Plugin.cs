@@ -136,7 +136,7 @@ public sealed class Plugin : IDalamudPlugin
         memoryStats = new MemoryStats(cache);
         // Before the main window: its title bar button opens it.
         settingsWindow = new SettingsWindow(config, browser, pool, calibration, theme);
-        plates = new GlamourPlate.GlamourPlateBridge(variants, ownership, dyes, id => browser.ItemOf(id)?.Name ?? $"Item {id}",
+        plates = new GlamourPlate.GlamourPlateBridge(variants, ownership, dyes, id => browser.ItemOf(id)?.Name ?? Loc.F("Item {0}", id),
             id => browser.ItemOf(id)?.DyeCount ?? 0);
         var filterControls = new TileFilterControls(browser, jobs, dyes, theme);
         mainWindow = new MainWindow(
@@ -155,11 +155,11 @@ public sealed class Plugin : IDalamudPlugin
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
-            HelpMessage = "Öffnet Shynees Glamour Dresser (kurz: /sgd).",
+            HelpMessage = Loc.T("Öffnet Shynees Glamour Dresser (kurz: /sgd)."),
         });
         CommandManager.AddHandler(ShortCommandName, new CommandInfo(OnCommand)
         {
-            HelpMessage = "Öffnet Shynees Glamour Dresser.",
+            HelpMessage = Loc.T("Öffnet Shynees Glamour Dresser."),
             ShowInHelp = false,
         });
 

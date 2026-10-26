@@ -3,6 +3,7 @@ using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Sources;
 
 namespace GlamourBrowser.UI;
@@ -17,10 +18,10 @@ public static unsafe class SourceActions
     /// <returns>Null when the source has no action.</returns>
     public static (uint Icon, FontAwesomeIcon Fallback, string Tooltip)? ButtonFor(SourceAction? action) => action switch
     {
-        MapFlag => (MapIcon, FontAwesomeIcon.MapMarkerAlt, "Karte"),
-        DutyFinder => (DutyFinderIcon, FontAwesomeIcon.Search, "Inhaltssuche"),
-        OpenRecipe => (RecipeIcon, FontAwesomeIcon.Book, "Rezept"),
-        OpenStore => (0u, FontAwesomeIcon.ShoppingCart, "Mogstation"),
+        MapFlag => (MapIcon, FontAwesomeIcon.MapMarkerAlt, Loc.T("Karte")),
+        DutyFinder => (DutyFinderIcon, FontAwesomeIcon.Search, Loc.T("Inhaltssuche")),
+        OpenRecipe => (RecipeIcon, FontAwesomeIcon.Book, Loc.T("Rezept")),
+        OpenStore => (0u, FontAwesomeIcon.ShoppingCart, Loc.T("Mogstation")),
         _ => null,
     };
 

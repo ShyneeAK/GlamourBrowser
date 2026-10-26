@@ -10,6 +10,7 @@ using GlamourBrowser.Core.Ownership;
 using GlamourBrowser.Data;
 using GlamourBrowser.Ownership;
 using GlamourBrowser.Rendering;
+using GlamourBrowser.Core.Localization;
 using CabinetRow = Lumina.Excel.Sheets.Cabinet;
 using MirageStoreSetItem = Lumina.Excel.Sheets.MirageStoreSetItem;
 using ItemSource = FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentMiragePrismMiragePlateData.ItemSource;
@@ -314,7 +315,7 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
         var now = DateTimeOffset.Now;
         // Oldest plate first, so that plate 1 ends up last changed and on top.
         foreach (var (plate, pieces) in imported.Reverse())
-            store.Add($"Glamour-Plate {plate + 1}", pieces, now);
+            store.Add(Loc.F("Glamour-Plate {0}", plate + 1), pieces, now);
         return (imported.Count, plates.Count(p => p.Count > 0) - imported.Count);
     }
 

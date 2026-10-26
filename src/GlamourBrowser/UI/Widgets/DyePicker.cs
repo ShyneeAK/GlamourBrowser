@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Data;
 
 namespace GlamourBrowser.UI.Widgets;
@@ -34,7 +35,7 @@ public static class DyePicker
             drawList.AddRectFilled(min + pad, min + size - pad, current.Color, 4f);
         drawList.AddRect(min + pad, min + size - pad, hovered && enabled ? colors.Text : colors.Border, 4f);
         if (hovered)
-            ImGui.SetTooltip(!enabled ? "nicht färbbar" : label != null ? $"{label}: {dyes.NameOf(stain)}" : dyes.NameOf(stain));
+            ImGui.SetTooltip(!enabled ? Loc.T("nicht färbbar") : label != null ? $"{label}: {dyes.NameOf(stain)}" : dyes.NameOf(stain));
 
         var popup = $"{id}-dyes";
         if (clicked)
@@ -43,7 +44,7 @@ public static class DyePicker
             return false;
 
         var changed = false;
-        if (ImGui.Selectable("Keine Farbe", stain == 0))
+        if (ImGui.Selectable(Loc.T("Keine Farbe"), stain == 0))
         {
             stain = 0;
             changed = true;

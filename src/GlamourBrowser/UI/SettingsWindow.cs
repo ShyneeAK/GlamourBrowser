@@ -28,10 +28,10 @@ public sealed class SettingsWindow : Window
     private static readonly string[] LanguageNames = ["", "Deutsch", "English", "Français", "日本語"];
     private bool languageChanged;
 
-    private static readonly string[] AccentNames = ["Blau", "Violett", "Türkis", "Rosé", "Bernstein"];
+    private static readonly string[] AccentNames = [Loc.T("Blau"), Loc.T("Violett"), Loc.T("Türkis"), Loc.T("Rosé"), Loc.T("Bernstein")];
 
     public SettingsWindow(Configuration config, BrowserState state, RenderPool pool, CalibrationService calibration, Theme.Theme theme)
-        : base("Shynees Glamour Dresser – Einstellungen##ShyneesGlamourDresserSettings")
+        : base(Loc.T("Shynees Glamour Dresser – Einstellungen") + "##ShyneesGlamourDresserSettings")
     {
         this.config = config;
         this.state = state;
@@ -66,7 +66,7 @@ public sealed class SettingsWindow : Window
     public override void Draw()
     {
         var accent = (int)config.Accent;
-        if (ImGui.Combo("Akzentfarbe", ref accent, AccentNames, AccentNames.Length))
+        if (ImGui.Combo(Loc.T("Akzentfarbe"), ref accent, AccentNames, AccentNames.Length))
         {
             config.Accent = (AccentColor)accent;
             config.Save();
@@ -75,17 +75,17 @@ public sealed class SettingsWindow : Window
 
         var columns = config.Columns;
         var rows = config.Rows;
-        var gridChanged = ImGui.SliderInt("Spalten", ref columns, 2, 10, "%d", ImGuiSliderFlags.AlwaysClamp);
-        gridChanged |= ImGui.SliderInt("Zeilen", ref rows, 1, 6, "%d", ImGuiSliderFlags.AlwaysClamp);
+        var gridChanged = ImGui.SliderInt(Loc.T("Spalten"), ref columns, 2, 10, "%d", ImGuiSliderFlags.AlwaysClamp);
+        gridChanged |= ImGui.SliderInt(Loc.T("Zeilen"), ref rows, 1, 6, "%d", ImGuiSliderFlags.AlwaysClamp);
         if (gridChanged)
             state.SetGrid(columns, rows);
 
         var mode = (int)config.TileMode;
-        if (ImGui.Combo("Kachel-Modus", ref mode, ["Aktuelles Outfit", "Unterwäsche"], 2))
+        if (ImGui.Combo(Loc.T("Kachel-Modus"), ref mode, [Loc.T("Aktuelles Outfit"), Loc.T("Unterwäsche")], 2))
             state.SetTileMode((TileMode)mode);
 
         var pose = config.UseIdlePose ? 1 : 0;
-        if (ImGui.Combo("Pose", ref pose, ["Standard", "Meine Idle-Pose"], 2))
+        if (ImGui.Combo(Loc.T("Pose"), ref pose, [Loc.T("Standard"), Loc.T("Meine Idle-Pose")], 2))
             state.SetUseIdlePose(pose == 1);
 
 
@@ -93,7 +93,7 @@ public sealed class SettingsWindow : Window
 
         // The value being dragged is kept across frames; fonts are rebuilt only once the slider is released.
         var percent = scaleDraft ?? (int)MathF.Round(config.UiScale * 100);
-        if (ImGui.SliderInt("UI-Skalierung", ref percent, 50, 300, "%d %%", ImGuiSliderFlags.AlwaysClamp))
+        if (ImGui.SliderInt(Loc.T("UI-Skalierung"), ref percent, 50, 300, "%d %%", ImGuiSliderFlags.AlwaysClamp))
             scaleDraft = percent;
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
@@ -104,27 +104,27 @@ public sealed class SettingsWindow : Window
         }
 
         var cachedPages = config.CachedPages;
-        if (ImGui.SliderInt("Seiten im Cache", ref cachedPages, 0, PageHistory.MaxPages, "%d", ImGuiSliderFlags.AlwaysClamp))
+        if (ImGui.SliderInt(Loc.T("Seiten im Cache"), ref cachedPages, 0, PageHistory.MaxPages, "%d", ImGuiSliderFlags.AlwaysClamp))
             state.SetCachedPages(cachedPages);
         if (ImGui.IsItemHovered())
-            ImGui.SetTooltip("Wie viele zuletzt angezeigte Seiten gerendert bleiben, auch beim Wechsel zwischen Slots und Modi.\n"
-                             + "Zurück zu einer solchen Seite zeigt die Bilder sofort. Mehr Seiten brauchen mehr Grafikspeicher.");
+            ImGui.SetTooltip(Loc.T("Wie viele zuletzt angezeigte Seiten gerendert bleiben, auch beim Wechsel zwischen Slots und Modi.\n"
+                                   + "Zurück zu einer solchen Seite zeigt die Bilder sofort. Mehr Seiten brauchen mehr Grafikspeicher."));
 
         var lookahead = config.LookaheadPages;
-        if (ImGui.SliderInt("Seiten vorausrendern", ref lookahead, 0, Lookahead.MaxPages, "%d", ImGuiSliderFlags.AlwaysClamp))
+        if (ImGui.SliderInt(Loc.T("Seiten vorausrendern"), ref lookahead, 0, Lookahead.MaxPages, "%d", ImGuiSliderFlags.AlwaysClamp))
             state.SetLookaheadPages(lookahead);
         if (ImGui.IsItemHovered())
-            ImGui.SetTooltip("Wie viele Seiten nach der aktuellen schon im Voraus gerendert werden, die nächste zuerst.\n"
-                             + "Weiterblättern zeigt die Bilder dann sofort. Mehr Seiten brauchen mehr Grafikspeicher und Renderzeit.");
+            ImGui.SetTooltip(Loc.T("Wie viele Seiten nach der aktuellen schon im Voraus gerendert werden, die nächste zuerst.\n"
+                                   + "Weiterblättern zeigt die Bilder dann sofort. Mehr Seiten brauchen mehr Grafikspeicher und Renderzeit."));
 
         ImGui.Separator();
-        ImGui.TextDisabled("Live-Ansicht");
+        ImGui.TextDisabled(Loc.T("Live-Ansicht"));
         var rotate = config.RotateSensitivity;
         var pan = config.PanSensitivity;
         var zoom = config.ZoomSensitivity;
-        var changed = ImGui.SliderFloat("Drehen", ref rotate, 0.01f, 20f, "%.2f", ImGuiSliderFlags.Logarithmic);
-        changed |= ImGui.SliderFloat("Verschieben", ref pan, 0.01f, 20f, "%.2f", ImGuiSliderFlags.Logarithmic);
-        changed |= ImGui.SliderFloat("Zoom", ref zoom, 0.1f, 20f, "%.2f", ImGuiSliderFlags.Logarithmic);
+        var changed = ImGui.SliderFloat(Loc.T("Drehen"), ref rotate, 0.01f, 20f, "%.2f", ImGuiSliderFlags.Logarithmic);
+        changed |= ImGui.SliderFloat(Loc.T("Verschieben"), ref pan, 0.01f, 20f, "%.2f", ImGuiSliderFlags.Logarithmic);
+        changed |= ImGui.SliderFloat(Loc.T("Zoom"), ref zoom, 0.1f, 20f, "%.2f", ImGuiSliderFlags.Logarithmic);
         if (changed)
         {
             config.RotateSensitivity = rotate;
@@ -137,25 +137,25 @@ public sealed class SettingsWindow : Window
         DrawCameraPresets();
 
         ImGui.Separator();
-        ImGui.TextDisabled("Debug");
+        ImGui.TextDisabled(Loc.T("Debug"));
         var memory = config.ShowMemoryStats;
-        if (ImGui.Checkbox("Speicheranzeige unter dem Raster", ref memory))
+        if (ImGui.Checkbox(Loc.T("Speicheranzeige unter dem Raster"), ref memory))
         {
             config.ShowMemoryStats = memory;
             config.Save();
         }
         if (ImGui.IsItemHovered())
-            ImGui.SetTooltip("Zeigt unter den Kacheln, wie viel Grafikspeicher der Kachel-Cache belegt, dazu VRAM und RAM des Spiels.");
+            ImGui.SetTooltip(Loc.T("Zeigt unter den Kacheln, wie viel Grafikspeicher der Kachel-Cache belegt, dazu VRAM und RAM des Spiels."));
 
         var views = config.ParallelViews;
-        if (ImGui.SliderInt("Parallele Ansichten", ref views, 1, 3, "%d", ImGuiSliderFlags.AlwaysClamp))
+        if (ImGui.SliderInt(Loc.T("Parallele Ansichten"), ref views, 1, 3, "%d", ImGuiSliderFlags.AlwaysClamp))
         {
             config.ParallelViews = views;
             pool.MaxViews = views;
             config.Save();
         }
         if (ImGui.IsItemHovered())
-            ImGui.SetTooltip("Wie viele Kacheln gleichzeitig gerendert werden (Standard 3).");
+            ImGui.SetTooltip(Loc.T("Wie viele Kacheln gleichzeitig gerendert werden (Standard 3)."));
     }
 
     /// <summary>The plugin's language: the game client's, or a chosen one. Texts already built change after a reload of the plugin.</summary>
@@ -178,8 +178,8 @@ public sealed class SettingsWindow : Window
 
     private void DrawCameraPresets()
     {
-        ImGui.TextDisabled("Kamera-Kalibrierung dieses Charakters");
-        ImGui.TextWrapped("Kalibriert wird in der Live-Ansicht: Item eines Slots auswählen, Ansicht einstellen, „Kamera-Position festlegen“ klicken.");
+        ImGui.TextDisabled(Loc.T("Kamera-Kalibrierung dieses Charakters"));
+        ImGui.TextWrapped(Loc.T("Kalibriert wird in der Live-Ansicht: Item eines Slots auswählen, Ansicht einstellen, „Kamera-Position festlegen“ klicken."));
 
         var contentId = Plugin.PlayerState.ContentId;
         calibration.Ensure(contentId);
@@ -188,13 +188,13 @@ public sealed class SettingsWindow : Window
         {
             if (!calibrated.ContainsKey(slot))
             {
-                ImGui.TextDisabled($"{name}: Standard");
+                ImGui.TextDisabled(Loc.F("{0}: Standard", name));
                 continue;
             }
 
-            ImGui.TextUnformatted($"{name}: kalibriert");
+            ImGui.TextUnformatted(Loc.F("{0}: kalibriert", name));
             ImGui.SameLine();
-            if (ImGui.SmallButton($"Zurücksetzen##{slot}") && calibration.Remove(contentId, slot))
+            if (ImGui.SmallButton(Loc.T("Zurücksetzen") + $"##{slot}") && calibration.Remove(contentId, slot))
                 state.InvalidateTiles();
         }
     }

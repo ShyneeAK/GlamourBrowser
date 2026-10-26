@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using Dalamud.Interface.Textures.TextureWraps;
 using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Core.Ui;
+using GlamourBrowser.Core.Localization;
 
 namespace GlamourBrowser.Rendering;
 
@@ -12,11 +13,11 @@ public sealed class MemoryStats : IDisposable
 {
     private const long SampleInterval = 1000;
 
-    public const string Tooltip =
+    public static string Tooltip => Loc.T(
         "Kachel-Cache: gerenderte Kacheln dieses Plugins (aktuelle, vorausgerenderte und zuletzt gesehene Seiten), Größe geschätzt.\n"
         + "VRAM: Grafikspeicher, den das ganze Spiel belegt / den es nutzen darf.\n"
         + "RAM: Arbeitsspeicher des Spielprozesses.\n"
-        + ".NET: verwalteter Speicher von Dalamud und allen Plugins zusammen.";
+        + ".NET: verwalteter Speicher von Dalamud und allen Plugins zusammen.");
 
     private readonly TileCache<IDalamudTextureWrap> cache;
     // Created on the first sample: a missing DirectX interop must not break the plugin, only the VRAM figure.
@@ -46,7 +47,7 @@ public sealed class MemoryStats : IDisposable
         });
         var vram = QueryGpu() is { } video ? $"{ByteSize.Format(video.Used)} / {ByteSize.Format(video.Budget)}" : "?";
         using var process = Process.GetCurrentProcess();
-        Line = $"Kachel-Cache: {cache.Count} Kacheln ≈ {ByteSize.Format(tileBytes)}  ·  VRAM {vram}  ·  RAM {ByteSize.Format(process.WorkingSet64)}"
+        Line = Loc.F("Kachel-Cache: {0} Kacheln ≈ {1}", cache.Count, ByteSize.Format(tileBytes)) + $"  ·  VRAM {vram}  ·  RAM {ByteSize.Format(process.WorkingSet64)}"
                + $"  ·  .NET {ByteSize.Format(GC.GetTotalMemory(false))}";
     }
 

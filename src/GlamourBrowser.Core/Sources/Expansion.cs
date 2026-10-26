@@ -1,3 +1,5 @@
+using GlamourBrowser.Core.Localization;
+
 namespace GlamourBrowser.Core.Sources;
 
 public enum Expansion
@@ -31,7 +33,7 @@ public static class Expansions
         _ => "DT",
     };
 
-    public static string LongName(Expansion expansion) => expansion switch
+    public static string LongName(Expansion expansion) => Loc.T(expansion switch
     {
         Expansion.ARealmReborn => "A Realm Reborn",
         Expansion.Heavensward => "Heavensward",
@@ -39,5 +41,5 @@ public static class Expansions
         Expansion.Shadowbringers => "Shadowbringers",
         Expansion.Endwalker => "Endwalker",
         _ => "Dawntrail",
-    };
+    });
 }

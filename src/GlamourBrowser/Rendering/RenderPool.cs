@@ -9,6 +9,7 @@ using Dalamud.Interface.Textures.TextureWraps;
 using GlamourBrowser.Core.CustomSets;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Rendering;
+using GlamourBrowser.Core.Localization;
 
 namespace GlamourBrowser.Rendering;
 
@@ -151,7 +152,7 @@ public sealed unsafe class RenderPool : IDisposable
 
         if (SlotGuard.ConflictActive())
         {
-            Status = "Render-Plätze werden gerade vom Spiel genutzt (Gruppen-Portraits).";
+            Status = Loc.T("Render-Plätze werden gerade vom Spiel genutzt (Gruppen-Portraits).");
             if (workers.Count > 0)
             {
                 // Set aside, not released: the game may own these slots now.
@@ -204,7 +205,7 @@ public sealed unsafe class RenderPool : IDisposable
                 view.Create(character, appearance.Race, appearance.Sex);
                 workers.Add(new Worker(view));
             }
-            Status = workers.Count == 0 && blocked > 0 ? "Kein Render-Platz frei (Plätze 5–7 belegt)." : null;
+            Status = workers.Count == 0 && blocked > 0 ? Loc.T("Kein Render-Platz frei (Plätze 5–7 belegt).") : null;
         }
         else
         {
@@ -279,7 +280,7 @@ public sealed unsafe class RenderPool : IDisposable
                     return;
                 if (lookup(key) is not { } subject)
                 {
-                    failures[key] = "Unbekanntes Item";
+                    failures[key] = Loc.T("Unbekanntes Item");
                     return;
                 }
 
@@ -344,7 +345,7 @@ public sealed unsafe class RenderPool : IDisposable
                 if (worker.Frames < 2 || !view.IsIdle)
                 {
                     if (worker.Frames > TimeoutFrames)
-                        Fail(worker, "Zeitüberschreitung beim Laden");
+                        Fail(worker, Loc.T("Zeitüberschreitung beim Laden"));
                     return;
                 }
                 // Draw or sheathe now that the item has loaded (a toggle sent while an item loads is ignored). Judged by
@@ -354,7 +355,7 @@ public sealed unsafe class RenderPool : IDisposable
                 if (view.IsChangingStance())
                 {
                     if (worker.Frames > TimeoutFrames)
-                        Fail(worker, "Zeitüberschreitung beim Laden");
+                        Fail(worker, Loc.T("Zeitüberschreitung beim Laden"));
                     return;
                 }
                 var wantDrawn = worker.Key!.Value.WeaponDrawn;
@@ -394,7 +395,7 @@ public sealed unsafe class RenderPool : IDisposable
                         view.ApplyVisibility(showWeapons: true);
                         return;
                     case SettleAction.Timeout:
-                        Fail(worker, "Zeitüberschreitung beim Laden");
+                        Fail(worker, Loc.T("Zeitüberschreitung beim Laden"));
                         return;
                     case SettleAction.CopyWithoutWeapons:
                         Plugin.Log.Warning($"Tile {worker.Key!.Value.ItemId}: weapons still hidden after {worker.Gate.Retries} retries, copying anyway");
@@ -477,7 +478,7 @@ public sealed unsafe class RenderPool : IDisposable
                 var texture = view.GetTexture();
                 if (texture == null || texture->D3D11ShaderResourceView == null)
                 {
-                    Fail(worker, "Keine Textur");
+                    Fail(worker, Loc.T("Keine Textur"));
                     return;
                 }
                 var width = worker.Key!.Value.RenderWidth;
@@ -497,7 +498,7 @@ public sealed unsafe class RenderPool : IDisposable
                 worker.CopyTask = null;
                 if (!task.IsCompletedSuccessfully)
                 {
-                    Fail(worker, task.Exception?.InnerException?.Message ?? "Kopieren fehlgeschlagen");
+                    Fail(worker, task.Exception?.InnerException?.Message ?? Loc.T("Kopieren fehlgeschlagen"));
                     return;
                 }
 

@@ -7,6 +7,7 @@ using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Ui;
 using GlamourBrowser.Rendering;
+using GlamourBrowser.Core.Localization;
 
 namespace GlamourBrowser.CustomSets;
 
@@ -63,7 +64,7 @@ public sealed class CustomSetEditor
 
     /// <summary>A new set from what the character wears (glamour preferred), with its dyes.</summary>
     public void StartFromOutfit()
-        => StartNew("Aktuelles Outfit", appearance.Outfit.Entries.Select(e => new CustomPiece(e.Slot, e.ItemId, e.Stain0, e.Stain1)).ToList());
+        => StartNew(Loc.T("Aktuelles Outfit"), appearance.Outfit.Entries.Select(e => new CustomPiece(e.Slot, e.ItemId, e.Stain0, e.Stain1)).ToList());
 
     /// <summary>The answer to "Änderungen verwerfen?": yes starts the waiting draft, no keeps the current one.</summary>
     public void Answer(bool discard)

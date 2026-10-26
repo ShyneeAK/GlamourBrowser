@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using GlamourBrowser.Core.Sources;
 using GlamourBrowser.Sources;
+using GlamourBrowser.Core.Localization;
 
 namespace GlamourBrowser.Sources;
 
@@ -45,7 +46,7 @@ public sealed class SourceService : IDisposable
         {
             Plugin.Log.Error(e, "Building the source index failed");
             var builder = new SourceIndex.Builder();
-            builder.MarkFailure("Alle Quellen");
+            builder.MarkFailure(Loc.T("Alle Quellen"));
             index = builder.Build();
         }
 

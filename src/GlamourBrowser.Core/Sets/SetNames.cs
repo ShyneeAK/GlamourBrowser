@@ -1,3 +1,5 @@
+using GlamourBrowser.Core.Localization;
+
 namespace GlamourBrowser.Core.Sets;
 
 /// <summary>Names of sets without an own name, built from the names of their pieces.</summary>
@@ -29,7 +31,7 @@ public static class SetNames
         return start.Length == 0 ? null : start[..^1] + "-Set" + CommonEnding(names);
     }
 
-    public static string Fallback(string pieceName) => $"{Clean(pieceName)} (Set)";
+    public static string Fallback(string pieceName) => Loc.F("{0} (Set)", Clean(pieceName));
 
     /// <summary>The ending all names share, from its first " des " or " der " on (" des Spähens"); empty when there is none.</summary>
     public static string CommonEnding(IReadOnlyList<string> names)

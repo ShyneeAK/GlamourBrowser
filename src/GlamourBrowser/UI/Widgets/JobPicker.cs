@@ -5,6 +5,7 @@ using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
 using GlamourBrowser.Core.Ui;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Data;
 
 namespace GlamourBrowser.UI.Widgets;
@@ -23,16 +24,16 @@ public static class JobPicker
                             ref bool exclusive, Theme.Theme theme)
     {
         var changed = false;
-        if (ImGui.Selectable("Alle Jobs", selected.Count == 0, ImGuiSelectableFlags.DontClosePopups))
+        if (ImGui.Selectable(Loc.T("Alle Jobs"), selected.Count == 0, ImGuiSelectableFlags.DontClosePopups))
         {
             selected = new HashSet<uint>();
             changed = true;
         }
-        changed |= ImGui.Checkbox($"Nur job-exklusive##{id}-exclusive", ref exclusive);
+        changed |= ImGui.Checkbox(Loc.T("Nur job-exklusive") + $"##{id}-exclusive", ref exclusive);
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(exclusive
-                ? "An: nur Ausrüstung, die für die gewählten Jobs gemacht ist (keine, die auch andere Jobs tragen)"
-                : "Aus: alles, was einer der gewählten Jobs tragen kann");
+                ? Loc.T("An: nur Ausrüstung, die für die gewählten Jobs gemacht ist (keine, die auch andere Jobs tragen)")
+                : Loc.T("Aus: alles, was einer der gewählten Jobs tragen kann"));
 
         var size = new Vector2(32, 32) * UiScale.Global;
         foreach (var group in jobs.All.GroupBy(j => j.Group))
@@ -48,7 +49,7 @@ public static class JobPicker
                 changed = true;
             }
             if (ImGui.IsItemHovered())
-                ImGui.SetTooltip(whole ? $"{name} abwählen" : $"Alle Jobs von {name} wählen");
+                ImGui.SetTooltip(whole ? Loc.F("{0} abwählen", name) : Loc.F("Alle Jobs von {0} wählen", name));
 
             var index = 0;
             foreach (var job in group)

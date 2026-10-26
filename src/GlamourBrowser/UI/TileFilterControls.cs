@@ -5,6 +5,7 @@ using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 using GlamourBrowser.Browser;
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Ui;
 using GlamourBrowser.Data;
 using GlamourBrowser.UI.Widgets;
@@ -47,15 +48,16 @@ public sealed class TileFilterControls
         {
             // Drawn by hand, level with the pickers' text: after the taller mode icons ImGui would put a text lower.
             var top = ImGui.GetCursorScreenPos();
-            ImGui.Dummy(ImGui.CalcTextSize("Farbe") with { Y = ImGui.GetFrameHeight() });
+            var dyeLabel = Loc.T("Farbe");
+            ImGui.Dummy(ImGui.CalcTextSize(dyeLabel) with { Y = ImGui.GetFrameHeight() });
             ImGui.GetWindowDrawList().AddText(top + new Vector2(0, ImGui.GetStyle().FramePadding.Y),
-                ImGui.GetColorU32(ImGuiCol.Text), "Farbe");
+                ImGui.GetColorU32(ImGuiCol.Text), dyeLabel);
             ImGui.SameLine();
-            if (DyePicker.Draw("##tiledye1", ref first, dyes, theme, enabled: true, label: "Farbe 1"))
+            if (DyePicker.Draw("##tiledye1", ref first, dyes, theme, enabled: true, label: Loc.T("Farbe 1")))
                 state.Filter = state.Filter with { Dye = dye with { First = first } };
             DisabledHint(onlySearch);
             ImGui.SameLine();
-            if (DyePicker.Draw("##tiledye2", ref second, dyes, theme, enabled: true, label: "Farbe 2"))
+            if (DyePicker.Draw("##tiledye2", ref second, dyes, theme, enabled: true, label: Loc.T("Farbe 2")))
                 state.Filter = state.Filter with { Dye = dye with { Second = second } };
         }
         DisabledHint(onlySearch);
@@ -79,7 +81,7 @@ public sealed class TileFilterControls
 
     /// <summary>The width of the dye controls, to tell whether they still fit on the row.</summary>
     public static float DyeWidth()
-        => ImGui.CalcTextSize("Farbe").X + ImGui.GetFrameHeight() * 2 + ImGui.GetStyle().ItemSpacing.X * 2;
+        => ImGui.CalcTextSize(Loc.T("Farbe")).X + ImGui.GetFrameHeight() * 2 + ImGui.GetStyle().ItemSpacing.X * 2;
 
     public float JobsWidth()
         => ImGui.CalcTextSize(JobSelection.Label(JobParts(state.Filter.Jobs))).X + ImGui.GetStyle().FramePadding.X * 2;

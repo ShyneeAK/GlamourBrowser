@@ -1,3 +1,5 @@
+using GlamourBrowser.Core.Localization;
+
 namespace GlamourBrowser.Core.Ui;
 
 /// <summary>A piece of the job selection with its label: a whole group ("Handwerk") or one job ("PLD").</summary>
@@ -49,7 +51,7 @@ public static class JobSelection
     /// <summary>The job button: "Klassen/Jobs" without a choice, else the first part and how many more follow ("PLD +2").</summary>
     public static string Label(IReadOnlyList<JobPart> parts) => parts.Count switch
     {
-        0 => "Klassen/Jobs",
+        0 => Loc.T("Klassen/Jobs"),
         1 => parts[0].Label,
         _ => $"{parts[0].Label} +{parts.Count - 1}",
     };

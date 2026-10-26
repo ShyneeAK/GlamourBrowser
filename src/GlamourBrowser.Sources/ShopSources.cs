@@ -1,3 +1,4 @@
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Sources;
 using Lumina;
 using Lumina.Excel.Sheets;
@@ -34,7 +35,7 @@ public static class ShopSources
         var items = data.GetSubrowExcelSheet<GCScripShopItem>()!;
         foreach (var gcShop in data.GetExcelSheet<GCShop>()!)
         {
-            var companyName = gcShop.GrandCompany.IsValid ? gcShop.GrandCompany.Value.Name.ExtractText() : "Staatliche Gesellschaft";
+            var companyName = gcShop.GrandCompany.IsValid ? gcShop.GrandCompany.Value.Name.ExtractText() : Loc.T("Staatliche Gesellschaft");
             foreach (var category in categories.Where(c => c.GrandCompany.RowId == gcShop.GrandCompany.RowId))
             {
                 if (!items.TryGetRow(category.RowId, out var entries))
@@ -89,7 +90,7 @@ public static class ShopSources
         var sellers = npcs.NpcsForShop(shopId);
         if (sellers.Count == 0)
         {
-            builder.Add(itemId, new ItemSource(category, shopName.Length > 0 ? shopName : "Händler", "Ort unbekannt", null, costItemId, costAmount));
+            builder.Add(itemId, new ItemSource(category, shopName.Length > 0 ? shopName : Loc.T("Händler"), Loc.T("Ort unbekannt"), null, costItemId, costAmount));
             return;
         }
 
@@ -97,7 +98,7 @@ public static class ShopSources
         {
             var place = npcs.PlaceOf(npc);
             var name = npcs.NameOf(npc);
-            var detail = place == null ? "Ort unbekannt" : $"{place.PlaceName} ({place.MapPosition.X:0.0}, {place.MapPosition.Y:0.0})";
+            var detail = place == null ? Loc.T("Ort unbekannt") : $"{place.PlaceName} ({place.MapPosition.X:0.0}, {place.MapPosition.Y:0.0})";
             SourceAction? action = place == null ? null : new MapFlag(place.TerritoryId, place.MapId, place.MapPosition.X, place.MapPosition.Y);
             builder.Add(itemId, new ItemSource(category, name.Length > 0 ? name : shopName, detail, action, costItemId, costAmount));
         }

@@ -4,6 +4,7 @@ using Dalamud.Game.Inventory.InventoryEventArgTypes;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using GlamourBrowser.Core.Ownership;
+using GlamourBrowser.Core.Localization;
 
 namespace GlamourBrowser.Ownership;
 
@@ -49,7 +50,7 @@ public sealed class InventoryReader : IDisposable
         {
             var ids = ContainerScan.ReadItemIds(types);
             if (ids != null)
-                service.Submit(new ContainerSnapshot(new ContainerId(kind, ""), name, now, ids));
+                service.Submit(new ContainerSnapshot(new ContainerId(kind, ""), Loc.T(name), now, ids));
         }
     }
 

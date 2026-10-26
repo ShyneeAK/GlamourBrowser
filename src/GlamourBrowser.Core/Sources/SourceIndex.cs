@@ -1,3 +1,4 @@
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Sets;
 
 namespace GlamourBrowser.Core.Sources;
@@ -87,7 +88,7 @@ public sealed class SourceIndex
             {
                 if (!sources.TryGetValue(container, out var list))
                     continue;
-                var detail = $"aus {nameOf(container)}";
+                var detail = Loc.F("aus {0}", nameOf(container));
                 foreach (var source in list.ToList())
                 {
                     foreach (var item in items)

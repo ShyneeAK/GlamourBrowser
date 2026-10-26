@@ -1,3 +1,4 @@
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Sources;
 using Lumina;
 using Lumina.Data;
@@ -23,22 +24,22 @@ public static class ContentSources
         }
 
         foreach (var drop in SupplementalCsv.Load<DungeonBossDrop>(data, CsvLoader.DungeonBossDropResourceName, log))
-            Add(drop.ItemId, drop.ContentFinderConditionId, $"Boss {drop.FightNo}");
+            Add(drop.ItemId, drop.ContentFinderConditionId, Loc.F("Boss {0}", drop.FightNo));
 
         var chests = SupplementalCsv.Load<DungeonChest>(data, CsvLoader.DungeonChestResourceName, log).ToDictionary(c => c.RowId);
         foreach (var item in SupplementalCsv.Load<DungeonChestItem>(data, CsvLoader.DungeonChestItemResourceName, log))
         {
             if (chests.TryGetValue(item.ChestId, out var chest))
-                Add(item.ItemId, chest.ContentFinderConditionId, $"Truhe {chest.ChestNo}");
+                Add(item.ItemId, chest.ContentFinderConditionId, Loc.F("Truhe {0}", chest.ChestNo));
         }
 
         foreach (var drop in SupplementalCsv.Load<DungeonDrop>(data, CsvLoader.DungeonDropItemResourceName, log))
-            Add(drop.ItemId, drop.ContentFinderConditionId, "Drop");
+            Add(drop.ItemId, drop.ContentFinderConditionId, Loc.T("Drop"));
 
         foreach (var coffer in SupplementalCsv.Load<FieldOpCoffer>(data, CsvLoader.FieldOpCofferResourceName, log))
         {
             if (relevant.Contains(coffer.ItemId))
-                builder.Add(coffer.ItemId, new ItemSource(SourceCategory.OtherContent, "Field Operation", "Schatzkiste"));
+                builder.Add(coffer.ItemId, new ItemSource(SourceCategory.OtherContent, Loc.T("Field Operation"), Loc.T("Schatzkiste")));
         }
     }
 
@@ -98,7 +99,7 @@ public static class ContentSources
             if (!duties.TryGetRow(chain.DutyId, out var cfc))
                 continue;
             var via = items.TryGetRow(chain.ViaItemId, out var viaItem) ? viaItem.Name.ExtractText() : "";
-            var detail = chain.Kind == ChainKind.Coffer ? $"aus {via}" : $"über {via}";
+            var detail = chain.Kind == ChainKind.Coffer ? Loc.F("aus {0}", via) : Loc.F("über {0}", via);
             builder.Add(chain.ItemId, new ItemSource(CategoryOf(cfc, englishDuties), Capitalize(cfc.Name.ExtractText()), detail, DutyFinderFor(cfc)));
         }
     }

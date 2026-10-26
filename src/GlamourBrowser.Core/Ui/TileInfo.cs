@@ -1,5 +1,6 @@
 using System.Text;
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Sources;
 
@@ -9,18 +10,21 @@ namespace GlamourBrowser.Core.Ui;
 public static class TileInfo
 {
     public static string Line(int level, SourceCategory? top)
-        => top is { } category ? $"Lv. {level} · {SourceCategories.DisplayName(category)}" : $"Lv. {level}";
+        => top is { } category ? $"{Level(level)} · {SourceCategories.DisplayName(category)}" : Level(level);
 
-    public static string DyeText(int channels) => channels == 1 ? "Färbbar (1 Farbkanal)" : $"Färbbar ({channels} Farbkanäle)";
+    public static string DyeText(int channels) => channels == 1 ? Loc.T("Färbbar (1 Farbkanal)") : Loc.F("Färbbar ({0} Farbkanäle)", channels);
 
-    public static string TradeText(Tradability trade) => trade switch
+    public static string TradeText(Tradability trade) => Loc.T(trade switch
     {
         Tradability.Marketable => "Marktbrett",
         Tradability.Tradable => "Handelbar",
         _ => "Gebunden",
-    };
+    });
 
-    public static string SetLine(int level, SetProgress progress) => $"Lv. {level} · {progress.Owned}/{progress.Total}";
+    public static string SetLine(int level, SetProgress progress) => $"{Level(level)} · {progress.Owned}/{progress.Total}";
+
+    /// <summary>"Lv. 90" in the loaded language.</summary>
+    public static string Level(int level) => Loc.F("Lv. {0}", level);
 
     /// <summary>
     /// Tooltip of a tile's source icon: the sources of every category of the icon's group the item has, best category
@@ -59,16 +63,16 @@ public static class TileInfo
             listed += room;
         }
         if (skipped > 0)
-            text.Append($"\n  … und {skipped} weitere");
+            text.Append("\n  ").Append(Loc.F("… und {0} weitere", skipped));
         return text.Length > 0 ? text.ToString() : SourceCategories.DisplayName(shown);
     }
 
     /// <summary>For owned items: where the item is (first place, plus how many more).</summary>
     public static string OwnedLine(int level, IReadOnlyList<string> places) => places.Count switch
     {
-        0 => $"Lv. {level}",
-        1 => $"Lv. {level} · {places[0]}",
-        _ => $"Lv. {level} · {places[0]} +{places.Count - 1}",
+        0 => Level(level),
+        1 => $"{Level(level)} · {places[0]}",
+        _ => $"{Level(level)} · {places[0]} +{places.Count - 1}",
     };
 
     /// <summary>Info rows under the name that fit a tile: icons are dropped first, then line 2, then the name.</summary>

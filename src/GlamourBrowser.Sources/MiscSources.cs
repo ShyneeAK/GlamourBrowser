@@ -1,3 +1,4 @@
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Sources;
 using Lumina;
 using Lumina.Excel.Sheets;
@@ -19,9 +20,9 @@ public static class MiscSources
             var itemId = recipe.ItemResult.RowId;
             if (!relevant.Contains(itemId))
                 continue;
-            var job = jobs.TryGetRow(FirstCrafterJob + recipe.CraftType.RowId, out var classJob) ? ContentSources.Capitalize(classJob.Name.ExtractText()) : "Handwerk";
+            var job = jobs.TryGetRow(FirstCrafterJob + recipe.CraftType.RowId, out var classJob) ? ContentSources.Capitalize(classJob.Name.ExtractText()) : Loc.T("Handwerk");
             var level = recipe.RecipeLevelTable.IsValid ? recipe.RecipeLevelTable.Value.ClassJobLevel : 0;
-            builder.Add(itemId, new ItemSource(SourceCategory.Crafting, job, $"Lv. {level}", new OpenRecipe(recipe.RowId)));
+            builder.Add(itemId, new ItemSource(SourceCategory.Crafting, job, Loc.F("Lv. {0}", level), new OpenRecipe(recipe.RowId)));
         }
     }
 
@@ -30,7 +31,7 @@ public static class MiscSources
         foreach (var item in SupplementalCsv.Load<StoreItem>(data, CsvLoader.StoreItemResourceName, log))
         {
             if (relevant.Contains(item.ItemId))
-                builder.Add(item.ItemId, new ItemSource(SourceCategory.MogStation, "Mogstation", item.PriceCentsUSD > 0 ? $"{item.PriceCentsUSD / 100.0:0.00} $" : "Shop",
+                builder.Add(item.ItemId, new ItemSource(SourceCategory.MogStation, Loc.T("Mogstation"), item.PriceCentsUSD > 0 ? $"{item.PriceCentsUSD / 100.0:0.00} $" : Loc.T("Shop"),
                     item.StoreId != 0 ? new OpenStore(item.StoreId) : null));
         }
     }
@@ -41,27 +42,27 @@ public static class MiscSources
         foreach (var row in SupplementalCsv.Load<FateItem>(data, CsvLoader.FateItemResourceName, log))
         {
             if (relevant.Contains(row.ItemId))
-                builder.Add(row.ItemId, new ItemSource(SourceCategory.Other, "FATE", fates.TryGetRow(row.FateId, out var fate) ? fate.Name.ExtractText() : ""));
+                builder.Add(row.ItemId, new ItemSource(SourceCategory.Other, Loc.T("FATE"), fates.TryGetRow(row.FateId, out var fate) ? fate.Name.ExtractText() : ""));
         }
 
         var monsters = data.GetExcelSheet<BNpcName>()!;
         foreach (var row in SupplementalCsv.Load<MobDrop>(data, CsvLoader.MobDropResourceName, log))
         {
             if (relevant.Contains(row.ItemId))
-                builder.Add(row.ItemId, new ItemSource(SourceCategory.Other, "Monster", monsters.TryGetRow(row.BNpcNameId, out var name) ? ContentSources.Capitalize(name.Singular.ExtractText()) : ""));
+                builder.Add(row.ItemId, new ItemSource(SourceCategory.Other, Loc.T("Monster"), monsters.TryGetRow(row.BNpcNameId, out var name) ? ContentSources.Capitalize(name.Singular.ExtractText()) : ""));
         }
 
         var items = data.GetExcelSheet<Item>()!;
         foreach (var row in SupplementalCsv.Load<ItemSupplement>(data, CsvLoader.ItemSupplementResourceName, log))
         {
             if (relevant.Contains(row.ItemId))
-                builder.Add(row.ItemId, new ItemSource(SourceCategory.Other, "Gewinnung", items.TryGetRow(row.SourceItemId, out var source) ? $"aus {source.Name.ExtractText()}" : ""));
+                builder.Add(row.ItemId, new ItemSource(SourceCategory.Other, Loc.T("Gewinnung"), items.TryGetRow(row.SourceItemId, out var source) ? Loc.F("aus {0}", source.Name.ExtractText()) : ""));
         }
 
         foreach (var row in SupplementalCsv.Load<RetainerVentureItem>(data, CsvLoader.RetainerVentureItemResourceName, log))
         {
             if (relevant.Contains(row.ItemId))
-                builder.Add(row.ItemId, new ItemSource(SourceCategory.Other, "Kundschafter", "Unternehmung"));
+                builder.Add(row.ItemId, new ItemSource(SourceCategory.Other, Loc.T("Kundschafter"), Loc.T("Unternehmung")));
         }
     }
 

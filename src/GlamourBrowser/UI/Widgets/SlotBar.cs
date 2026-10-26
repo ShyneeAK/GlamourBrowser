@@ -4,6 +4,7 @@ using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Ui;
 using GlamourBrowser.Data;
 
@@ -41,7 +42,7 @@ public static class SlotBar
             }
         }
         ImGui.SameLine();
-        if (IconToggle.Draw($"{id}-sets", SlotIcons.Sets, new Vector2(edge), filter.Mode == BrowseMode.Sets, "Ausrüstungs-Sets", theme, FontAwesomeIcon.LayerGroup))
+        if (IconToggle.Draw($"{id}-sets", SlotIcons.Sets, new Vector2(edge), filter.Mode == BrowseMode.Sets, Loc.T("Ausrüstungs-Sets"), theme, FontAwesomeIcon.LayerGroup))
         {
             filter = SlotSelection.ToggleMode(filter, BrowseMode.Sets);
             changed = true;
@@ -53,13 +54,13 @@ public static class SlotBar
     public static bool DrawModes(string id, ref FilterState filter, Theme.Theme theme, float edge)
     {
         var changed = false;
-        if (IconToggle.Draw($"{id}-mysets", SlotIcons.MySets, new Vector2(edge), filter.Mode == BrowseMode.MySets, "Meine Sets", theme, FontAwesomeIcon.Clone))
+        if (IconToggle.Draw($"{id}-mysets", SlotIcons.MySets, new Vector2(edge), filter.Mode == BrowseMode.MySets, Loc.T("Meine Sets"), theme, FontAwesomeIcon.Clone))
         {
             filter = SlotSelection.ToggleMode(filter, BrowseMode.MySets);
             changed = true;
         }
         ImGui.SameLine();
-        if (IconToggle.Draw($"{id}-wishlist", SlotIcons.Wishlist, new Vector2(edge), filter.Mode == BrowseMode.Wishlist, "Wunschliste", theme, FontAwesomeIcon.Star))
+        if (IconToggle.Draw($"{id}-wishlist", SlotIcons.Wishlist, new Vector2(edge), filter.Mode == BrowseMode.Wishlist, Loc.T("Wunschliste"), theme, FontAwesomeIcon.Star))
         {
             filter = SlotSelection.ToggleMode(filter, BrowseMode.Wishlist);
             changed = true;

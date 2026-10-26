@@ -6,6 +6,7 @@ using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using GlamourBrowser.Core.Ownership;
 using Lumina.Excel.Sheets;
+using GlamourBrowser.Core.Localization;
 
 namespace GlamourBrowser.Ownership;
 
@@ -36,7 +37,7 @@ public sealed unsafe class DresserReader : IDisposable
             return;
 
         var items = DresserContents.Resolve(mirage->PrismBoxItemIds.ToArray(), outfitSets);
-        service.Submit(new ContainerSnapshot(new ContainerId(ContainerKind.Dresser, ""), "Kommode", DateTimeOffset.Now, items));
+        service.Submit(new ContainerSnapshot(new ContainerId(ContainerKind.Dresser, ""), Loc.T("Kommode"), DateTimeOffset.Now, items));
     }
 
     public void Dispose() => Plugin.AddonLifecycle.UnregisterListener(AddonEvent.PostRefresh, Addon, OnAddon);

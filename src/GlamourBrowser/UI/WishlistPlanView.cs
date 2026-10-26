@@ -5,6 +5,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 using GlamourBrowser.Browser;
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Sources;
 using GlamourBrowser.Core.Wishlist;
 using GlamourBrowser.Ownership;
@@ -56,7 +57,7 @@ public sealed class WishlistPlanView
         // Without the index every piece would land under "Quelle unbekannt".
         if (!sources.IsReady)
         {
-            ImGui.TextDisabled("Quellen werden geladen …");
+            ImGui.TextDisabled(Loc.T("Quellen werden geladen …"));
             return;
         }
 
@@ -68,10 +69,10 @@ public sealed class WishlistPlanView
 
         if (plan.Missing == 0)
         {
-            ImGui.TextDisabled("Alles erledigt");
+            ImGui.TextDisabled(Loc.T("Alles erledigt"));
             return;
         }
-        ImGui.TextUnformatted($"Fehlend {plan.Missing} von {plan.Total}");
+        ImGui.TextUnformatted(Loc.F("Fehlend {0} von {1}", plan.Missing, plan.Total));
 
         using var child = ImRaii.Child("##wishplan", Vector2.Zero, false);
         if (!child.Success)
@@ -98,10 +99,10 @@ public sealed class WishlistPlanView
     /// <summary>Icon, "Kategorie · Titel · Detail", the number of pieces and the shared action; the unknown group has no icon and no action.</summary>
     private void DrawHeader(WishGroup group, Vector2 iconSize)
     {
-        var count = group.Pieces.Count == 1 ? "1 Teil" : $"{group.Pieces.Count} Teile";
+        var count = group.Pieces.Count == 1 ? Loc.T("1 Teil") : Loc.F("{0} Teile", group.Pieces.Count);
         if (group.Source is not { } source)
         {
-            ImGui.TextUnformatted("Quelle unbekannt");
+            ImGui.TextUnformatted(Loc.T("Quelle unbekannt"));
             ImGui.SameLine();
             ImGui.TextDisabled(count);
             return;

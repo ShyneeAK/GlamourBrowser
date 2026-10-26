@@ -8,6 +8,7 @@ using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using GlamourBrowser.Browser;
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Ownership;
 using GlamourBrowser.Core.Sources;
 using GlamourBrowser.Ownership;
@@ -43,9 +44,9 @@ public sealed class FilterColumn
         // Above the sections, so it shows with all of them collapsed: source and expansion filters then miss items.
         if (sources.IsReady && sources.Index.HasFailures)
         {
-            ImGui.TextColored(WarningColor, "Einige Quellen konnten nicht geladen werden");
+            ImGui.TextColored(WarningColor, Loc.T("Einige Quellen konnten nicht geladen werden"));
             if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Fehlt: " + string.Join(", ", sources.Index.Failures));
+                ImGui.SetTooltip(Loc.F("Fehlt: {0}", string.Join(", ", sources.Index.Failures.Select(Loc.T))));
         }
 
         // The wishlist and custom set modes only follow the search; the containers stay readable.
@@ -55,7 +56,7 @@ public sealed class FilterColumn
         using (ImRaii.Disabled(onlySearch))
             DrawFilterSections(f);
 
-        if (Section.Begin("containers", "Behälter", config))
+        if (Section.Begin("containers", Loc.T("Behälter"), config))
         {
             DrawContainers();
             Section.End();
@@ -64,7 +65,7 @@ public sealed class FilterColumn
 
     private void DrawFilterSections(FilterState f)
     {
-        if (Section.Begin("level", "Level", config))
+        if (Section.Begin("level", Loc.T("Level"), config))
         {
             var min = f.MinLevel;
             var max = f.MaxLevel;
@@ -78,37 +79,37 @@ public sealed class FilterColumn
         var dyeable = f.DyeableOnly;
         using (ImRaii.Disabled(f.Mode == BrowseMode.Sets))
         {
-            if (ImGui.Checkbox("Nur Färbbare", ref dyeable))
+            if (ImGui.Checkbox(Loc.T("Nur Färbbare"), ref dyeable))
                 state.Filter = f with { DyeableOnly = dyeable };
         }
         if (f.Mode == BrowseMode.Sets && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip("gilt nur für einzelne Items");
+            ImGui.SetTooltip(Loc.T("gilt nur für einzelne Items"));
         ImGui.Spacing();
 
-        if (Section.Begin("ownership", "Besitz", config))
+        if (Section.Begin("ownership", Loc.T("Besitz"), config))
         {
-            foreach (var (value, label) in new[] { (OwnershipFilter.All, "Alle"), (OwnershipFilter.Owned, "Habe ich"), (OwnershipFilter.Missing, "Fehlt mir") })
+            foreach (var (value, label) in new[] { (OwnershipFilter.All, Loc.T("Alle")), (OwnershipFilter.Owned, Loc.T("Habe ich")), (OwnershipFilter.Missing, Loc.T("Fehlt mir")) })
             {
                 if (ImGui.RadioButton(label, f.Ownership == value))
                     state.Filter = f with { Ownership = value };
             }
             var wearable = f.WearableOnly;
-            if (ImGui.Checkbox("Nur für mich tragbar", ref wearable))
+            if (ImGui.Checkbox(Loc.T("Nur für mich tragbar"), ref wearable))
                 state.Filter = f with { WearableOnly = wearable };
             Section.End();
         }
 
-        if (Section.Begin("sources", "Quelle", config))
+        if (Section.Begin("sources", Loc.T("Quelle"), config))
         {
             DrawSources(f);
             Section.End();
         }
 
-        if (Section.Begin("expansions", "Erweiterung", config))
+        if (Section.Begin("expansions", Loc.T("Erweiterung"), config))
         {
             // The patch of an item comes from the source index; until it is built the filter would do nothing.
             if (!sources.IsReady)
-                ImGui.TextDisabled("Quellen werden geladen …");
+                ImGui.TextDisabled(Loc.T("Quellen werden geladen …"));
             using (ImRaii.Disabled(!sources.IsReady))
             {
                 foreach (var expansion in Enum.GetValues<Expansion>())
@@ -126,7 +127,7 @@ public sealed class FilterColumn
     {
         if (ownership.Current is not { } store)
         {
-            ImGui.TextUnformatted("Nicht eingeloggt");
+            ImGui.TextUnformatted(Loc.T("Nicht eingeloggt"));
             return;
         }
 
@@ -135,16 +136,16 @@ public sealed class FilterColumn
 
         var known = store.Containers.Select(c => c.Id).ToHashSet();
         foreach (var name in NeverOpened(known))
-            ImGui.TextDisabled($"{name}: noch nie geöffnet");
+            ImGui.TextDisabled(Loc.F("{0}: noch nie geöffnet", name));
     }
 
     private static unsafe IEnumerable<string> NeverOpened(HashSet<ContainerId> known)
     {
         var result = new List<string>();
         if (!known.Contains(new ContainerId(ContainerKind.Dresser, "")))
-            result.Add("Kommode");
+            result.Add(Loc.T("Kommode"));
         if (!known.Contains(new ContainerId(ContainerKind.Armoire, "")))
-            result.Add("Armoire");
+            result.Add(Loc.T("Armoire"));
 
         var retainers = RetainerManager.Instance();
         if (retainers != null && retainers->IsReady)
@@ -152,7 +153,7 @@ public sealed class FilterColumn
             foreach (var r in retainers->Retainers)
             {
                 if (r.RetainerId != 0 && !known.Contains(new ContainerId(ContainerKind.Retainer, r.RetainerId.ToString())))
-                    result.Add($"Gehilfe {r.NameString}");
+                    result.Add(Loc.F("Gehilfe {0}", r.NameString));
             }
         }
         return result;
@@ -161,7 +162,7 @@ public sealed class FilterColumn
     private void DrawSources(FilterState f)
     {
         if (!sources.IsReady)
-            ImGui.TextDisabled("Quellen werden geladen …");
+            ImGui.TextDisabled(Loc.T("Quellen werden geladen …"));
 
         using var disabled = ImRaii.Disabled(!sources.IsReady);
         var counts = state.CountsWithoutCategories;
