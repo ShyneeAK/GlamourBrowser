@@ -408,17 +408,23 @@ public sealed class TileGrid
         filterControls.DrawJobs(edge);
     }
 
+    /// <summary>The display options' exact width, so the filter-column toggle ends flush with the right edge.</summary>
     private static float DisplayOptionsWidth()
     {
         var spacing = ImGui.GetStyle().ItemSpacing.X;
-        return CheckboxWidth(WeaponsLabel) + ImGui.GetFrameHeight() + CheckboxWidth(DimLabel) + ImGui.GetFrameHeight() + spacing * 5;
+        return CheckboxWidth(WeaponsLabel) + 2 + WarningGlyphWidth() + spacing + CheckboxWidth(DimLabel) + spacing + ImGui.GetFrameHeight();
+    }
+
+    private static float WarningGlyphWidth()
+    {
+        using (UiScale.PushIcons())
+            return ImGui.CalcTextSize(FontAwesomeIcon.ExclamationTriangle.ToIconString()).X;
     }
 
     /// <summary>Right of the slot bar: drawn weapons (slower, with a warning), dimming of missing items and the filter-column toggle.</summary>
     private void DrawDisplayOptions()
     {
-        var spacing = ImGui.GetStyle().ItemSpacing.X;
-        ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - DisplayOptionsWidth() + spacing);
+        ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - DisplayOptionsWidth());
         var frameOffset = (ImGui.GetItemRectSize().Y - ImGui.GetFrameHeight()) / 2;
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + MathF.Max(0, frameOffset));
 
