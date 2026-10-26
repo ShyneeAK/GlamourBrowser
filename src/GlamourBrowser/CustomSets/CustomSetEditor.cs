@@ -28,6 +28,8 @@ public sealed class CustomSetEditor
     private CustomSetStore? draftStore;
     // The draft as the preview shows it; null without a piece the catalog knows.
     private SetSubject? draftSubject;
+    // The folder of "Meine Sets" that was open when the draft started: a new set goes into it.
+    private uint draftFolder;
 
     /// <param name="variants">"+N" variants mapped to their base item: start pieces are shown as their base.</param>
     /// <param name="blocksOf">The slots an item blocks besides its own: a robe put in takes legs and feet out.</param>
@@ -125,14 +127,14 @@ public sealed class CustomSetEditor
         var now = DateTimeOffset.Now;
         var saved = Draft.Id is { } id && store.Find(id) is { } old
             ? store.Update(old with { Name = Draft.Name, Pieces = Draft.Pieces, Changed = now }) ? store.Find(id)! : old
-            : store.Add(Draft.Name, Draft.Pieces, now);
-        Close(CustomSetSubjects.ToSubject(saved, state.ItemOf));
+            : store.Add(Draft.Name, Draft.Pieces, now, draftFolder);
+        Close(CustomSetSubjects.ToSubject(saved, state.ItemOf), saved.Folder);
     }
 
     public void Discard()
     {
-        var kept = Draft?.Id is { } id && customSets.Current?.Find(id) is { } set ? CustomSetSubjects.ToSubject(set, state.ItemOf) : null;
-        Close(kept);
+        var set = Draft?.Id is { } id ? customSets.Current?.Find(id) : null;
+        Close(set != null ? CustomSetSubjects.ToSubject(set, state.ItemOf) : null, set?.Folder ?? draftFolder);
     }
 
     private void Start(Func<CustomSetDraft> make)
@@ -149,12 +151,16 @@ public sealed class CustomSetEditor
     {
         Draft = draft;
         draftStore = customSets.Current;
+        draftFolder = state.Filter.Mode == BrowseMode.MySets ? state.OpenFolder : 0;
         SelectedSlot = null;
         UpdatePreview();
     }
 
-    /// <summary>Ends editing; the set (or nothing) stays selected, the grid shows "Meine Sets" from its first page (the last changed set).</summary>
-    private void Close(SetSubject? selected)
+    /// <summary>
+    /// Ends editing; the set (or nothing) stays selected, the grid shows "Meine Sets" (the set's folder) from its first
+    /// page (the last changed set).
+    /// </summary>
+    private void Close(SetSubject? selected, uint folder)
     {
         Draft = null;
         SelectedSlot = null;
@@ -162,7 +168,13 @@ public sealed class CustomSetEditor
         state.Selected = selected;
         live.Select(selected);
         state.Filter = state.Filter with { Mode = BrowseMode.MySets, Slots = new HashSet<EquipSlot>() };
-        state.ShowFirstPage();
+        if (folder != 0)
+            state.ShowFolder(folder);
+        else
+        {
+            state.CloseFolder();
+            state.ShowFirstPage();
+        }
     }
 
     /// <summary>The live preview and the selection show the draft as it is now.</summary>

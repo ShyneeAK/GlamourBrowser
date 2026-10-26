@@ -1,6 +1,8 @@
 de,en,fr,ja
++ Neuer Ordner,+ New folder,+ Nouveau dossier,+ 新しいフォルダー
 + Neues Set,+ New Set,+ Nouvel ensemble,+ 新規セット
 1 Farbkanal,1 dye channel,1 canal de teinture,染色1箇所
+1 Set,1 set,1 ensemble,1セット
 1 Teil,1 piece,1 pièce,1点
 A Realm Reborn,A Realm Reborn,A Realm Reborn,新生エオルゼア
 Abbrechen,Cancel,Annuler,キャンセル
@@ -19,6 +21,7 @@ Allianz-Raid,Alliance Raid,Raid en alliance,アライアンスレイド
 Als Set speichern,Save as set,Enregistrer comme ensemble,セットとして保存
 Als ‚{0}‘ gespeichert,Saved as “{0}”,Enregistré sous « {0} »,「{0}」として保存しました
 "An: nur Ausrüstung, die für die gewählten Jobs gemacht ist (keine, die auch andere Jobs tragen)",On: only gear made for the chosen jobs (none that other jobs can wear too),Activé : uniquement l'équipement conçu pour les jobs choisis (aucun que d'autres jobs peuvent aussi porter),オン: 選んだジョブ専用の装備のみ(他のジョブも装備できるものは除く)
+Anlegen,Create,Créer,作成
 Anprobe,Try On,Essayer,試着
 Armoire,Armoire,Bahut,アーモワール
 Armreife,Bracelets,Bracelets,腕
@@ -45,6 +48,7 @@ Boss {0},Boss {0},Boss {0},ボス{0}
 Chat-Link: schreibt einen Item-Link in deinen eigenen Chat und kopiert den Namen.,Chat link: writes an item link into your own chat and copies the name.,Lien de discussion : écrit un lien d'objet dans votre propre fenêtre de discussion et copie le nom.,チャットリンク：自分のチャットにアイテムリンクを表示し、名前をコピーします。
 Dawntrail,Dawntrail,Dawntrail,黄金のレガシー
 Debug,Debug,Débogage,デバッグ
+Dieser Ordner ist leer – Sets per Rechtsklick „In Ordner verschieben“ hineinlegen oder in der Übersicht auf seine Kachel ziehen,"This folder is empty – put sets in with right-click ""Move to folder"" or drag them onto its tile in the overview",Ce dossier est vide – range des ensembles avec le clic droit « Déplacer vers un dossier » ou glisse-les sur sa vignette dans la vue d'ensemble,このフォルダーは空です。右クリックの「フォルダーへ移動」で入れるか、一覧でフォルダーのタイルにドラッグしてください
 Drehen,Rotate,Rotation,回転
 Drop,Drop,Butin,ドロップ
 Dungeon,Dungeon,Donjon,ダンジョン
@@ -117,6 +121,7 @@ Händler-Orte,Vendor locations,Emplacements des marchands,商人の場所
 Händler-Orte (Supplemental),Vendor locations (Supplemental),Emplacements des marchands (Supplemental),商人の場所（Supplemental）
 Händler-Zuordnung (Supplemental),Vendor assignment (Supplemental),Attribution des marchands (Supplemental),商人の割り当て（Supplemental）
 In Glamour-Plate übertragen,Transfer to glamour plate,Transférer vers la tenue de mirage,ミラージュプレートに転送
+In Ordner verschieben,Move to folder,Déplacer vers un dossier,フォルダーへ移動
 Inhalte,Duties,Missions,コンテンツ
 Inhalts-Ketten,Duty chains,Chaînes de missions,コンテンツ経由
 Inhaltssuche,Duty Finder,Outil de recherche de mission,コンテンツファインダー
@@ -148,6 +153,7 @@ Kamera-Position festlegen für ({0}),Set camera position for ({0}),Définir la p
 Kamera-Position für ({0}) zurücksetzen,Reset camera position for ({0}),Réinitialiser la position de la caméra pour ({0}),（{0}）のカメラ位置をリセット
 Karte,Map,Carte,マップ
 Kein Item ausgewählt,No item selected,Aucun objet sélectionné,アイテムが選択されていません
+Kein Ordner,No folder,Aucun dossier,フォルダーなし
 Kein Render-Platz frei (Plätze 5–7 belegt).,No free render slot (slots 5–7 in use).,Aucun emplacement de rendu libre (emplacements 5–7 occupés).,空いている描画枠がありません（枠5～7が使用中）。
 keine Angebote,no listings,aucune offre,出品なし
 Keine Einträge im Katalog gefunden,No entries found in the catalog,Aucune entrée trouvée dans le catalogue,カタログに該当する項目がありません
@@ -167,6 +173,15 @@ Rechtsklick: ausziehen","Click: select and show in the tiles
 Right-click: take off","Clic : sélectionner et afficher dans les vignettes
 Clic droit : retirer","クリック：選択してタイルに表示
 右クリック：外す"
+"Klick: Ordner öffnen
+Rechtsklick: umbenennen, löschen
+Set hierher ziehen: hineinlegen","Click: open folder
+Right-click: rename, delete
+Drag a set here: put it in","Clic : ouvrir le dossier
+Clic droit : renommer, supprimer
+Glisser un ensemble ici : le ranger","クリック：フォルダーを開く
+右クリック：名前変更、削除
+セットをここにドラッグ：中に入れる"
 Kommode,Glamour Dresser,Commode à mirages,ミラージュドレッサー
 Kommoden-Set,Glamour Dresser set,Ensemble de la commode à mirages,ミラージュドレッサーのセット
 Kopf,Head,Tête,頭
@@ -214,6 +229,7 @@ Name A–Z,Name A–Z,Nom A–Z,名前（昇順）
 Name Z–A,Name Z–A,Nom Z–A,名前（降順）
 Namen kopieren,Copy name,Copier le nom,名前をコピー
 Nebenhand,Off Hand,Arme secondaire,副兵装
+Neuer Ordner,New folder,Nouveau dossier,新しいフォルダー
 Neues Set,New Set,Nouvel ensemble,新規セット
 Neueste zuerst,Newest first,Plus récents d'abord,新しい順
 Neuigkeiten anzeigen,Show what's new,Afficher les nouveautés,新機能を表示
@@ -231,6 +247,8 @@ Nur Färbbare,Dyeable only,Teintables uniquement,染色可能のみ
 Nur für mich tragbar,Wearable by me only,Portables par moi uniquement,自分が装備可能なもののみ
 Nur job-exklusive,Job-exclusive only,Exclusifs au job uniquement,ジョブ専用のみ
 Ohrringe,Earrings,Boucles d'oreilles,耳
+Ordner löschen (die Sets bleiben),Delete folder (the sets stay),Supprimer le dossier (les ensembles restent),フォルダーを削除（セットは残ります）
+Ordner umbenennen,Rename folder,Renommer le dossier,フォルダー名を変更
 Ort unbekannt,Location unknown,Lieu inconnu,場所不明
 Parallele Ansichten,Parallel views,Vues parallèles,並列ビュー数
 Patch {0},Patch {0},Patch {0},パッチ{0}
@@ -297,6 +315,7 @@ Tomestones,Tomestones,Mémoquartz,トームストーン
 Truhe {0},Chest {0},Coffre {0},宝箱{0}
 Türkis,Turquoise,Turquoise,ターコイズ
 UI-Skalierung,UI scale,Échelle de l'interface,UIスケール
+Umbenennen,Rename,Renommer,名前を変更
 Unbekanntes Item,Unknown item,Objet inconnu,不明なアイテム
 Unternehmung,Venture,Tâche,リテイナーベンチャー
 Unterwäsche,Underwear,Sous-vêtements,下着
@@ -341,12 +360,14 @@ Zeilen,Rows,Lignes,行
 Zeitüberschreitung beim Laden,Timed out while loading,Délai de chargement dépassé,読み込みがタイムアウトしました
 Zoom,Zoom,Zoom,ズーム
 "Zurück auf aktuelles Outfit bzw. Unterwäsche, je nach Kachel-Modus","Back to the current outfit or underwear, depending on the tile mode","Revenir à la tenue actuelle ou aux sous-vêtements, selon le mode des tuiles",タイルモードに応じて、現在の装備または下着に戻します
+Zurück zu allen Sets; ein Set hierher ziehen nimmt es aus dem Ordner,Back to all sets; dragging a set here takes it out of the folder,Retour à tous les ensembles ; glisser un ensemble ici le sort du dossier,すべてのセットに戻る。ここにセットをドラッグするとフォルダーから出します
 Zurücksetzen,Reset,Réinitialiser,リセット
 {0} (Set),{0} (Set),{0} (ensemble),{0}（セット）
 {0} abwählen,Deselect {0},Désélectionner {0},{0}の選択を解除
 {0} anziehen: {1},Put on {0}: {1},Équiper ({0}) : {1},{0}を装備: {1}
 {0} Farbkanäle,{0} dye channels,{0} canaux de teinture,染色{0}箇所
 {0} Gil,{0} gil,{0} gils,{0}ギル
+{0} Sets,{0} sets,{0} ensembles,{0}セット
 "{0} Sets importiert, {1} übersprungen","{0} sets imported, {1} skipped","{0} ensembles importés, {1} ignorés",{0}件のセットを取り込み、{1}件をスキップ
 {0} Spalten × {1} Zeilen,{0} columns × {1} rows,{0} colonnes × {1} lignes,{0}列 × {1}行
 {0} Teile,{0} pieces,{0} pièces,{0}点
@@ -360,6 +381,7 @@ Zurücksetzen,Reset,Réinitialiser,リセット
 {0}: Standardansicht,{0}: default view,{0} : vue par défaut,{0}：標準ビュー
 Älteste zuerst,Oldest first,Plus anciens d'abord,古い順
 Änderungen verwerfen?,Discard changes?,Abandonner les modifications ?,変更を破棄しますか？
+Öffnen,Open,Ouvrir,開く
 Öffnet Shynees Glamour Dresser (kurz: /sgd).,Opens Shynees Glamour Dresser (short: /sgd).,Ouvre Shynees Glamour Dresser (raccourci : /sgd).,Shynees Glamour Dresserを開きます（短縮: /sgd）。
 Öffnet Shynees Glamour Dresser.,Opens Shynees Glamour Dresser.,Ouvre Shynees Glamour Dresser.,Shynees Glamour Dresserを開きます。
 über {0},via {0},via {0},{0}経由

@@ -35,8 +35,15 @@ public static class CustomSetFile
                 if (set.Pieces.FirstOrDefault(p => !CustomSetSubjects.Slots.Contains(p!.Slot)) is { } wrong)
                     throw new JsonException($"piece in slot {(int)wrong.Slot}");
                 var pieces = set.Pieces.Select(p => new CustomPiece(p!.Slot, p.ItemId, p.Stain0, p.Stain1)).ToList();
-                store.Restore(new CustomSet(set.Id, set.Name ?? "", pieces, set.Changed), dto.NextId);
+                store.Restore(new CustomSet(set.Id, set.Name ?? "", pieces, set.Changed) { Folder = set.Folder }, dto.NextId);
             }
+            foreach (var folder in dto.Folders ?? [])
+            {
+                if (folder == null)
+                    throw new JsonException("empty folder");
+                store.RestoreFolder(new CustomFolder(folder.Id, folder.Name ?? ""), dto.NextFolderId);
+            }
+            store.DropUnknownFolders();
             return store;
         }
         catch (Exception e) when (e is JsonException or NotSupportedException)
@@ -66,8 +73,8 @@ public static class CustomSetFile
     public static void Save(CustomSetStore store, string path)
     {
         var dto = new FileDto(store.ContentId, store.NextId, store.Sets
-            .Select(s => new SetDto(s.Id, s.Name, s.Changed, s.Pieces.Select(p => new PieceDto(p.Slot, p.ItemId, p.Stain0, p.Stain1)).ToList<PieceDto?>()))
-            .ToList<SetDto?>());
+            .Select(s => new SetDto(s.Id, s.Name, s.Changed, s.Pieces.Select(p => new PieceDto(p.Slot, p.ItemId, p.Stain0, p.Stain1)).ToList<PieceDto?>(), s.Folder))
+            .ToList<SetDto?>(), store.NextFolderId, store.Folders.Select(f => new FolderDto(f.Id, f.Name)).ToList<FolderDto?>());
 
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
         var tmp = path + ".tmp";
@@ -75,9 +82,12 @@ public static class CustomSetFile
         File.Move(tmp, path, overwrite: true);
     }
 
-    private sealed record FileDto(ulong ContentId, uint NextId, List<SetDto?>? Sets);
+    // Folders came later: a file without them has none, its sets are in none.
+    private sealed record FileDto(ulong ContentId, uint NextId, List<SetDto?>? Sets, uint NextFolderId = 1, List<FolderDto?>? Folders = null);
 
-    private sealed record SetDto(uint Id, string? Name, DateTimeOffset Changed, List<PieceDto?>? Pieces);
+    private sealed record SetDto(uint Id, string? Name, DateTimeOffset Changed, List<PieceDto?>? Pieces, uint Folder = 0);
+
+    private sealed record FolderDto(uint Id, string? Name);
 
     private sealed record PieceDto(EquipSlot Slot, uint ItemId, byte Stain0, byte Stain1);
 }

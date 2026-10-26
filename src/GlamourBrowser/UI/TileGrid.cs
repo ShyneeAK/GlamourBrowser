@@ -78,6 +78,7 @@ public sealed class TileGrid
     private readonly Dictionary<((uint ItemId, SetId Set) Id, uint Variant, string Name), TileLabels> labels = new();
     private (float Width, float FontSize, int Ownership, bool SourcesReady) labelsFor;
     private int ownershipVersion;
+    private readonly MySetsFolders folders;
     private readonly MarketService market;
 
     public TileGrid(BrowserState state, TileCache<IDalamudTextureWrap> cache, RenderPool pool, OwnershipService ownership,
@@ -103,6 +104,7 @@ public sealed class TileGrid
         this.ownership = ownership;
         this.live = live;
         this.config = config;
+        folders = new MySetsFolders(state, customSets, cache, theme);
         ownership.Changed += () => ownershipVersion++;
     }
 
@@ -223,6 +225,7 @@ public sealed class TileGrid
         if (customSets.Current is not { } store)
             return false;
 
+        folders.DrawHeader(store);
         if (ImGui.Button(Loc.T("+ Neues Set")))
             ImGui.OpenPopup("##newset");
         if (ImGui.BeginPopup("##newset"))
@@ -252,9 +255,16 @@ public sealed class TileGrid
             ImGui.TextDisabled(status.Text);
         }
 
-        if (store.Sets.Count == 0)
+        folders.DrawPopups();
+
+        if (store.Sets.Count == 0 && store.Folders.Count == 0)
         {
             ImGui.TextDisabled(Loc.T("Noch keine eigenen Sets – „+ Neues Set“ anklicken"));
+            return false;
+        }
+        if (state.Results.Count == 0 && state.OpenFolder != 0 && state.Filter.SearchText.Trim().Length == 0)
+        {
+            ImGui.TextDisabled(Loc.T("Dieser Ordner ist leer – Sets per Rechtsklick „In Ordner verschieben“ hineinlegen oder in der Übersicht auf seine Kachel ziehen"));
             return false;
         }
         if (state.Results.Count == 0)
@@ -476,11 +486,18 @@ public sealed class TileGrid
 
     private void DrawTile(TileSubject subject, Vector2 size)
     {
+        if (subject is FolderSubject folder)
+        {
+            folders.DrawTile(folder, size, dimmed: false);
+            return;
+        }
         const float rounding = 8f;
         var colors = theme.Colors;
         var pos = ImGui.GetCursorScreenPos();
         var clicked = ImGui.InvisibleButton($"##tile{subject.Id.ItemId}-{subject.Id.Set.Kind}{subject.Id.Set.Value}", size);
         var hovered = ImGui.IsItemHovered();
+        if (subject is SetSubject draggable && state.Filter.Mode == BrowseMode.MySets)
+            folders.DragSource(draggable);
         if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
         {
             contextSubject = subject;
@@ -599,6 +616,7 @@ public sealed class TileGrid
             case SetSubject set:
                 ImGui.TextDisabled(set.Name);
                 DrawSetPieces(set, null);
+                folders.DrawMoveMenu(set);
                 break;
             case ItemSubject { Item: var item } subject:
                 var isRing = item.Slot is EquipSlot.RingRight or EquipSlot.RingLeft;

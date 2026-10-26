@@ -11,6 +11,7 @@ public sealed class CustomSetStore(ulong contentId, IReadOnlyDictionary<uint, ui
     public static string DefaultName => Loc.T("Neues Set");
 
     private readonly List<CustomSet> sets = new();
+    private readonly List<CustomFolder> folders = new();
 
     public ulong ContentId { get; } = contentId;
 
@@ -19,24 +20,36 @@ public sealed class CustomSetStore(ulong contentId, IReadOnlyDictionary<uint, ui
 
     public IReadOnlyList<CustomSet> Sets => sets;
 
+    /// <summary>The folders by name.</summary>
+    public IReadOnlyList<CustomFolder> Folders => folders;
+
+    /// <summary>The id the next new folder gets.</summary>
+    public uint NextFolderId { get; private set; } = 1;
+
     public event Action? Changed;
 
     public CustomSet? Find(uint id) => sets.Find(s => s.Id == id);
 
-    public CustomSet Add(string name, IReadOnlyList<CustomPiece> pieces, DateTimeOffset now)
+    /// <param name="folder">The folder the new set goes into (0 for none, also for an unknown folder).</param>
+    public CustomSet Add(string name, IReadOnlyList<CustomPiece> pieces, DateTimeOffset now, uint folder = 0)
     {
-        var set = Normalize(new CustomSet(NextId++, name, pieces, now));
+        var set = Normalize(new CustomSet(NextId++, name, pieces, now) { Folder = FindFolder(folder) != null ? folder : 0 });
         Insert(set);
         Changed?.Invoke();
         return set;
     }
 
-    /// <summary>Replaces the set with the same id. Returns false (and stays quiet) for an unknown id or the same content.</summary>
+    /// <summary>
+    /// Replaces the set with the same id; it stays in its folder. Returns false (and stays quiet) for an unknown id or
+    /// the same content.
+    /// </summary>
     public bool Update(CustomSet set)
     {
         var old = Find(set.Id);
-        set = Normalize(set);
-        if (old == null || old.SameContent(set))
+        if (old == null)
+            return false;
+        set = Normalize(set with { Folder = old.Folder });
+        if (old.SameContent(set))
             return false;
 
         sets.Remove(old);
@@ -53,6 +66,69 @@ public sealed class CustomSetStore(ulong contentId, IReadOnlyDictionary<uint, ui
         return true;
     }
 
+    public CustomFolder? FindFolder(uint id) => folders.Find(f => f.Id == id);
+
+    public CustomFolder AddFolder(string name)
+    {
+        var folder = new CustomFolder(NextFolderId++, FolderName(name));
+        InsertFolder(folder);
+        Changed?.Invoke();
+        return folder;
+    }
+
+    public bool RenameFolder(uint id, string name)
+    {
+        if (FindFolder(id) is not { } old || old.Name == FolderName(name))
+            return false;
+        folders.Remove(old);
+        InsertFolder(old with { Name = FolderName(name) });
+        Changed?.Invoke();
+        return true;
+    }
+
+    /// <summary>Deletes the folder; its sets stay, outside any folder.</summary>
+    public bool RemoveFolder(uint id)
+    {
+        if (folders.RemoveAll(f => f.Id == id) == 0)
+            return false;
+        for (var i = 0; i < sets.Count; i++)
+        {
+            if (sets[i].Folder == id)
+                sets[i] = sets[i] with { Folder = 0 };
+        }
+        Changed?.Invoke();
+        return true;
+    }
+
+    /// <summary>Puts the set into the folder (0: out of any folder); its place in the list and its time stay.</summary>
+    public bool Move(uint setId, uint folder)
+    {
+        var index = sets.FindIndex(s => s.Id == setId);
+        if (index < 0 || folder != 0 && FindFolder(folder) == null || sets[index].Folder == folder)
+            return false;
+        sets[index] = sets[index] with { Folder = folder };
+        Changed?.Invoke();
+        return true;
+    }
+
+    /// <summary>Takes a folder from the file as it is, without <see cref="Changed"/>.</summary>
+    public void RestoreFolder(CustomFolder folder, uint nextFolderId)
+    {
+        folders.RemoveAll(f => f.Id == folder.Id);
+        InsertFolder(folder with { Name = FolderName(folder.Name) });
+        NextFolderId = Math.Max(Math.Max(NextFolderId, nextFolderId), folder.Id + 1);
+    }
+
+    /// <summary>Sets in a folder the file does not have go out of it (after the folders and sets are restored).</summary>
+    public void DropUnknownFolders()
+    {
+        for (var i = 0; i < sets.Count; i++)
+        {
+            if (sets[i].Folder != 0 && FindFolder(sets[i].Folder) == null)
+                sets[i] = sets[i] with { Folder = 0 };
+        }
+    }
+
     /// <summary>Ids below <paramref name="nextId"/> were given out before (in a file that broke): new sets get none of them.</summary>
     public void ReserveIdsBelow(uint nextId) => NextId = Math.Max(NextId, nextId);
 
@@ -64,6 +140,23 @@ public sealed class CustomSetStore(ulong contentId, IReadOnlyDictionary<uint, ui
         Insert(set);
         NextId = Math.Max(Math.Max(NextId, nextId), set.Id + 1);
     }
+
+    private void InsertFolder(CustomFolder folder)
+    {
+        var comparer = StringComparer.Create(Loc.Culture, true);
+        var index = folders.FindIndex(f => comparer.Compare(f.Name, folder.Name) > 0);
+        folders.Insert(index < 0 ? folders.Count : index, folder);
+    }
+
+    private static string FolderName(string name)
+    {
+        name = name.Trim();
+        if (name.Length > MaxNameLength)
+            name = name[..MaxNameLength].TrimEnd();
+        return name.Length == 0 ? DefaultFolderName : name;
+    }
+
+    public static string DefaultFolderName => Loc.T("Neuer Ordner");
 
     private void Insert(CustomSet set)
     {

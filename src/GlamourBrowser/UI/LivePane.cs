@@ -157,7 +157,9 @@ public sealed unsafe class LivePane
         {
             if (ImGui.Button(Loc.T("Als Set speichern")) && store != null)
             {
-                store.Add(CustomSetStore.DefaultName, tryOn.TryOn.Pieces, DateTimeOffset.Now);
+                // Into the folder of "Meine Sets" that is open.
+                store.Add(CustomSetStore.DefaultName, tryOn.TryOn.Pieces, DateTimeOffset.Now,
+                          state.Filter.Mode == BrowseMode.MySets ? state.OpenFolder : 0);
                 savedAt = DateTime.UtcNow;
             }
         }

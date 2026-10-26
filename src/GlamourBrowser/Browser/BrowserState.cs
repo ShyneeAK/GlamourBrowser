@@ -81,6 +81,9 @@ public sealed class BrowserState
         {
             // Back on a slot (or mode) the page it was left on; Refresh clamps it to the new results.
             PageIndex = pages.Switch(filter, PageIndex, value);
+            // Another mode closes an open folder of "Meine Sets".
+            if (value.Mode != BrowseMode.MySets)
+                OpenFolder = 0;
             filter = value;
             Refresh();
         }
@@ -95,6 +98,37 @@ public sealed class BrowserState
     public int PageCount => ItemFilter.PageCount(Results.Count, PageSize);
     public PageLayoutResult Layout { get; private set; }
     public TileSubject? Selected { get; set; }
+
+    /// <summary>The folder of "Meine Sets" that is open; 0 for the top with the folders.</summary>
+    public uint OpenFolder { get; private set; }
+    // The page of the top level a folder was opened from, to go back to it.
+    private int pageBeforeFolder;
+
+    /// <summary>Opens a folder of "Meine Sets" on its first page.</summary>
+    public void ShowFolder(uint folder)
+    {
+        lock (RenderSync.Lock)
+        {
+            if (OpenFolder == 0)
+                pageBeforeFolder = PageIndex;
+            OpenFolder = folder;
+            PageIndex = 0;
+            Refresh();
+        }
+    }
+
+    /// <summary>Back to the top of "Meine Sets", on the page the folder was opened from.</summary>
+    public void CloseFolder()
+    {
+        lock (RenderSync.Lock)
+        {
+            if (OpenFolder == 0)
+                return;
+            OpenFolder = 0;
+            PageIndex = pageBeforeFolder;
+            Refresh();
+        }
+    }
 
     /// <summary>The custom sets of the logged-in character that have a known piece, the last changed first.</summary>
     public IReadOnlyList<SetSubject> MySets { get; private set; } = [];
@@ -240,6 +274,7 @@ public sealed class BrowserState
         SetSubject set => TileKeys.ForSet(set.Set.Id, config.TileMode, LookHash(set.Slots), RenderWidth, IdleStance.Pose, set.Variant,
                                           set.Set.Id.Kind == SetKind.Custom ? default : TileDye),
         ItemSubject { Item: var item } => ItemKey(item),
+        FolderSubject { Cover: { } cover } => KeyFor(cover),
         _ => throw new ArgumentOutOfRangeException(nameof(subject)),
     };
 
@@ -293,7 +328,15 @@ public sealed class BrowserState
             MySets = ResolveMySets();
             WishlistEntries = ResolveWishlist();
             if (filter.Mode == BrowseMode.MySets)
-                Results = WishResults.Filter(MySets, filter.SearchText, hideDone: false, isOwned);
+            {
+                var folders = customSets.Current?.Folders ?? [];
+                // A deleted folder (or another character's) closes.
+                if (OpenFolder != 0 && folders.All(f => f.Id != OpenFolder))
+                    OpenFolder = 0;
+                var found = WishResults.Filter(MySets, filter.SearchText, hideDone: false, isOwned).OfType<SetSubject>().ToList();
+                Results = CustomSetFolders.View(found, folders, id => customSets.Current?.Find(id)?.Folder ?? 0, OpenFolder,
+                                                filter.SearchText.Trim().Length > 0);
+            }
             else if (filter.Mode == BrowseMode.Wishlist)
                 Results = WishResults.Filter(WishlistEntries, filter.SearchText, config.HideDoneWishes, isOwned);
             else if (filter.Mode == BrowseMode.Sets)
@@ -356,7 +399,7 @@ public sealed class BrowserState
                 return;
             }
 
-            var current = CurrentPage.Select(KeyFor).ToList();
+            var current = RenderKeys(CurrentPage).ToList();
             // The pages ahead in the paging direction render the nearest first; recently shown pages (also of other slots)
             // stay cached for going back.
             var lookahead = Lookahead.Pages(PageIndex, PageCount, config.LookaheadPages, pagingBack).SelectMany(PageKeys).ToList();
@@ -368,7 +411,11 @@ public sealed class BrowserState
     }
 
     private List<TileKey> PageKeys(int page)
-        => page >= 0 && page < PageCount ? ItemFilter.Page(Results, page, PageSize).Select(KeyFor).ToList() : [];
+        => page >= 0 && page < PageCount ? RenderKeys(ItemFilter.Page(Results, page, PageSize)).ToList() : [];
+
+    /// <summary>The keys to render for the subjects: a folder renders its first set, an empty one nothing.</summary>
+    private IEnumerable<TileKey> RenderKeys(IEnumerable<TileSubject> subjects)
+        => subjects.Select(s => s is FolderSubject folder ? folder.Cover : s).OfType<TileSubject>().Select(KeyFor);
 
     private IReadOnlyList<TileSubject> Subjects(IReadOnlyList<GlamourItem> items) => items.Select(i => (TileSubject)itemSubjects[i.Id]).ToList();
 

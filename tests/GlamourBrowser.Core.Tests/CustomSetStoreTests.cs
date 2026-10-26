@@ -23,6 +23,49 @@ public class CustomSetStoreTests
     }
 
     [Fact]
+    public void Folders_ByNameAndANewSetGoesIntoTheGivenOne()
+    {
+        var store = new CustomSetStore(1);
+        var raid = store.AddFolder("Raid");
+        var alltag = store.AddFolder("  Alltag  ");
+
+        Assert.Equal(["Alltag", "Raid"], store.Folders.Select(f => f.Name));
+        Assert.Equal(raid.Id, store.Add("Rot", [Robe], Now, raid.Id).Folder);
+        Assert.Equal(0u, store.Add("Blau", [Hat], Now, 99).Folder);
+        Assert.True(store.RenameFolder(alltag.Id, "Zuhause"));
+        Assert.Equal(["Raid", "Zuhause"], store.Folders.Select(f => f.Name));
+    }
+
+    [Fact]
+    public void Move_KeepsThePlace_AndUpdateKeepsTheFolder()
+    {
+        var store = new CustomSetStore(1);
+        var raid = store.AddFolder("Raid");
+        var first = store.Add("Erstes", [Robe], Now);
+        store.Add("Zweites", [Hat], Now.AddMinutes(1));
+
+        Assert.True(store.Move(first.Id, raid.Id));
+        Assert.False(store.Move(first.Id, raid.Id));
+        Assert.False(store.Move(first.Id, 99));
+        Assert.Equal([2u, 1u], store.Sets.Select(s => s.Id));
+
+        store.Update(store.Find(first.Id)! with { Name = "Umbenannt", Folder = 0 });
+        Assert.Equal(raid.Id, store.Find(first.Id)!.Folder);
+    }
+
+    [Fact]
+    public void RemoveFolder_KeepsItsSets()
+    {
+        var store = new CustomSetStore(1);
+        var raid = store.AddFolder("Raid");
+        var set = store.Add("Rot", [Robe], Now, raid.Id);
+
+        Assert.True(store.RemoveFolder(raid.Id));
+        Assert.Empty(store.Folders);
+        Assert.Equal(0u, store.Find(set.Id)!.Folder);
+    }
+
+    [Fact]
     public void Add_DoesNotReuseTheIdOfADeletedSet()
     {
         // A star on the deleted set must not land on the next new one.

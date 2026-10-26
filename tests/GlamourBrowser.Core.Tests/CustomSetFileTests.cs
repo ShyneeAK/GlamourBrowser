@@ -31,6 +31,32 @@ public sealed class CustomSetFileTests : IDisposable
     }
 
     [Fact]
+    public void SaveAndLoad_KeepsTheFolders()
+    {
+        var store = new CustomSetStore(123);
+        var raid = store.AddFolder("Raid");
+        store.Add("Rot", [new CustomPiece(Body, 10, 0, 0)], Now, raid.Id);
+        store.Add("Blau", [new CustomPiece(Head, 20, 0, 0)], Now);
+        CustomSetFile.Save(store, FilePath);
+
+        var loaded = CustomSetFile.Load(FilePath, 123);
+        Assert.Equal([raid], loaded.Folders);
+        Assert.Equal(raid.Id, loaded.Find(1)!.Folder);
+        Assert.Equal(0u, loaded.Find(2)!.Folder);
+        Assert.Equal(raid.Id + 1, loaded.AddFolder("Neu").Id);
+    }
+
+    [Fact]
+    public void Load_AFileWithoutFoldersHasNone()
+    {
+        File.WriteAllText(FilePath, """{"ContentId":123,"NextId":2,"Sets":[{"Id":1,"Name":"Alt","Changed":"2026-10-25T15:00:00+01:00","Pieces":[{"Slot":4,"ItemId":10,"Stain0":0,"Stain1":0}]}]}""");
+
+        var loaded = CustomSetFile.Load(FilePath, 123);
+        Assert.Empty(loaded.Folders);
+        Assert.Equal(0u, loaded.Find(1)!.Folder);
+    }
+
+    [Fact]
     public void MissingFile_IsEmpty()
     {
         var loaded = CustomSetFile.Load(FilePath, 123);

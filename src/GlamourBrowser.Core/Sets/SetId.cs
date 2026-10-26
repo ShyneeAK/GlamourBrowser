@@ -8,6 +8,8 @@ public enum SetKind
     Model,
     /// <summary>A set the player built (see <see cref="CustomSets.CustomSet"/>); the value is its id.</summary>
     Custom,
+    /// <summary>A folder of custom sets (see <see cref="CustomSets.CustomFolder"/>), only as a tile in "Meine Sets"; the value is its id.</summary>
+    CustomFolder,
 }
 
 /// <summary>
