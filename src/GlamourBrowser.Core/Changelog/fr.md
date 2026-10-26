@@ -1,5 +1,13 @@
 # Nouveautés
 
+## 0.6.0.0
+- Bagues : la barre des emplacements sépare désormais « Bague droite » et « Bague gauche ». Leurs vignettes montrent la bague à cette main, et chaque main a sa propre caméra.
+- Caméra automatique : gants, bracelets et bagues s’affichent de la même façon sur chaque personnage, une main vue de côté. Les bagues gauches et les bracelets du bras gauche seulement en image miroir.
+- Nouveau zoom de la caméra automatique par emplacement dans les paramètres (50–300 %).
+- Annuler et rétablir pour l’essayage : deux boutons à droite de la ligne avec la teinture et Classes/Jobs.
+- Ensembles d’équipement : l’icône de coffre dans la fiche de l’objet (sous les teintures) affiche toutes les pièces de l’ensemble en vignettes, « ← Retour » revient à la vue précédente. Le menu clic droit des vignettes n’affiche plus les ensembles.
+- Sans arme dans l’essayage, les vignettes n’affichent plus d’arme par défaut non plus.
+
 ## 0.5.0.0
 - Dossiers pour tes propres ensembles : crée et nomme des dossiers, ranges-y des ensembles en les glissant ou avec le clic droit. La vignette d'un dossier montre ses quatre premiers ensembles en mosaïque ; renomme-le ou supprime-le en haut à gauche de la vignette (les ensembles restent).
 - Sélectionne plusieurs de tes ensembles avec Ctrl+clic ou Maj+clic et déplace-les ensemble. Pendant le glisser, une petite copie de la vignette suit le curseur.

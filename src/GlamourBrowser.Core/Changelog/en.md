@@ -1,5 +1,13 @@
 # What's new
 
+## 0.6.0.0
+- Rings: the slot bar now has "Right Ring" and "Left Ring" apart. Their tiles show the ring on that hand, and each hand has its own camera.
+- Automatic camera: gloves, bracelets and rings look the same on every character, one hand from the side. Left rings and bracelets for the left arm only as the mirror image.
+- New zoom of the automatic camera per slot in the settings (50–300 %).
+- Undo and redo for the try-on: two buttons on the right of the row with the dye and Classes/Jobs.
+- Gear sets: the chest icon in the item card (below the dyes) shows all pieces of the set as tiles, "← Back" returns to the previous view. The tiles' right-click menu no longer lists sets.
+- Without a weapon in the try-on, the tiles no longer show a default weapon either.
+
 ## 0.5.0.0
 - Folders for your own sets: create and name folders, put sets in by dragging or with the right-click menu. A folder's tile shows its first four sets as a collage; rename and delete it in the tile's top-left corner (its sets stay).
 - Mark several of your own sets with Ctrl+click or Shift+click and move them together. While dragging, a small copy of the tile follows the cursor.

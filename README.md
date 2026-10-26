@@ -9,13 +9,14 @@ A [Dalamud](https://github.com/goatcorp/Dalamud) plugin for Final Fantasy XIV th
 ## Features
 
 - **Tile grid** of all equippable items, rendered on your character in your current outfit or in underwear, with adjustable columns and rows, several sort orders and pages rendered ahead in the direction you page.
-- **Live try-on**: every item or set you click is put on, so an outfit builds up piece by piece; right-click a worn piece to take it off, and pick the hand for a ring from its tile's right-click menu. Rotate, pan and zoom (the camera stays where you put it), open the visor, draw or hide the weapon, and calibrate a camera position per slot and character for the tiles.
+- **Live try-on**: every item or set you click is put on, so an outfit builds up piece by piece, with undo and redo; right-click a worn piece to take it off. Rings have a slot per hand. Rotate, pan and zoom (the camera stays where you put it), open the visor, draw or hide the weapon, and calibrate a camera position per slot and character for the tiles.
 - **Dye preview**: two tile dyes (channel 1 and 2) render every dyeable tile in them and come along when you click a tile; the item card's dye boxes recolour the worn piece.
 - **Filters** by slot, level, ownership, source (shops, quests, duties and more), jobs (gear only certain jobs can wear, several at once or whole groups such as all crafters) and dyeability.
 - **Item card** with the item's sources and costs, buttons for the map, the duty finder, the recipe and the Mog Station, a chat link, copying the name, and links to Garland Tools, Teamcraft and a web search.
 - **Market prices**: hovering the market board icon shows the cheapest listing on your home world and on your data center from [Universalis](https://universalis.app).
 - **Ownership** across inventory, retainers, glamour dresser and armoire, including where an item is stored.
-- **Gear sets** detected from the game data, shown as one tile.
+- **Automatic camera** that frames every slot to fit your character's race and height (gloves, bracelets and rings from the side), with a zoom per slot.
+- **Gear sets** detected from the game data, shown as one tile; the chest in the item card shows a set's pieces as tiles.
 - **Wishlist** for items and sets, with the missing pieces grouped by where to get them.
 - **My sets**: build your own outfits with dyes, like in the glamour dresser, and sort them into folders. Start from scratch, from your current outfit or from a glamour plate, import all glamour plates at once, and transfer a set into the open glamour plate editor.
 

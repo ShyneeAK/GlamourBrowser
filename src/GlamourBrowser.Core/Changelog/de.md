@@ -1,5 +1,13 @@
 # Neuigkeiten
 
+## 0.6.0.0
+- Ringe: Die Slot-Leiste hat jetzt „Ring rechts“ und „Ring links“ getrennt. Die Kacheln zeigen den Ring an der jeweiligen Hand, und jede Hand hat ihre eigene Kamera.
+- Automatische Kamera: Handschuhe, Armbänder und Ringe werden auf jedem Charakter gleich gezeigt, eine Hand von der Seite. Linke Ringe und Armbänder nur für links als Spiegelbild.
+- Neuer Zoom der automatischen Kamera pro Slot in den Einstellungen (50–300 %).
+- Rückgängig und Wiederholen für die Anprobe: zwei Buttons rechts in der Zeile mit Farbe und Klassen/Jobs.
+- Ausrüstungs-Sets: Das Truhe-Icon in der Item-Karte (unter den Farben) zeigt alle Teile des Sets als Kacheln, „← Zurück“ führt zur vorherigen Ansicht. Das Rechtsklick-Menü der Kacheln zeigt keine Sets mehr.
+- Ohne Waffe in der Anprobe zeigen auch die Kacheln keine Standardwaffe mehr.
+
 ## 0.5.0.0
 - Ordner für eigene Sets: Ordner anlegen und benennen, Sets per Ziehen oder Rechtsklick hineinlegen. Die Ordner-Kachel zeigt die ersten vier Sets als Collage; umbenennen und löschen oben links auf der Kachel (die Sets bleiben).
 - Mehrere eigene Sets mit Strg+Klick oder Umschalt+Klick markieren und zusammen verschieben. Beim Ziehen hängt eine kleine Kopie der Kachel am Mauszeiger.
