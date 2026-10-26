@@ -1,5 +1,13 @@
 # Neuigkeiten
 
+## 0.4.1.0
+- Marktpreise: Über dem Marktbrett-Icon einer Kachel oder der Item-Karte zeigt ein Tooltip das günstigste Angebot auf deiner Heimatwelt und in deinem Datenzentrum (Universalis). Ein Klick in der Item-Karte öffnet das Item auf Universalis.
+- Anprobe: Ein Rechtsklick auf ein Teil unter der Live-Ansicht zieht es aus, auch die Waffen. Ohne Waffe wird keine Standardwaffe mehr angezeigt, und Waffe ziehen ist ausgegraut.
+- Ein Klick auf ein Teil unter der Live-Ansicht springt in den Kacheln zu seinem Slot und zur Seite mit dem Item.
+- Ringe: Das Rechtsklick-Menü einer Ring-Kachel steckt den Ring an die rechte oder die linke Hand.
+- Neuer Button in der Item-Karte, der den Namen des Items kopiert.
+- Seiten vorausrendern folgt jetzt der Blätterrichtung: Rückwärts und auf der letzten Seite werden die Seiten davor vorbereitet.
+
 ## 0.4.0.0
 - Das Plugin spricht jetzt die Sprache deines Spiels: Deutsch, Englisch, Französisch oder Japanisch. In den Einstellungen lässt sie sich auch fest wählen.
 - Live-Ansicht: Visier öffnen/schließen, Waffe ziehen und Waffe ausblenden direkt oben links in der Ansicht. Das Zahnrad unten rechts stellt ein, wie schnell Drehen, Verschieben und Zoom reagieren.

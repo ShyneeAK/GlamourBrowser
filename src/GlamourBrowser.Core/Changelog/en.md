@@ -1,5 +1,13 @@
 # What's new
 
+## 0.4.1.0
+- Market prices: hovering the market board icon of a tile or the item card shows the cheapest listing on your home world and on your data center (Universalis). A click in the item card opens the item on Universalis.
+- Try-on: right-clicking a piece below the live view takes it off, the weapons too. Without a weapon no default weapon shows up any more, and drawing the weapon is grayed out.
+- Clicking a piece below the live view jumps the tiles to its slot and to the page with the item.
+- Rings: a ring tile's right-click menu puts the ring on the right or the left hand.
+- New button in the item card that copies the item's name.
+- Pre-rendering pages now follows the paging direction: paging back and on the last page, the pages before are prepared.
+
 ## 0.4.0.0
 - The plugin now speaks your game's language: English, German, French or Japanese. You can also pick one in the settings.
 - Live view: open/close the visor, draw the weapon and hide the weapon right in the view's top-left corner. The cog in the bottom-right corner sets how fast rotating, panning and zooming react.

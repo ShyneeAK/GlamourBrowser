@@ -1,5 +1,13 @@
 # Nouveautés
 
+## 0.4.1.0
+- Prix du marché : survoler l'icône du tableau des ventes d'une vignette ou de la fiche d'objet affiche l'offre la moins chère sur ton monde d'origine et dans ton centre de données (Universalis). Un clic dans la fiche d'objet ouvre l'objet sur Universalis.
+- Essayage : un clic droit sur une pièce sous la vue en direct la retire, les armes aussi. Sans arme, plus aucune arme par défaut n'apparaît, et dégainer est grisé.
+- Un clic sur une pièce sous la vue en direct fait passer les vignettes à son emplacement et à la page de l'objet.
+- Bagues : le menu du clic droit d'une vignette de bague la met à la main droite ou gauche.
+- Nouveau bouton dans la fiche d'objet pour copier le nom de l'objet.
+- Le rendu anticipé des pages suit maintenant le sens de navigation : en revenant en arrière et sur la dernière page, les pages précédentes sont préparées.
+
 ## 0.4.0.0
 - Le plugin parle maintenant la langue de votre jeu : français, anglais, allemand ou japonais. Vous pouvez aussi en choisir une dans les paramètres.
 - Vue en direct : ouvrir/fermer la visière, dégainer et masquer l'arme directement en haut à gauche de la vue. La roue dentée en bas à droite règle la vitesse de rotation, de déplacement et de zoom.
