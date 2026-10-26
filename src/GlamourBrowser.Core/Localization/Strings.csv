@@ -388,3 +388,8 @@ Zurücksetzen,Reset,Réinitialiser,リセット
 Übertragen: 1 Teil,Transferred: 1 piece,Transféré : 1 pièce,転送済み：1点
 Übertragen: {0} Teile,Transferred: {0} pieces,Transférées : {0} pièces,転送済み：{0}点
 … und {0} weitere,… and {0} more,… et {0} de plus,…ほか{0}件
+1 Set markiert,1 set marked,1 ensemble sélectionné,1セットを選択中
+{0} Sets markiert,{0} sets marked,{0} ensembles sélectionnés,{0}セットを選択中
+Markierung aufheben,Clear selection,Annuler la sélection,選択を解除
+Strg+Klick oder Umschalt+Klick: mehrere Sets markieren,Ctrl+click or Shift+click: mark several sets,Ctrl+clic ou Maj+clic : sélectionner plusieurs ensembles,Ctrl+クリックまたはShift+クリック：複数のセットを選択
+{0} Sets in Ordner verschieben,Move {0} sets to folder,Déplacer {0} ensembles vers un dossier,{0}セットをフォルダーへ移動
