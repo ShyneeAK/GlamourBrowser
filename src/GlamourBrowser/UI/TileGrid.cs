@@ -586,8 +586,8 @@ public sealed class TileGrid
     private bool IsOwned(uint itemId) => ownership.Current?.IsOwned(itemId) ?? false;
 
     /// <summary>
-    /// The right-click menu of a tile: the other pieces of the item's sets (a set tile: its own pieces) to put on one by
-    /// one, or the whole set. They go on like a click on their tile (into the set editor while it is open), dyed in the
+    /// The right-click menu of a tile: a ring on the right or the left hand, then the other pieces of the item's sets (a
+    /// set tile: its own pieces) to put on one by one, or the whole set. They go on like a click on their tile (into the set editor while it is open), dyed in the
     /// tile dye; the selection stays, the pieces can be selected below the live view.
     /// </summary>
     private void DrawContextMenu()
@@ -600,8 +600,15 @@ public sealed class TileGrid
                 ImGui.TextDisabled(set.Name);
                 DrawSetPieces(set, null);
                 break;
-            case ItemSubject { Item: var item }:
+            case ItemSubject { Item: var item } subject:
+                var isRing = item.Slot is EquipSlot.RingRight or EquipSlot.RingLeft;
+                if (isRing)
+                    DrawRingHands(subject);
                 var sets = state.SetsOf(item.Id);
+                if (sets.Count == 0 && isRing)
+                    break;
+                if (isRing)
+                    ImGui.Separator();
                 if (sets.Count == 0)
                     ImGui.TextDisabled(sources.IsReady ? Loc.T("Gehört zu keinem Ausrüstungs-Set") : Loc.T("Ausrüstungs-Sets werden geladen …"));
                 else if (sets.Count == 1)
@@ -640,13 +647,24 @@ public sealed class TileGrid
             PutOn(set);
     }
 
-    /// <summary>Like a click on the subject's tile, but without selecting it.</summary>
-    private void PutOn(TileSubject subject)
+    /// <summary>A ring's two entries, right and left hand (checked while it is worn there); a click on the tile picks the hand by itself.</summary>
+    private void DrawRingHands(ItemSubject ring)
+    {
+        foreach (var hand in (EquipSlot[])[EquipSlot.RingRight, EquipSlot.RingLeft])
+        {
+            var worn = editor.IsOpen ? editor.Draft?.PieceIn(hand)?.ItemId == ring.Item.Id : tryOn.TryOn.PieceIn(hand)?.ItemId == ring.Item.Id;
+            if (ImGui.MenuItem(Loc.F("{0} anziehen: {1}", SlotNames.Full(hand), ring.Item.Name) + $"##{hand}", "", worn))
+                PutOn(ring, hand);
+        }
+    }
+
+    /// <summary>Like a click on the subject's tile, but without selecting it; a ring on the hand in <paramref name="ring"/> when given.</summary>
+    private void PutOn(TileSubject subject, EquipSlot? ring = null)
     {
         if (editor.IsOpen)
-            editor.Put(subject, state.TileDye);
+            editor.Put(subject, state.TileDye, ring);
         else
-            tryOn.Put(subject, state.TileDye);
+            tryOn.Put(subject, state.TileDye, ring);
     }
 
     /// <summary>The tile's wishlist star with a dark shadow, readable on bright renders too.</summary>

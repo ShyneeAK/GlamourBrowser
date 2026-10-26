@@ -295,6 +295,19 @@ public class TryOnTests
     }
 
     [Fact]
+    public void Put_ARingGoesOnTheChosenHand()
+    {
+        var tryOn = new TryOn(Basis);
+        tryOn.Put(Item(30, EquipSlot.RingRight), default, EquipSlot.RingLeft);
+
+        Assert.Equal(Piece(EquipSlot.RingRight, 10), tryOn.PieceIn(EquipSlot.RingRight));
+        Assert.Equal(Piece(EquipSlot.RingLeft, 30), tryOn.PieceIn(EquipSlot.RingLeft));
+
+        tryOn.Put(Item(30, EquipSlot.RingRight), default, EquipSlot.RingRight);
+        Assert.Equal(Piece(EquipSlot.RingRight, 30), tryOn.PieceIn(EquipSlot.RingRight));
+    }
+
+    [Fact]
     public void TakeOff_EmptiesTheSlotUntilSomethingIsPutOnAgain()
     {
         var tryOn = new TryOn(Outfit);

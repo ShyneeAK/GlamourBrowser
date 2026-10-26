@@ -77,16 +77,17 @@ public sealed class CustomSetEditor
 
     /// <summary>
     /// A click on a tile: an item goes into its slot, a set brings all its pieces with their dyes. The tile dye
-    /// (<paramref name="dye"/>) colours the channels the set has no dye on yet, as the tile showed it.
+    /// (<paramref name="dye"/>) colours the channels the set has no dye on yet, as the tile showed it. A ring goes on the
+    /// hand in <paramref name="ring"/> when given, else into the selected ring slot.
     /// </summary>
-    public void Put(TileSubject subject, DyePair dye = default)
+    public void Put(TileSubject subject, DyePair dye = default, EquipSlot? ring = null)
     {
         if (Draft == null)
             return;
         switch (subject)
         {
             case ItemSubject { Item: var item }:
-                Draft.Put(item, SelectedSlot, dye);
+                Draft.Put(item, ring ?? SelectedSlot, dye);
                 break;
             case SetSubject set:
                 Draft.PutAll(set, dye);

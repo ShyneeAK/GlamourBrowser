@@ -43,15 +43,15 @@ public sealed class TryOnService : IDisposable
             TryOn.Reset(Basis());
     }
 
-    /// <summary>Puts a clicked item or set on, dyed like its tile.</summary>
-    public void Put(TileSubject subject, DyePair dye)
+    /// <summary>Puts a clicked item or set on, dyed like its tile; a ring on the hand in <paramref name="ring"/> when given.</summary>
+    public void Put(TileSubject subject, DyePair dye, EquipSlot? ring = null)
     {
         lock (RenderSync.Lock)
         {
             switch (subject)
             {
                 case ItemSubject { Item: var item }:
-                    TryOn.Put(item, dye);
+                    TryOn.Put(item, dye, ring);
                     break;
                 case SetSubject set:
                     TryOn.PutAll(set, dye);

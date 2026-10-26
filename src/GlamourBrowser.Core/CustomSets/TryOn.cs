@@ -56,12 +56,14 @@ public sealed class TryOn
     }
 
     /// <summary>
-    /// Puts the item on, dyed in <paramref name="dye"/> on the channels it has (as its tile shows it). A ring that is
-    /// already worn stays on its finger, so clicking it (to see or dye it) does not push the other ring off.
+    /// Puts the item on, dyed in <paramref name="dye"/> on the channels it has (as its tile shows it). A ring goes on the
+    /// hand in <paramref name="ring"/> when given; else one that is already worn stays on its finger, so clicking it (to
+    /// see or dye it) does not push the other ring off.
     /// </summary>
-    public void Put(GlamourItem item, DyePair dye)
+    public void Put(GlamourItem item, DyePair dye, EquipSlot? ring = null)
     {
-        var worn = item.Slot is EquipSlot.RingRight or EquipSlot.RingLeft ? SlotOf(item.Id) : null;
+        var isRing = item.Slot is EquipSlot.RingRight or EquipSlot.RingLeft;
+        var worn = !isRing ? null : ring is EquipSlot.RingRight or EquipSlot.RingLeft ? ring : SlotOf(item.Id);
         var slot = clicked.Put(item, worn is EquipSlot.RingRight or EquipSlot.RingLeft ? worn : null);
         Dye(slot, item, dye);
         OnChanged();
