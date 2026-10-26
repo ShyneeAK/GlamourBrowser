@@ -150,7 +150,7 @@ public sealed class Plugin : IDalamudPlugin
             new FilterColumn(browser, ownership, config, sources, theme),
             new TileGrid(browser, cache, pool, ownership, live, config, theme, sources, jobs, wishlist,
                          new WishlistPlanView(browser, ownership, wishlist, sources, live, theme, customSets, tryOn), customSets, editor, plates,
-                         memoryStats, tryOn, filterControls),
+                         memoryStats, tryOn, filterControls, market),
             theme,
             config,
             settingsWindow.Toggle);

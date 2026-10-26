@@ -26,7 +26,6 @@ using GlamourBrowser.Wishlist;
 using GlamourBrowser.CustomSets;
 using GlamourBrowser.GlamourPlate;
 using GlamourBrowser.Market;
-using GlamourBrowser.Core.Market;
 
 namespace GlamourBrowser.UI;
 
@@ -711,43 +710,7 @@ public sealed unsafe class LivePane
         if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
             Util.OpenLink($"https://universalis.app/market/{item.Id}");
 
-        using var tooltip = ImRaii.Tooltip();
-        ImGui.TextUnformatted("Universalis");
-        if (!Plugin.PlayerState.IsLoaded || !Plugin.PlayerState.HomeWorld.IsValid)
-        {
-            ImGui.TextDisabled(Loc.T("Preise erst nach dem Einloggen (Heimatwelt)"));
-        }
-        else
-        {
-            var home = Plugin.PlayerState.HomeWorld.Value;
-            var world = home.Name.ExtractText();
-            var dataCenter = home.DataCenter.Value.Name.ExtractText();
-            ImGui.TextUnformatted(world + ": " + MarketText(market.Get(item.Id, world), withWorld: false));
-            ImGui.TextUnformatted(Loc.F("{0}, günstigstes", dataCenter) + ": " + MarketText(market.Get(item.Id, dataCenter), withWorld: true));
-        }
-        ImGui.Spacing();
-        ImGui.TextDisabled(Loc.T("Klick: auf Universalis öffnen"));
-    }
-
-    private static string MarketText(MarketAnswer answer, bool withWorld) => answer switch
-    {
-        { State: MarketState.Loading } => Loc.T("lädt …"),
-        { State: MarketState.Failed } => Loc.T("nicht erreichbar"),
-        { Price: null } => Loc.T("keine Angebote"),
-        { Price: { } p } => Loc.F("{0} Gil", p.PricePerUnit.ToString("N0", Loc.Culture))
-                            + (p.Hq ? " HQ" : "")
-                            + (withWorld && p.World != null ? " " + Loc.F("auf {0}", p.World) : "")
-                            + " (" + Age(p.Updated) + ")",
-    };
-
-    private static string Age(DateTimeOffset updated)
-    {
-        var age = DateTimeOffset.UtcNow - updated;
-        if (age.TotalHours < 1)
-            return Loc.F("vor {0} Min.", Math.Max(1, (int)age.TotalMinutes));
-        if (age.TotalDays < 1)
-            return Loc.F("vor {0} Std.", (int)age.TotalHours);
-        return Loc.F("vor {0} Tagen", (int)age.TotalDays);
+        MarketTooltip.Draw(market, item.Id, Loc.T("Klick: auf Universalis öffnen"));
     }
 
     private static string DyeText(int count) => count switch

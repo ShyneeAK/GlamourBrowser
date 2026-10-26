@@ -23,6 +23,7 @@ using GlamourBrowser.Ownership;
 using GlamourBrowser.Rendering;
 using GlamourBrowser.Sources;
 using GlamourBrowser.UI.Widgets;
+using GlamourBrowser.Market;
 using GlamourBrowser.Wishlist;
 using GlamourBrowser.CustomSets;
 using GlamourBrowser.GlamourPlate;
@@ -77,12 +78,14 @@ public sealed class TileGrid
     private readonly Dictionary<((uint ItemId, SetId Set) Id, uint Variant, string Name), TileLabels> labels = new();
     private (float Width, float FontSize, int Ownership, bool SourcesReady) labelsFor;
     private int ownershipVersion;
+    private readonly MarketService market;
 
     public TileGrid(BrowserState state, TileCache<IDalamudTextureWrap> cache, RenderPool pool, OwnershipService ownership,
                     LivePreview live, Configuration config, Theme.Theme theme, SourceService sources, JobCatalog jobs,
                     WishlistService wishlist, WishlistPlanView planView, CustomSetService customSets, CustomSetEditor editor, GlamourPlateBridge plates,
-                    MemoryStats memory, TryOnService tryOn, TileFilterControls filterControls)
+                    MemoryStats memory, TryOnService tryOn, TileFilterControls filterControls, MarketService market)
     {
+        this.market = market;
         this.tryOn = tryOn;
         this.filterControls = filterControls;
         this.memory = memory;
@@ -745,7 +748,11 @@ public sealed class TileGrid
         if (icon.Label != null)
             drawList.AddText(ImGui.GetFont(), ImGui.GetFontSize() * 0.75f, at + new Vector2(iconSize * 0.6f, iconSize * 0.35f), colors.Text, icon.Label);
         // Only the icon itself shows a tooltip; the rest of the tile has none.
-        if (windowHovered && ImGui.IsMouseHoveringRect(at, at + new Vector2(iconSize)))
+        if (!windowHovered || !ImGui.IsMouseHoveringRect(at, at + new Vector2(iconSize)))
+            return;
+        if (icon.Kind == TraitKind.Trade && icon.IconId == TraitIcons.Marketable && subject is ItemSubject { Item: var item })
+            MarketTooltip.Draw(market, item.Id);
+        else
             ImGui.SetTooltip(icon.Tooltip ?? SourceTooltip(subject, icon.Category));
     }
 
