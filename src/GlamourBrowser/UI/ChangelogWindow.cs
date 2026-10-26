@@ -75,8 +75,12 @@ public sealed class ChangelogWindow : Window
         {
             if (child.Success)
             {
-                foreach (var entry in entries)
+                for (var i = 0; i < entries.Count; i++)
                 {
+                    var entry = entries[i];
+                    // Several versions (an update over more than one) stand apart, the newest first.
+                    if (i > 0)
+                        ImGui.Separator();
                     ImGui.TextColored(ImGui.ColorConvertU32ToFloat4(theme.Colors.Accent), Loc.F("Version {0}", entry.Version));
                     foreach (var line in entry.Lines)
                     {

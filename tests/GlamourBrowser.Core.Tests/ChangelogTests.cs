@@ -22,8 +22,8 @@ public class ChangelogTests
             Changelog.Since(Entries, new Version(0, 3, 0, 0), new Version(0, 4, 0, 0)).Select(e => e.Version));
 
     [Fact]
-    public void Since_WithoutLastSeen_OnlyTheCurrent()
-        => Assert.Equal([new Version(0, 4, 0, 0)], Changelog.Since(Entries, null, new Version(0, 4, 0, 0)).Select(e => e.Version));
+    public void Since_WithoutLastSeen_EveryEntryUpToTheCurrent()
+        => Assert.Equal([new Version(0, 3, 1, 0), new Version(0, 3, 0, 0)], Changelog.Since(Entries, null, new Version(0, 3, 1, 0)).Select(e => e.Version));
 
     [Fact]
     public void Since_LeavesOutVersionsAfterTheCurrent()

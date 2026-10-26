@@ -40,11 +40,12 @@ public static class Changelog
     }
 
     /// <summary>
-    /// The entries after <paramref name="lastSeen"/> up to <paramref name="current"/>, newest first; without a last seen
-    /// version (updated from a version before the changelog) only the current one's.
+    /// The entries after <paramref name="lastSeen"/> up to <paramref name="current"/>, newest first, so an update over
+    /// several versions shows them all; without a last seen version (updated from a version before the changelog) every
+    /// entry up to the current one.
     /// </summary>
     public static IReadOnlyList<ChangelogEntry> Since(IReadOnlyList<ChangelogEntry> entries, Version? lastSeen, Version current)
-        => entries.Where(e => e.Version <= current && (lastSeen == null ? e.Version == current : e.Version > lastSeen)).ToList();
+        => entries.Where(e => e.Version <= current && (lastSeen == null || e.Version > lastSeen)).ToList();
 
     /// <summary>The embedded changelog of a language, English when there is none, else German.</summary>
     public static string Embedded(string language)
