@@ -41,7 +41,7 @@ public class JobSelectionTests
         => Assert.Equal(["#99"], JobSelection.Parts(Set(99), Jobs, Name).Select(p => p.Label));
 
     [Theory]
-    [InlineData(new uint[0], "Job")]
+    [InlineData(new uint[0], "Klassen/Jobs")]
     [InlineData(new uint[] { 19 }, "PLD")]
     [InlineData(new uint[] { 8, 9 }, "Handwerk")]
     [InlineData(new uint[] { 19, 21, 16 }, "PLD +2")]

@@ -46,10 +46,10 @@ public static class JobSelection
         return parts;
     }
 
-    /// <summary>The job button: "Job" without a choice, else the first part and how many more follow ("PLD +2").</summary>
+    /// <summary>The job button: "Klassen/Jobs" without a choice, else the first part and how many more follow ("PLD +2").</summary>
     public static string Label(IReadOnlyList<JobPart> parts) => parts.Count switch
     {
-        0 => "Job",
+        0 => "Klassen/Jobs",
         1 => parts[0].Label,
         _ => $"{parts[0].Label} +{parts.Count - 1}",
     };

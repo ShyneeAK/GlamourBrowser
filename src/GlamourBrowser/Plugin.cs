@@ -19,6 +19,7 @@ using GlamourBrowser.Sources;
 using GlamourBrowser.UI;
 using GlamourBrowser.Wishlist;
 using GlamourBrowser.CustomSets;
+using GlamourBrowser.Core.Localization;
 
 namespace GlamourBrowser;
 
@@ -79,6 +80,15 @@ public sealed class Plugin : IDalamudPlugin
             config.Version = 3;
             config.Save();
         }
+        if (config.Version < 4)
+        {
+            // Parallel views left the normal settings: everyone gets the default back.
+            config.ParallelViews = 3;
+            config.Version = 4;
+            config.Save();
+        }
+        // First: texts built from here on (slot names, labels) are in this language.
+        Loc.Load(LanguageOf(config.Language));
         calibration = new CalibrationService(config);
         var (catalog, variants) = ItemCatalogLoader.Load(DataManager);
         ownership = new OwnershipService(variants);
@@ -159,6 +169,16 @@ public sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.OpenMainUi += mainWindow.Toggle;
         PluginInterface.UiBuilder.OpenConfigUi += settingsWindow.Toggle;
     }
+
+    /// <summary>The chosen language, or the game client's when none is chosen.</summary>
+    public static string LanguageOf(string chosen)
+        => chosen.Length > 0 ? chosen : ClientState.ClientLanguage switch
+        {
+            Dalamud.Game.ClientLanguage.German => "de",
+            Dalamud.Game.ClientLanguage.French => "fr",
+            Dalamud.Game.ClientLanguage.Japanese => "ja",
+            _ => "en",
+        };
 
     private void OnCommand(string command, string args)
     {

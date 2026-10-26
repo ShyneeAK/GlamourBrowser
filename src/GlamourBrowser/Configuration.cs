@@ -12,13 +12,19 @@ namespace GlamourBrowser;
 [Serializable]
 public sealed class Configuration : IPluginConfiguration
 {
-    /// <summary>2: the page cache default went from 3 to 8 pages; 3: to 10 (see Plugin, which raises older files).</summary>
-    public int Version { get; set; } = 3;
+    /// <summary>
+    /// 2: the page cache default went from 3 to 8 pages; 3: to 10; 4: parallel views back to 3, now a debug setting
+    /// (see Plugin, which raises older files).
+    /// </summary>
+    public int Version { get; set; } = 4;
 
     public int Columns { get; set; } = 3;
     public int Rows { get; set; } = 2;
     public TileMode TileMode { get; set; } = TileMode.CurrentOutfit;
+    /// <summary>Tiles rendered at the same time, 1–3; a debug setting.</summary>
     public int ParallelViews { get; set; } = 3;
+    /// <summary>The plugin's language: "de", "en", "fr" or "ja"; empty follows the game client.</summary>
+    public string Language { get; set; } = "";
     /// <summary>How many recently shown pages stay rendered besides the current one and the ones ahead, 0–100.</summary>
     public int CachedPages { get; set; } = 10;
     /// <summary>How many pages after the current one are rendered ahead, 0–10.</summary>

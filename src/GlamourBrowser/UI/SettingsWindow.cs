@@ -6,6 +6,7 @@ using GlamourBrowser.Browser;
 using System;
 using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Core.Ui;
+using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Rendering;
 
 namespace GlamourBrowser.UI;
@@ -21,6 +22,11 @@ public sealed class SettingsWindow : Window
     private IDisposable? fontScope;
     private int? scaleDraft;
     private float? pendingScale;
+
+    // "" follows the game client; the names stay in their own language, so each can be found whatever is shown.
+    private static readonly string[] LanguageCodes = ["", "de", "en", "fr", "ja"];
+    private static readonly string[] LanguageNames = ["", "Deutsch", "English", "Français", "日本語"];
+    private bool languageChanged;
 
     private static readonly string[] AccentNames = ["Blau", "Violett", "Türkis", "Rosé", "Bernstein"];
 
@@ -83,9 +89,11 @@ public sealed class SettingsWindow : Window
             state.SetUseIdlePose(pose == 1);
 
 
+        DrawLanguage();
+
         // The value being dragged is kept across frames; fonts are rebuilt only once the slider is released.
         var percent = scaleDraft ?? (int)MathF.Round(config.UiScale * 100);
-        if (ImGui.SliderInt("Skalierung", ref percent, 50, 300, "%d %%", ImGuiSliderFlags.AlwaysClamp))
+        if (ImGui.SliderInt("UI-Skalierung", ref percent, 50, 300, "%d %%", ImGuiSliderFlags.AlwaysClamp))
             scaleDraft = percent;
         if (ImGui.IsItemDeactivatedAfterEdit())
         {
@@ -93,14 +101,6 @@ public sealed class SettingsWindow : Window
             config.Save();
             pendingScale = config.UiScale;
             scaleDraft = null;
-        }
-
-        var views = config.ParallelViews;
-        if (ImGui.SliderInt("Parallele Ansichten", ref views, 1, 3, "%d", ImGuiSliderFlags.AlwaysClamp))
-        {
-            config.ParallelViews = views;
-            pool.MaxViews = views;
-            config.Save();
         }
 
         var cachedPages = config.CachedPages;
@@ -146,6 +146,34 @@ public sealed class SettingsWindow : Window
         }
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip("Zeigt unter den Kacheln, wie viel Grafikspeicher der Kachel-Cache belegt, dazu VRAM und RAM des Spiels.");
+
+        var views = config.ParallelViews;
+        if (ImGui.SliderInt("Parallele Ansichten", ref views, 1, 3, "%d", ImGuiSliderFlags.AlwaysClamp))
+        {
+            config.ParallelViews = views;
+            pool.MaxViews = views;
+            config.Save();
+        }
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip("Wie viele Kacheln gleichzeitig gerendert werden (Standard 3).");
+    }
+
+    /// <summary>The plugin's language: the game client's, or a chosen one. Texts already built change after a reload of the plugin.</summary>
+    private void DrawLanguage()
+    {
+        var index = Array.IndexOf(LanguageCodes, config.Language);
+        if (index < 0)
+            index = 0;
+        string[] names = [Loc.F("Wie der Client ({0})", LanguageNames[Array.IndexOf(LanguageCodes, Plugin.LanguageOf(""))]), .. LanguageNames.Skip(1)];
+        if (ImGui.Combo(Loc.T("Sprache"), ref index, names, names.Length))
+        {
+            config.Language = LanguageCodes[index];
+            config.Save();
+            Loc.Load(Plugin.LanguageOf(config.Language));
+            languageChanged = true;
+        }
+        if (languageChanged)
+            ImGui.TextColored(new Vector4(1f, 0.8f, 0.3f, 1f), Loc.T("Ganz übernommen wird die Sprache nach einem Neustart des Plugins."));
     }
 
     private void DrawCameraPresets()
