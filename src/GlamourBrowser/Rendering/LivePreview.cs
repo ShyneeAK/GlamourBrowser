@@ -10,7 +10,7 @@ namespace GlamourBrowser.Rendering;
 
 /// <summary>
 /// Live, rotatable view of the try-on (or the set editor's draft) on slot 7, borrowed from the render pool; the selected
-/// item frames it (camera slot) and gets the weapon toggles.
+/// item gets the weapon toggles and frames the view (camera slot) when it opens or is reset; else the camera stays.
 /// </summary>
 public sealed unsafe class LivePreview : IDisposable
 {
@@ -28,7 +28,10 @@ public sealed unsafe class LivePreview : IDisposable
     private CharaViewHandle? view;
     private CharaViewHandle? suspended;
     // The look's hash with face and body: any change of the try-on, the draft or the character dresses again.
-    private (uint Look, ulong Customize, CameraPreset? Camera)? applied;
+    private (uint Look, ulong Customize)? applied;
+    // The camera a reset (double-click) goes back to: the selected slot's, the body's without a selection. It is set
+    // only on a new view and on a reset; otherwise the camera stays where the user put it.
+    private CameraPreset? framing;
     // The last look and its hash: the try-on hands out the same list until it changes, so it is hashed once per change.
     private IReadOnlyList<CustomPiece>? hashedLook;
     private uint lookHash;
@@ -152,15 +155,15 @@ public sealed unsafe class LivePreview : IDisposable
         if (!view.IsIdle && view.State != CharaViewHandle.StateReady)
             return;
 
-        // The selection only frames the look: its slot's camera, the body's without one (like sets).
+        // The selection only frames the look on a new view or a reset: its slot's camera, the body's without one (like sets).
         var look = Look();
         if (!ReferenceEquals(look, hashedLook))
         {
             hashedLook = look;
             lookHash = Looks.Hash(look);
         }
-        var camera = cameraFor(subject?.CameraSlot ?? EquipSlot.Body);
-        var wanted = (lookHash, appearance.CustomizeHash, camera);
+        framing = cameraFor(subject?.CameraSlot ?? EquipSlot.Body);
+        var wanted = (lookHash, appearance.CustomizeHash);
 
         // The game picks the stance when a weapon is drawn and keeps it for the next weapon loaded into the hand: before
         // another kind of weapon loads, the drawn one is sheathed (only while nothing loads), and drawn anew below.
@@ -191,7 +194,8 @@ public sealed unsafe class LivePreview : IDisposable
         if (applied != wanted && view.IsIdle)
         {
             view.ApplyOutfit(look, 0);
-            view.ApplyCamera(camera);
+            if (applied == null)
+                view.ApplyCamera(framing);
             applied = wanted;
             appliedPose = null;
             appliedWeaponVisible = null;
@@ -262,7 +266,7 @@ public sealed unsafe class LivePreview : IDisposable
         if (zoom != 0)
             target.Zoom(-zoom * config.ZoomSensitivity);
         if (reset)
-            target.ApplyCamera(applied?.Camera);
+            target.ApplyCamera(framing);
 
         rotateX = rotateY = panX = panY = zoom = 0;
         reset = false;
