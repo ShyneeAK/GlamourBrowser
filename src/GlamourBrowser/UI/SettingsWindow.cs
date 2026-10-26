@@ -22,7 +22,9 @@ public sealed class SettingsWindow : Window
     private IDisposable? themeScope;
     private IDisposable? fontScope;
     private int? scaleDraft;
-    private float? pendingScale;
+    private int? fontDraft;
+    // A new UI scale or text size: the fonts are rebuilt before the next draw.
+    private bool fontsChanged;
 
     // "" follows the game client; the names stay in their own language, so each can be found whatever is shown.
     private static readonly string[] LanguageCodes = ["", "de", "en", "fr", "ja"];
@@ -49,10 +51,10 @@ public sealed class SettingsWindow : Window
         themeScope = theme.Push();
         // A new scale takes effect here, while none of the plugin's fonts is pushed: Dalamud refuses to dispose
         // a font handle that is still pushed.
-        if (pendingScale is { } scale)
+        if (fontsChanged)
         {
-            UiScale.Set(scale);
-            pendingScale = null;
+            UiScale.Set(config.UiScale, config.FontScale);
+            fontsChanged = false;
         }
         // Before Begin, so the title bar scales too.
         fontScope = UiScale.PushText();
@@ -104,8 +106,21 @@ public sealed class SettingsWindow : Window
         {
             config.UiScale = percent / 100f;
             config.Save();
-            pendingScale = config.UiScale;
+            fontsChanged = true;
             scaleDraft = null;
+        }
+
+        var fontPercent = fontDraft ?? (int)MathF.Round(config.FontScale * 100);
+        if (ImGui.SliderInt(Loc.T("Schriftgröße"), ref fontPercent, 80, 200, "%d %%", ImGuiSliderFlags.AlwaysClamp))
+            fontDraft = fontPercent;
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip(Loc.T("Nur der Text, zusätzlich zur UI-Skalierung; Icons und die Slot-Leiste bleiben gleich groß."));
+        if (ImGui.IsItemDeactivatedAfterEdit())
+        {
+            config.FontScale = fontPercent / 100f;
+            config.Save();
+            fontsChanged = true;
+            fontDraft = null;
         }
 
         var cachedPages = config.CachedPages;

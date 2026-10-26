@@ -52,6 +52,7 @@ public sealed unsafe class LivePane
     // Pieces of the selected set whose sources are open.
     private readonly HashSet<uint> openPieces = new();
     private const int SourcesPerCategory = 3;
+    private const float CardFrameScale = 1.4f;
 
     public LivePane(BrowserState state, OwnershipService ownership, LivePreview live, CalibrationService calibration, JobCatalog jobs, Theme.Theme theme,
                     SourceService sources, WishlistService wishlist, CustomSetService customSets, DyeCatalog dyes, CustomSetEditor editor,
@@ -91,7 +92,13 @@ public sealed unsafe class LivePane
         if (editor.IsOpen)
             editorPane.Draw();
         else
-            DrawItemCard();
+        {
+            // Larger buttons and icons than elsewhere: frames 1.4 times as high, text centred in them.
+            var style = ImGui.GetStyle();
+            var padding = (ImGui.GetFrameHeight() * CardFrameScale - ImGui.GetFontSize()) / 2;
+            using (ImRaii.PushStyle(ImGuiStyleVar.FramePadding, style.FramePadding with { Y = padding }))
+                DrawItemCard();
+        }
     }
 
     /// <summary>The size of the item's dye fields in the card's top-right corner: two thirds of the item icon.</summary>
@@ -496,13 +503,14 @@ public sealed unsafe class LivePane
         if (all.Count == 0)
             ImGui.TextDisabled(Loc.T("Keine Quelle bekannt"));
 
-        var iconSize = new Vector2(ImGui.GetTextLineHeight());
+        var iconSize = new Vector2(ImGui.GetFrameHeight());
         foreach (var group in all.GroupBy(s => s.Category).OrderBy(g => g.Key))
         {
             var iconMin = ImGui.GetCursorScreenPos();
             ImGui.Dummy(iconSize);
             TileGrid.DrawSourceIcon(ImGui.GetWindowDrawList(), group.Key, iconMin, iconSize.X, theme.Colors.TextMuted);
             ImGui.SameLine();
+            ImGui.AlignTextToFramePadding();
             ImGui.TextUnformatted(SourceCategories.DisplayName(group.Key));
 
             var key = (item.Id, group.Key);
@@ -590,7 +598,7 @@ public sealed unsafe class LivePane
             return;
         }
 
-        var size = new Vector2(20 * UiScale.Global);
+        var size = new Vector2(ImGui.GetFrameHeight());
         var perRow = Math.Max(1, (int)(ImGui.GetContentRegionAvail().X / (size.X + 4)));
         var shown = jobs.All.Where(j => item.ClassJobIds.Contains(j.Id)).ToList();
         for (var i = 0; i < shown.Count; i++)
@@ -644,9 +652,10 @@ public sealed unsafe class LivePane
     private void DrawTraits(GlamourItem item)
     {
         var colors = theme.Colors;
-        var size = new Vector2(ImGui.GetTextLineHeight());
+        var size = new Vector2(ImGui.GetFrameHeight());
         GameIcon.Draw(item.DyeCount > 0 ? TraitIcons.Dye : 0, size, FontAwesomeIcon.PaintBrush, colors.TextMuted);
         ImGui.SameLine();
+        ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted(item.DyeCount > 0 ? Loc.F("Färbbar ({0})", DyeText(item.DyeCount)) : Loc.T("Nicht färbbar"));
         ImGui.SameLine();
         var (tradeIcon, glyph, text) = item.Trade switch
@@ -657,6 +666,7 @@ public sealed unsafe class LivePane
         };
         GameIcon.Draw(tradeIcon, size, glyph, colors.TextMuted);
         ImGui.SameLine();
+        ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted(text);
     }
 

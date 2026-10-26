@@ -9,4 +9,6 @@
 - Réorganisation : Mes ensembles, Liste de souhaits, teinture des vignettes et Classes/Jobs se trouvent sur une deuxième ligne sous le choix d'emplacement. Le mode des vignettes, le tri et le nombre de vignettes par page ont un libellé, et le bouton de la colonne de filtres est à côté de « Assombrir ».
 - Les icônes des pièces portées sous la vue en direct sont plus grandes. Un nouveau bouton dans la fiche de l'objet va à sa vignette pour continuer à parcourir depuis là.
 - À la connexion, le personnage n'apparaît plus en sous-vêtements pendant que le jeu charge encore l'équipement.
+- Nouveau paramètre « Taille du texte », en plus de l'échelle de l'interface.
+- Fiche de l'objet : boutons et icônes plus grands, et les teintures de l'objet en grand en haut à droite.
 - Après une mise à jour, cette fenêtre présente les nouveautés.

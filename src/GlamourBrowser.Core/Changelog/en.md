@@ -9,4 +9,6 @@
 - Tidied up: My Sets, Wishlist, tile dye and Classes/Jobs sit in a second row under the slot selection. Tile mode, sort order and tiles per page have labels, and the filter column button sits next to "Dim".
 - The icons of the worn pieces under the live view are larger. A new button in the item card jumps to the item's tile so you can browse on from there.
 - When logging in, the character no longer shows up in underwear while the game is still loading the gear.
+- New "Text size" setting, on top of the UI scale.
+- Item card: larger buttons and icons, and the item's dyes sit large in the top-right corner.
 - After an update this window shows what is new.

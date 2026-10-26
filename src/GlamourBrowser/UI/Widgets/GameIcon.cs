@@ -1,3 +1,4 @@
+using System;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
@@ -26,9 +27,11 @@ public static class GameIcon
 
         using (UiScale.PushIcons())
         {
+            // A box larger than the icon font (large buttons) gets a larger glyph.
             var glyph = fallback.ToIconString();
-            var textSize = ImGui.CalcTextSize(glyph);
-            drawList.AddText(min + (size - textSize) / 2, fallbackColor, glyph);
+            var fontSize = ImGui.GetFontSize() * MathF.Max(1, MathF.Min(size.X, size.Y) / ImGui.GetFontSize());
+            var textSize = ImGui.CalcTextSize(glyph) * (fontSize / ImGui.GetFontSize());
+            drawList.AddText(ImGui.GetFont(), fontSize, min + (size - textSize) / 2, fallbackColor, glyph);
         }
     }
 

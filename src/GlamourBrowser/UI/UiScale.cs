@@ -24,23 +24,32 @@ public static class UiScale
 
     public static float Factor { get; private set; } = 1f;
 
+    /// <summary>The text size on top of <see cref="Factor"/> (the "Schriftgröße" setting).</summary>
+    public static float FontFactor { get; private set; } = 1f;
+
     /// <summary>Dalamud's global scale times the plugin's factor, for fixed pixel sizes.</summary>
     public static float Global => ImGuiHelpers.GlobalScale * Factor;
 
-    /// <summary>Rebuilds the fonts for a new factor. Not while one of them is pushed: disposing a pushed font handle throws.</summary>
-    public static void Set(float factor)
+    /// <summary>
+    /// Rebuilds the fonts for a new UI scale and text size. Not while one of them is pushed: disposing a pushed font
+    /// handle throws.
+    /// </summary>
+    public static void Set(float factor, float fontFactor)
     {
         factor = Math.Clamp(factor, Min, Max);
-        if (Math.Abs(factor - Factor) < 0.001f && (factor == 1f || text != null))
+        fontFactor = Math.Clamp(fontFactor, 0.8f, 2f);
+        var unchanged = Math.Abs(factor - Factor) < 0.001f && Math.Abs(fontFactor - FontFactor) < 0.001f;
+        if (unchanged && (factor == 1f && fontFactor == 1f || text != null))
             return;
         Factor = factor;
+        FontFactor = fontFactor;
         DisposeFonts();
-        if (factor == 1f)
+        if (factor == 1f && fontFactor == 1f)
             return;
 
         // The size is read on every build, so a rebuild after a change of Dalamud's font size picks up the new base.
         var atlas = Plugin.PluginInterface.UiBuilder.FontAtlas;
-        text = atlas.NewDelegateFontHandle(e => e.OnPreBuild(tk => tk.AddDalamudDefaultFont(UiBuilder.DefaultFontSizePx * factor)));
+        text = atlas.NewDelegateFontHandle(e => e.OnPreBuild(tk => tk.AddDalamudDefaultFont(UiBuilder.DefaultFontSizePx * factor * fontFactor)));
         icons = atlas.NewDelegateFontHandle(e => e.OnPreBuild(tk => tk.AddFontAwesomeIconFont(new SafeFontConfig { SizePx = UiBuilder.DefaultFontSizePx * factor })));
     }
 

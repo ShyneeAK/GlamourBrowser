@@ -115,7 +115,7 @@ public sealed class Plugin : IDalamudPlugin
         var jobs = new JobCatalog(DataManager);
         var dyes = new DyeCatalog(DataManager);
         browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets, wishlist, jobs, customSets, tryOn);
-        UI.UiScale.Set(config.UiScale);
+        UI.UiScale.Set(config.UiScale, config.FontScale);
         var theme = new UI.Theme.Theme(config);
         var editor = new CustomSetEditor(browser, customSets, live, variants, appearance, BlocksOf);
         live.ItemOf = browser.ItemOf;

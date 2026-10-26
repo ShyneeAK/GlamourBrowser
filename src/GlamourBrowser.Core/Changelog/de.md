@@ -9,4 +9,6 @@
 - Aufgeräumt: Meine Sets, Wunschliste, Kachelfarbe und Klassen/Jobs stehen in einer zweiten Zeile unter der Slot-Auswahl. Kachel-Modus, Sortierung und Kacheln pro Seite haben Beschriftungen, und der Filterspalten-Button sitzt neben „Abdunkeln“.
 - Die Icons der angezogenen Teile unter der Live-Ansicht sind größer. Ein neuer Button in der Item-Karte springt zur Kachel des Items, um von dort weiterzublättern.
 - Beim Einloggen erscheint der Charakter nicht mehr in Unterwäsche, solange das Spiel die Ausrüstung noch lädt.
+- Neue Einstellung „Schriftgröße“ für den Text, zusätzlich zur UI-Skalierung.
+- Item-Karte: größere Buttons und Icons, und die Farben des Items stehen groß oben rechts.
 - Nach einem Update zeigt dieses Fenster, was neu ist.

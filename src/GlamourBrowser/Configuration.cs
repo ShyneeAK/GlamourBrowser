@@ -46,6 +46,8 @@ public sealed class Configuration : IPluginConfiguration
     public bool WishlistBySource { get; set; }
     /// <summary>The plugin's own UI scale on top of Dalamud's, 0.5–3.</summary>
     public float UiScale { get; set; } = 1f;
+    /// <summary>The text size on top of the UI scale, 0.8–2; icons and the slot bar keep their size.</summary>
+    public float FontScale { get; set; } = 1f;
     public bool FilterColumnVisible { get; set; } = true;
     /// <summary>Replace, not merge, on load: otherwise a closed default section would reopen after a restart.</summary>
     [JsonProperty(ObjectCreationHandling = ObjectCreationHandling.Replace)]

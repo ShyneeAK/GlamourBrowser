@@ -215,6 +215,7 @@ Nicht im Besitz,Not owned,Non possédé,未所持
 nicht übertragen – Glamour-Plate wurde geschlossen,not transferred – the glamour plate was closed,non transféré – la tenue de mirage a été fermée,未転送 – ミラージュプレートが閉じられました
 Noch keine eigenen Sets – „+ Neues Set“ anklicken,No sets of your own yet – click “+ New Set”,Aucun ensemble personnel pour l'instant – cliquez sur « + Nouvel ensemble »,マイセットはまだありません ―「+ 新規セット」をクリックしてください
 Noch nichts auf der Wunschliste – Stern auf einer Kachel oder in der Item-Karte setzen,Nothing on the wishlist yet – set the star on a tile or in the item card,Rien dans la liste de souhaits pour l'instant – cochez l'étoile sur une tuile ou dans la fiche de l'objet,ほしい物リストはまだ空です ― タイルかアイテムカードの星を付けてください
+"Nur der Text, zusätzlich zur UI-Skalierung; Icons und die Slot-Leiste bleiben gleich groß.","Only the text, on top of the UI scale; icons and the slot bar keep their size.","Uniquement le texte, en plus de l'échelle de l'interface ; les icônes et la barre des emplacements gardent leur taille.",UIスケールに加えて文字だけを拡大します。アイコンと部位バーの大きさは変わりません。
 Nur Färbbare,Dyeable only,Teintables uniquement,染色可能のみ
 Nur für mich tragbar,Wearable by me only,Portables par moi uniquement,自分が装備可能なもののみ
 Nur job-exklusive,Job-exclusive only,Exclusifs au job uniquement,ジョブ専用のみ
@@ -255,6 +256,7 @@ Satteltasche (Premium),Saddlebag (Premium),Sacoches (premium),チョコボかば
 Schatzkiste,Treasure Coffer,Coffre au trésor,宝箱
 Schild/Nebenhand,Off Hand,Arme secondaire,副兵装
 Schließen,Close,Fermer,閉じる
+Schriftgröße,Text size,Taille du texte,文字サイズ
 Scrips,Scrips,Assignats,スクリップ
 Seite {0} / {1},Page {0} / {1},Page {0} / {1},{0} / {1} ページ
 Seiten im Cache,Cached pages,Pages en cache,キャッシュするページ数
