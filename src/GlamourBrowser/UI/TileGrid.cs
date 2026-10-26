@@ -74,6 +74,8 @@ public sealed class TileGrid
     private const string ContextPopup = "##tilecontext";
     // The tile whose context menu is open.
     private TileSubject? contextSubject;
+    private const string DeletePopup = "##tiledelete";
+    private CustomSet? deleteSet;
     // A custom set keeps its id while it changes: its content hash and name are part of the key.
     private readonly Dictionary<((uint ItemId, SetId Set) Id, uint Variant, string Name), TileLabels> labels = new();
     private (float Width, float FontSize, int Ownership, bool SourcesReady) labelsFor;
@@ -206,6 +208,7 @@ public sealed class TileGrid
             DrawTile(page[i], new Vector2(layout.TileWidth, layout.TileHeight));
         }
         DrawContextMenu();
+        DrawDeleteConfirm();
         // The page controls sit in the middle of the room left under the tiles (above the memory line).
         var pagerRoom = avail.Y - (config.ShowMemoryStats ? ImGui.GetTextLineHeightWithSpacing() : 0);
         DrawPager(gridTopLeft, layout, pagerRoom);
@@ -513,13 +516,26 @@ public sealed class TileGrid
         // Decided where the button went down: a press on the star toggles the wish wherever it is released on the tile.
         var pressed = ImGui.GetIO().MouseClickedPos[0];
         var pressedOnStar = canWish && pressed.X >= starMin.X && pressed.Y >= starMin.Y && pressed.X <= starMax.X && pressed.Y <= starMax.Y;
+        // An own set has "Bearbeiten" and "Löschen" below the star (while no set is edited), decided the same way.
+        var ownSet = !editor.IsOpen && subject is SetSubject { Set.Id: { Kind: SetKind.Custom } ownId } ? customSets.Current?.Find(ownId.Value) : null;
+        var editRect = GlyphRect(starPos + new Vector2(0, starSize.Y + 8), starSize);
+        var deleteRect = GlyphRect(starPos + new Vector2(0, (starSize.Y + 8) * 2), starSize);
+        var overEdit = hovered && ownSet != null && ImGui.IsMouseHoveringRect(editRect.Min, editRect.Max);
+        var overDelete = hovered && ownSet != null && ImGui.IsMouseHoveringRect(deleteRect.Min, deleteRect.Max);
         if (clicked && pressedOnStar)
             wishlist.Toggle(subject);
-        // While a custom set is edited, a tile goes into it instead of being selected.
+        else if (clicked && ownSet != null && Inside(pressed, editRect))
+            editor.StartEdit(ownSet);
+        else if (clicked && ownSet != null && Inside(pressed, deleteRect))
+        {
+            deleteSet = ownSet;
+            ImGui.OpenPopup(DeletePopup);
+        }
         // Ctrl or Shift on an own set marks it for moving several at once; a plain click drops the marks.
         else if (clicked && subject is SetSubject markable && state.Filter.Mode == BrowseMode.MySets && folders.Click(markable))
         {
         }
+        // While a custom set is edited, a tile goes into it instead of being selected.
         else if (clicked && editor.IsOpen)
             editor.Put(subject, state.TileDye);
         // Otherwise it is selected and put on in the try-on, dyed like its tile.
@@ -580,6 +596,15 @@ public sealed class TileGrid
             DrawWishStar(drawList, starPos, listed ? colors.Warning : overStar ? colors.Text : (colors.TextMuted & 0x00FFFFFF) | 0xA0000000);
             if (overStar)
                 ImGui.SetTooltip(listed ? Loc.T("Von der Wunschliste nehmen") : Loc.T("Auf die Wunschliste"));
+        }
+        if (hovered && ownSet != null)
+        {
+            DrawTileGlyph(drawList, FontAwesomeIcon.Pen, editRect, overEdit ? colors.Text : (colors.TextMuted & 0x00FFFFFF) | 0xA0000000);
+            DrawTileGlyph(drawList, FontAwesomeIcon.Trash, deleteRect, overDelete ? colors.Text : (colors.TextMuted & 0x00FFFFFF) | 0xA0000000);
+            if (overEdit)
+                ImGui.SetTooltip(Loc.T("Bearbeiten"));
+            else if (overDelete)
+                ImGui.SetTooltip(Loc.T("Löschen"));
         }
         // The star's place stays reserved while it can show, so the marker does not jump when the tile is hovered.
         var markerX = showStar || canWish ? 6 + starSize.X + 3 : 6f;
@@ -690,6 +715,48 @@ public sealed class TileGrid
             editor.Put(subject, state.TileDye, ring);
         else
             tryOn.Put(subject, state.TileDye, ring);
+    }
+
+    private static (Vector2 Min, Vector2 Max) GlyphRect(Vector2 at, Vector2 size) => (at - new Vector2(3), at + size + new Vector2(3));
+
+    private static bool Inside(Vector2 point, (Vector2 Min, Vector2 Max) rect)
+        => point.X >= rect.Min.X && point.Y >= rect.Min.Y && point.X <= rect.Max.X && point.Y <= rect.Max.Y;
+
+    /// <summary>A glyph button on a tile (edit, delete), centred in its rect, with a dark shadow like the star.</summary>
+    private static void DrawTileGlyph(ImDrawListPtr drawList, FontAwesomeIcon icon, (Vector2 Min, Vector2 Max) rect, uint color)
+    {
+        using (UiScale.PushIcons())
+        {
+            var glyph = icon.ToIconString();
+            var at = (rect.Min + rect.Max - ImGui.CalcTextSize(glyph)) / 2;
+            drawList.AddText(at + Vector2.One, 0xC0000000, glyph);
+            drawList.AddText(at, color, glyph);
+        }
+    }
+
+    /// <summary>"Set „…“ löschen?" after the trash glyph of an own set's tile.</summary>
+    private void DrawDeleteConfirm()
+    {
+        if (!ImGui.BeginPopup(DeletePopup))
+            return;
+        if (deleteSet is { } set)
+        {
+            ImGui.TextUnformatted(Loc.F("Set „{0}“ löschen?", set.Name));
+            if (ImGui.Button(Loc.T("Löschen")))
+            {
+                customSets.Current?.Remove(set.Id);
+                if (state.Selected is SetSubject { Set.Id: { Kind: SetKind.Custom } selected } && selected.Value == set.Id)
+                {
+                    state.Selected = null;
+                    live.Select(null);
+                }
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.SameLine();
+            if (ImGui.Button(Loc.T("Abbrechen")))
+                ImGui.CloseCurrentPopup();
+        }
+        ImGui.EndPopup();
     }
 
     /// <summary>The tile's wishlist star with a dark shadow, readable on bright renders too.</summary>

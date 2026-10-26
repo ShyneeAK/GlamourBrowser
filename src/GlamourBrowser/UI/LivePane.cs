@@ -418,17 +418,9 @@ public sealed unsafe class LivePane
         };
         ImGui.TextDisabled($"{progress.Owned}/{progress.Total} · {origin}");
         ImGui.EndGroup();
-        DrawWishToggle(set);
-        if (set.Set.Id.Kind == SetKind.Custom)
-        {
-            ImGui.SameLine();
-            if (IconButton.Draw("##editset", 0, FontAwesomeIcon.Pen, Loc.T("Bearbeiten"), theme) && customSets.Current?.Find(set.Set.Id.Value) is { } stored)
-                editor.StartEdit(stored);
-            ImGui.SameLine();
-            DrawDeleteButton(set);
-            if (customSets.Current?.Find(set.Set.Id.Value) is { } toTransfer)
-                PlateTransferUi.DrawButton(plates, toTransfer.Pieces);
-        }
+        // Wishlist, editing and deleting are on the tile; the card keeps the transfer into the open plate.
+        if (set.Set.Id.Kind == SetKind.Custom && customSets.Current?.Find(set.Set.Id.Value) is { } toTransfer)
+            PlateTransferUi.DrawButton(plates, toTransfer.Pieces);
         ImGui.Separator();
 
         var iconSize = new Vector2(ImGui.GetFrameHeight());
@@ -488,26 +480,6 @@ public sealed unsafe class LivePane
     }
 
     /// <summary>Deletes a custom set after asking.</summary>
-    private void DrawDeleteButton(SetSubject set)
-    {
-        if (IconButton.Draw("##deleteset", 0, FontAwesomeIcon.Trash, Loc.T("Löschen"), theme))
-            ImGui.OpenPopup("##deleteset-confirm");
-        if (!ImGui.BeginPopup("##deleteset-confirm"))
-            return;
-        ImGui.TextUnformatted(Loc.F("Set „{0}“ löschen?", set.Name));
-        if (ImGui.Button(Loc.T("Löschen")))
-        {
-            customSets.Current?.Remove(set.Set.Id.Value);
-            state.Selected = null;
-            live.Select(null);
-            ImGui.CloseCurrentPopup();
-        }
-        ImGui.SameLine();
-        if (ImGui.Button(Loc.T("Abbrechen")))
-            ImGui.CloseCurrentPopup();
-        ImGui.EndPopup();
-    }
-
     private string WhereOwned(GlamourItem piece) => ownership.Current?.LocationsOf(piece.Id).FirstOrDefault()?.DisplayName ?? "";
 
     /// <summary>The source of the piece's highest ranked category, as "Kategorie: Titel".</summary>
@@ -615,19 +587,6 @@ public sealed unsafe class LivePane
         ImGui.SameLine();
         if (IconButton.Draw($"##action{id}", b.Icon, b.Fallback, b.Tooltip, theme))
             SourceActions.Run(action);
-    }
-
-    /// <summary>The star that puts the item or set on the wishlist (accent frame while listed); grayed out while logged out.</summary>
-    private void DrawWishToggle(TileSubject? subject)
-    {
-        if (subject == null)
-            return;
-        var loggedIn = wishlist.Current != null;
-        var listed = wishlist.IsListed(subject);
-        var tooltip = !loggedIn ? wishlist.LoadFailed ? Loc.T("Wunschliste konnte nicht geladen werden") : Loc.T("Nicht eingeloggt")
-                    : listed ? Loc.T("Von der Wunschliste nehmen") : Loc.T("Auf die Wunschliste");
-        if (IconToggle.Draw("##wish", SlotIcons.Wishlist, new Vector2(ImGui.GetFrameHeight()), listed, tooltip, theme, FontAwesomeIcon.Star, enabled: loggedIn))
-            wishlist.Toggle(subject);
     }
 
     private void DrawJobs(GlamourItem item)
