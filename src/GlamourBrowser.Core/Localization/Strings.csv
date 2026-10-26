@@ -402,5 +402,5 @@ Zurück,Back,Retour,戻る
 Zurück zur vorherigen Ansicht,Back to the previous view,Retour à la vue précédente,前の表示に戻る
 „{0}“: alle Teile als Kacheln zeigen,“{0}”: show all pieces as tiles,« {0} » : afficher toutes les pièces en vignettes,「{0}」：全パーツをタイルで表示
 Gehört zu {0} Ausrüstungs-Sets: eins auswählen und seine Teile als Kacheln zeigen,Part of {0} gear sets: pick one to show its pieces as tiles,Fait partie de {0} ensembles d’équipement : en choisir un pour afficher ses pièces en vignettes,{0}個の装備セットに含まれます：1つ選んでパーツをタイルで表示
-Rückgängig (Strg+Z),Undo (Ctrl+Z),Annuler (Ctrl+Z),元に戻す (Ctrl+Z)
-Wiederholen (Strg+Y),Redo (Ctrl+Y),Rétablir (Ctrl+Y),やり直す (Ctrl+Y)
+Rückgängig,Undo,Annuler,元に戻す
+Wiederholen,Redo,Rétablir,やり直す

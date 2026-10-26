@@ -171,30 +171,9 @@ public sealed unsafe class LivePane
         ImGui.SetCursorScreenPos(cursor with { Y = MathF.Max(cursor.Y, bottom) });
     }
 
-    /// <summary>
-    /// Below the live view: undo and redo (also Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z while the window has the focus), back to
-    /// the try-on's basis (tile mode), or the whole try-on as a new custom set.
-    /// </summary>
+    /// <summary>Below the live view: back to the try-on's basis (tile mode), or the whole try-on as a new custom set.</summary>
     private void DrawTryOnButtons()
     {
-        using (ImRaii.Disabled(!tryOn.TryOn.CanUndo))
-        {
-            if (IconButton.Draw("##undo", 0, FontAwesomeIcon.Undo, "", theme))
-                tryOn.Undo();
-        }
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip(Loc.T("Rückgängig (Strg+Z)"));
-        ImGui.SameLine();
-        using (ImRaii.Disabled(!tryOn.TryOn.CanRedo))
-        {
-            if (IconButton.Draw("##redo", 0, FontAwesomeIcon.Redo, "", theme))
-                tryOn.Redo();
-        }
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip(Loc.T("Wiederholen (Strg+Y)"));
-        HandleUndoKeys();
-        ImGui.SameLine();
-
         using (ImRaii.Disabled(!tryOn.TryOn.HasChanges))
         {
             if (ImGui.Button(Loc.T("Zurücksetzen")))
@@ -224,23 +203,6 @@ public sealed unsafe class LivePane
         }
 
         DrawWornPieces();
-    }
-
-    /// <summary>Ctrl+Z undoes, Ctrl+Y or Ctrl+Shift+Z redoes, while the window has the focus and no text field is typed in.</summary>
-    private void HandleUndoKeys()
-    {
-        var io = ImGui.GetIO();
-        if (!io.KeyCtrl || io.WantTextInput || !ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows))
-            return;
-        if (ImGui.IsKeyPressed(ImGuiKey.Z, false))
-        {
-            if (io.KeyShift)
-                tryOn.Redo();
-            else
-                tryOn.Undo();
-        }
-        else if (ImGui.IsKeyPressed(ImGuiKey.Y, false))
-            tryOn.Redo();
     }
 
     /// <summary>

@@ -436,6 +436,33 @@ public sealed class TileGrid
         if (ImGui.GetContentRegionAvail().X < filterControls.JobsWidth())
             ImGui.NewLine();
         filterControls.DrawJobs(edge);
+        DrawUndoButtons(edge);
+    }
+
+    /// <summary>Undo and redo of the try-on, right-aligned in the row of the tile dye and the jobs (not while a set is edited).</summary>
+    private void DrawUndoButtons(float edge)
+    {
+        var spacing = ImGui.GetStyle().ItemSpacing.X;
+        var width = edge * 2 + spacing;
+        ImGui.SameLine(0, spacing * 3);
+        if (ImGui.GetContentRegionAvail().X < width)
+            ImGui.NewLine();
+        ImGui.SameLine(ImGui.GetWindowContentRegionMax().X - width);
+        using (ImRaii.Disabled(editor.IsOpen || !tryOn.TryOn.CanUndo))
+        {
+            if (IconButton.Draw("##undo", 0, FontAwesomeIcon.Undo, "", theme, edge))
+                tryOn.Undo();
+        }
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip(Loc.T("Rückgängig"));
+        ImGui.SameLine();
+        using (ImRaii.Disabled(editor.IsOpen || !tryOn.TryOn.CanRedo))
+        {
+            if (IconButton.Draw("##redo", 0, FontAwesomeIcon.Redo, "", theme, edge))
+                tryOn.Redo();
+        }
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip(Loc.T("Wiederholen"));
     }
 
     /// <summary>The display options' exact width, so the filter-column toggle ends flush with the right edge.</summary>
