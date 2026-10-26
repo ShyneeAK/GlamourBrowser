@@ -212,7 +212,8 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
     }
 
     /// <summary>A custom set's tile can be dragged onto a folder (or the way back); call right after the tile's button.</summary>
-    public void DragSource(SetSubject set)
+    /// <param name="tile">The tile's size: the cursor carries a small copy of it.</param>
+    public void DragSource(SetSubject set, Vector2 tile)
     {
         if (set.Set.Id.Kind != SetKind.Custom || customSets.Current is not { Folders.Count: > 0 } && state.OpenFolder == 0)
             return;
@@ -220,8 +221,33 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
             return;
         draggedSet = set.Set.Id.Value;
         ImGui.SetDragDropPayload(DragType, ReadOnlySpan<byte>.Empty, ImGuiCond.None);
-        ImGui.TextUnformatted(set.Name);
+        DrawMiniature(set, tile);
         ImGui.EndDragDropSource();
+    }
+
+    /// <summary>The dragged tile in small: its render (or its body piece's icon) with an accent frame, the name below.</summary>
+    private void DrawMiniature(SetSubject set, Vector2 tile)
+    {
+        var width = MathF.Min(tile.X * 0.5f, 110 * UiScale.Global);
+        var size = new Vector2(width, width * tile.Y / MathF.Max(1, tile.X));
+        var min = ImGui.GetCursorScreenPos();
+        ImGui.Dummy(size);
+        var drawList = ImGui.GetWindowDrawList();
+        if (cache.TryGet(state.KeyFor(set), out var texture) && texture != null)
+            drawList.AddImageRounded(texture.Handle, min, min + size, Vector2.Zero, Vector2.One, 0xFFFFFFFF, 6f);
+        else
+        {
+            drawList.AddRectFilled(min, min + size, theme.Colors.CardRaised, 6f);
+            if ((set.Wear.FirstOrDefault(w => w.Slot == EquipSlot.Body) ?? set.Wear.FirstOrDefault()) is { } piece)
+            {
+                var edge = new Vector2(width * 0.5f);
+                GameIcon.DrawAt(drawList, piece.IconId, min + (size - edge) / 2, edge, FontAwesomeIcon.Tshirt, theme.Colors.TextMuted);
+            }
+        }
+        drawList.AddRect(min, min + size, theme.Colors.Accent, 6f, ImDrawFlags.None, 2f);
+        ImGui.PushTextWrapPos(ImGui.GetCursorPosX() + width);
+        ImGui.TextWrapped(set.Name);
+        ImGui.PopTextWrapPos();
     }
 
     /// <summary>"In Ordner verschieben" with every folder and "Kein Ordner" for a custom set's right-click menu.</summary>

@@ -497,7 +497,7 @@ public sealed class TileGrid
         var clicked = ImGui.InvisibleButton($"##tile{subject.Id.ItemId}-{subject.Id.Set.Kind}{subject.Id.Set.Value}", size);
         var hovered = ImGui.IsItemHovered();
         if (subject is SetSubject draggable && state.Filter.Mode == BrowseMode.MySets)
-            folders.DragSource(draggable);
+            folders.DragSource(draggable, size);
         if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
         {
             contextSubject = subject;
