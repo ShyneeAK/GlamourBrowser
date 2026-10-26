@@ -172,7 +172,7 @@ public sealed unsafe class LivePane
 
     /// <summary>
     /// One icon per piece the try-on wears (known items, in slot order): a click selects it again, for its card, dyes and
-    /// camera, without putting anything on; a right-click takes it off (the main hand aside). Wraps when the pane is narrow.
+    /// camera, without putting anything on; a right-click takes it off. Wraps when the pane is narrow.
     /// </summary>
     private void DrawWornPieces()
     {
@@ -192,8 +192,8 @@ public sealed unsafe class LivePane
             }
             first = false;
             var selected = state.Selected is ItemSubject { Item.Id: var id } && id == piece.ItemId;
-            var hint = piece.Slot == EquipSlot.MainHand ? Loc.T("Klick: auswählen") : Loc.T("Klick: auswählen\nRechtsklick: ausziehen");
-            if (IconToggle.Draw($"##worn{(int)piece.Slot}", subject.Item.IconId, size, selected, $"{SlotNames.Full(piece.Slot)}: {subject.Name}\n" + hint,
+            if (IconToggle.Draw($"##worn{(int)piece.Slot}", subject.Item.IconId, size, selected,
+                    $"{SlotNames.Full(piece.Slot)}: {subject.Name}\n" + Loc.T("Klick: auswählen\nRechtsklick: ausziehen"),
                     theme, FontAwesomeIcon.Tshirt))
             {
                 state.Selected = subject;

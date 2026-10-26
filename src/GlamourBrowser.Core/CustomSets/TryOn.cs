@@ -89,12 +89,12 @@ public sealed class TryOn
     }
 
     /// <summary>
-    /// Empties the slot, also of the basis, until something is put on there again. The main hand stays: a character
-    /// always holds its weapon. False when nothing was worn there.
+    /// Empties the slot, also of the basis, until something is put on there again (the weapons too, as on a glamour
+    /// plate). False when nothing was worn there.
     /// </summary>
     public bool TakeOff(EquipSlot slot)
     {
-        if (slot == EquipSlot.MainHand || PieceIn(slot) == null)
+        if (PieceIn(slot) == null)
             return false;
         clicked.Set(new CustomPiece(slot, 0, 0, 0));
         OnChanged();

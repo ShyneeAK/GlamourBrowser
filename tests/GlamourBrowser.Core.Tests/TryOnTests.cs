@@ -312,13 +312,13 @@ public class TryOnTests
     }
 
     [Fact]
-    public void TakeOff_KeepsTheMainHand()
+    public void TakeOff_TheWeaponsToo()
     {
         var tryOn = new TryOn(Outfit);
 
-        Assert.False(tryOn.TakeOff(EquipSlot.MainHand));
+        Assert.True(tryOn.TakeOff(EquipSlot.MainHand));
         Assert.True(tryOn.TakeOff(EquipSlot.OffHand));
-        Assert.Equal(Piece(EquipSlot.MainHand, 5), tryOn.PieceIn(EquipSlot.MainHand));
+        Assert.Null(tryOn.PieceIn(EquipSlot.MainHand));
         Assert.Null(tryOn.PieceIn(EquipSlot.OffHand));
     }
 
