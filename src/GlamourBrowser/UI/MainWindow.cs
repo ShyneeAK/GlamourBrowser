@@ -83,7 +83,8 @@ public sealed class MainWindow : Window
             topBar.Draw();
             ImGui.Separator();
 
-            var filterWidth = config.FilterColumnVisible ? FilterColumnWidth * scale : 0;
+            // At least wide enough for its longest row (text size, language).
+            var filterWidth = config.FilterColumnVisible ? MathF.Max(FilterColumnWidth * scale, filterColumn.NeededWidth()) : 0;
             var gridWidth = MathF.Max(0, ImGui.GetContentRegionAvail().X - filterWidth - (filterWidth > 0 ? spacing : 0));
             if (gridWidth < MinGridWidth * scale)
             {

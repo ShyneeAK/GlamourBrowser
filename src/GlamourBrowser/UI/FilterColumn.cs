@@ -159,6 +159,23 @@ public sealed class FilterColumn
         return result;
     }
 
+    /// <summary>
+    /// The width the column needs for its longest row (a source category with its count, an expansion), so nothing is
+    /// cut off with a larger text size or a longer translation.
+    /// </summary>
+    public float NeededWidth()
+    {
+        var style = ImGui.GetStyle();
+        var counts = state.CountsWithoutCategories;
+        var checkbox = ImGui.GetFrameHeight() + style.ItemInnerSpacing.X;
+        var categories = Enum.GetValues<SourceCategory>()
+            .Select(c => ImGui.CalcTextSize($"{SourceCategories.DisplayName(c)} ({counts.GetValueOrDefault(c)})").X)
+            .Max() + ImGui.GetFrameHeight() + ImGui.GetTextLineHeight() + style.ItemSpacing.X * 2;
+        var expansions = Enum.GetValues<Expansion>().Select(e => ImGui.CalcTextSize(Expansions.LongName(e)).X).Max() + checkbox;
+        // The section indent, the child's padding and border, and the scrollbar.
+        return MathF.Max(categories, expansions) + 6 + style.WindowPadding.X * 2 + style.ScrollbarSize + 2;
+    }
+
     private void DrawSources(FilterState f)
     {
         if (!sources.IsReady)
