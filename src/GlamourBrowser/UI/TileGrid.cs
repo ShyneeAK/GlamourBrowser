@@ -200,7 +200,9 @@ public sealed class TileGrid
             DrawTile(page[i], new Vector2(layout.TileWidth, layout.TileHeight));
         }
         DrawContextMenu();
-        DrawPager(gridTopLeft, layout);
+        // The page controls sit in the middle of the room left under the tiles (above the memory line).
+        var pagerRoom = avail.Y - (config.ShowMemoryStats ? ImGui.GetTextLineHeightWithSpacing() : 0);
+        DrawPager(gridTopLeft, layout, pagerRoom);
 
         if (ImGui.IsWindowHovered() && ImGui.GetIO().MouseWheel is var wheel && wheel != 0)
         {
@@ -333,7 +335,8 @@ public sealed class TileGrid
     /// First page, page arrows, number and last page, centered right below the full grid (also when the last page has
     /// fewer tiles).
     /// </summary>
-    private void DrawPager(Vector2 gridTopLeft, PageLayoutResult layout)
+    /// <param name="room">Height from the grid's top to the bottom of the room for the page controls.</param>
+    private void DrawPager(Vector2 gridTopLeft, PageLayoutResult layout, float room)
     {
         var style = ImGui.GetStyle();
         var gridWidth = config.Columns * layout.TileWidth + (config.Columns - 1) * style.ItemSpacing.X;
@@ -341,7 +344,8 @@ public sealed class TileGrid
         var pageText = $"Seite {state.PageIndex + 1} / {state.PageCount}";
         var arrow = ImGui.GetFrameHeight();
         var width = arrow * 4 + ImGui.CalcTextSize(pageText).X + style.ItemSpacing.X * 4;
-        ImGui.SetCursorPos(gridTopLeft + new Vector2(MathF.Max(0, (gridWidth - width) / 2), gridHeight + style.ItemSpacing.Y));
+        var below = MathF.Max(style.ItemSpacing.Y, (room - gridHeight - arrow) / 2);
+        ImGui.SetCursorPos(gridTopLeft + new Vector2(MathF.Max(0, (gridWidth - width) / 2), gridHeight + below));
         var first = state.PageIndex == 0;
         var last = state.PageIndex >= state.PageCount - 1;
         using (ImRaii.Disabled(first))
@@ -370,7 +374,10 @@ public sealed class TileGrid
             ImGui.SetTooltip("Letzte Seite");
 
         if (config.ShowMemoryStats)
+        {
+            ImGui.SetCursorPosY(MathF.Max(ImGui.GetCursorPosY(), gridTopLeft.Y + room));
             DrawMemoryStats(gridTopLeft.X, gridWidth);
+        }
     }
 
     /// <summary>The debug memory line, centered below the page controls.</summary>
