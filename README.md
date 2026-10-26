@@ -16,8 +16,6 @@ The plugin speaks your game's language: English, German, French or Japanese (you
 - **Gear sets** detected from the game data, shown as one tile.
 - **Wishlist** for items and sets, with the missing pieces grouped by where to get them.
 - **My sets**: build your own outfits with dyes, like in the glamour dresser, and sort them into folders. Start from scratch, from your current outfit or from a glamour plate, import all glamour plates at once, and transfer a set into the open glamour plate editor.
-- **What's new**: after an update a window lists the changes of every version since the one you used last.
-- **Settings** for the UI scale, the text size, the language and the render cache (how many recently shown pages stay rendered, how many are rendered ahead).
 
 ## Installation
 
