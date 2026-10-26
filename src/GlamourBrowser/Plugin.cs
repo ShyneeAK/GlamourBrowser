@@ -128,14 +128,15 @@ public sealed class Plugin : IDalamudPlugin
         settingsWindow = new SettingsWindow(config, browser, pool, calibration, theme);
         plates = new GlamourPlate.GlamourPlateBridge(variants, ownership, dyes, id => browser.ItemOf(id)?.Name ?? $"Item {id}",
             id => browser.ItemOf(id)?.DyeCount ?? 0);
+        var filterControls = new TileFilterControls(browser, jobs, dyes, theme);
         mainWindow = new MainWindow(
             new LivePane(browser, ownership, live, calibration, jobs, theme, sources, wishlist, customSets, dyes, editor,
                          new SetEditorPane(editor, browser, dyes, theme, plates), plates, tryOn),
-            new TopBar(browser, jobs, config, theme, dyes),
+            new TopBar(browser, config, theme, dyes, filterControls),
             new FilterColumn(browser, ownership, config, sources, theme),
             new TileGrid(browser, cache, pool, ownership, live, config, theme, sources, jobs, wishlist,
                          new WishlistPlanView(browser, ownership, wishlist, sources, live, theme, customSets, tryOn), customSets, editor, plates,
-                         memoryStats, tryOn),
+                         memoryStats, tryOn, filterControls),
             theme,
             config,
             settingsWindow.Toggle);

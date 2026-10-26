@@ -147,7 +147,7 @@ public sealed unsafe class LivePane
     /// </summary>
     private void DrawWornPieces()
     {
-        var size = new Vector2(ImGui.GetFrameHeight());
+        var size = new Vector2(ImGui.GetFrameHeight() * 2);
         var spacing = ImGui.GetStyle().ItemSpacing.X;
         var right = ImGui.GetCursorScreenPos().X + ImGui.GetContentRegionAvail().X;
         var first = true;
@@ -291,8 +291,6 @@ public sealed unsafe class LivePane
         DrawLocations(ownership, item);
 
         ImGui.Separator();
-        DrawWishToggle(state.Selected);
-        ImGui.SameLine();
         if (IconButton.Draw("##tryon", 0, FontAwesomeIcon.Tshirt, "Anprobe", theme))
             Plugin.Framework.RunOnFrameworkThread(() => AgentTryon.TryOn(0, item.Id));
         ImGui.SameLine();

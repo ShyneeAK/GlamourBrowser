@@ -16,27 +16,24 @@ using GlamourBrowser.UI.Widgets;
 
 namespace GlamourBrowser.UI;
 
-/// <summary>Search, job popup, tile mode, grid size, hit count, filter-column toggle and the active filter chips (paging sits below the grid).</summary>
+/// <summary>Search, tile mode, sort, grid size, hit count, filter-column toggle and the active filter chips (jobs and tile dye sit under the slot bar, paging below the grid).</summary>
 public sealed class TopBar
 {
     private readonly BrowserState state;
-    private readonly JobCatalog jobs;
     private readonly Configuration config;
     private readonly Theme.Theme theme;
-    // Every job and class with its group, for choosing whole groups and naming the choice.
-    private readonly IReadOnlyList<(uint Id, JobGroup Group)> jobGroups;
     private readonly DyeCatalog dyes;
+    private readonly TileFilterControls filterControls;
     private string search = "";
     private bool searchActive;
 
-    public TopBar(BrowserState state, JobCatalog jobs, Configuration config, Theme.Theme theme, DyeCatalog dyes)
+    public TopBar(BrowserState state, Configuration config, Theme.Theme theme, DyeCatalog dyes, TileFilterControls filterControls)
     {
         this.dyes = dyes;
         this.state = state;
-        this.jobs = jobs;
         this.config = config;
         this.theme = theme;
-        jobGroups = jobs.All.Select(j => (j.Id, j.Group)).ToList();
+        this.filterControls = filterControls;
     }
 
     public void Draw()
@@ -62,41 +59,8 @@ public sealed class TopBar
             state.Filter = state.Filter with { SearchText = search };
         searchActive = ImGui.IsItemActive();
 
-        // Job and sort do not apply to the wishlist and the custom sets (newest first).
+        // Sort does not apply to the wishlist and the custom sets (newest first).
         var onlySearch = BrowseModes.OnlySearch(state.Filter.Mode);
-        var jobLabel = JobSelection.Label(JobParts(state.Filter.Jobs));
-        NextOnLine(ImGui.CalcTextSize(jobLabel).X + ImGui.GetStyle().FramePadding.X * 2);
-        using (ImRaii.Disabled(onlySearch))
-        {
-            PopupButton.Draw("jobpicker", jobLabel, () =>
-            {
-                var selected = state.Filter.Jobs;
-                var exclusive = state.Filter.JobsExclusive;
-                if (JobPicker.Draw("jobs", jobs, jobGroups, ref selected, ref exclusive, theme))
-                    state.Filter = state.Filter with { Jobs = selected, JobsExclusive = exclusive };
-            });
-        }
-        DisabledHint(onlySearch);
-
-        // The tile dye, one per channel: like a filter (each has a chip), but it colours the dyeable tiles instead of
-        // hiding any.
-        NextOnLine(ImGui.CalcTextSize("Farbe").X + ImGui.GetFrameHeight() * 2 + ImGui.GetStyle().ItemSpacing.X * 2);
-        var dye = state.Filter.Dye;
-        var first = dye.First;
-        var second = dye.Second;
-        using (ImRaii.Disabled(onlySearch))
-        {
-            ImGui.AlignTextToFramePadding();
-            ImGui.TextUnformatted("Farbe");
-            ImGui.SameLine();
-            if (DyePicker.Draw("##tiledye1", ref first, dyes, theme, enabled: true, label: "Farbe 1"))
-                state.Filter = state.Filter with { Dye = dye with { First = first } };
-            DisabledHint(onlySearch);
-            ImGui.SameLine();
-            if (DyePicker.Draw("##tiledye2", ref second, dyes, theme, enabled: true, label: "Farbe 2"))
-                state.Filter = state.Filter with { Dye = dye with { Second = second } };
-        }
-        DisabledHint(onlySearch);
 
         NextOnLine(130 * scale);
         ImGui.SetNextItemWidth(130 * scale);
@@ -139,7 +103,7 @@ public sealed class TopBar
 
     private void DrawChips()
     {
-        var chips = FilterChips.From(state.Filter, SlotName, JobParts, dyes.NameOf);
+        var chips = FilterChips.From(state.Filter, SlotName, filterControls.JobParts, dyes.NameOf);
         if (chips.Count == 0)
             return;
 
@@ -164,10 +128,6 @@ public sealed class TopBar
     }
 
     private static string SlotName(EquipSlot slot) => SlotNames.All.FirstOrDefault(s => s.Slot == slot).Name ?? slot.ToString();
-
-    private string JobName(uint id) => jobs.Find(id)?.Abbreviation ?? id.ToString();
-
-    private IReadOnlyList<JobPart> JobParts(IReadOnlySet<uint> selected) => JobSelection.Parts(selected, jobGroups, JobName);
 
     /// <summary>Why the control before it is grayed out in the wishlist and custom set modes.</summary>
     private void DisabledHint(bool onlySearch)

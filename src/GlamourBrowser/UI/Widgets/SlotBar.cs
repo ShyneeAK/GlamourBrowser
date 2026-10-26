@@ -10,18 +10,23 @@ using GlamourBrowser.Data;
 namespace GlamourBrowser.UI.Widgets;
 
 /// <summary>
-/// Row of slot icons: click selects only that slot (again clears), Ctrl+click adds or removes. The last three icons
-/// switch to the modes "Ausrüstungs-Sets", "Meine Sets" and "Wunschliste".
+/// Row of slot icons: click selects only that slot (again clears), Ctrl+click adds or removes. The last icon switches to
+/// the mode "Ausrüstungs-Sets"; "Meine Sets" and "Wunschliste" sit in a second row (<see cref="DrawModes"/>).
 /// </summary>
 public static class SlotBar
 {
+    /// <summary>The icon size for the row, so the second row can use the same.</summary>
     /// <param name="reserveRight">Width kept free on the right of the row (for controls drawn after the bar).</param>
-    public static bool Draw(string id, ref FilterState filter, Theme.Theme theme, float reserveRight = 0)
+    public static float Edge(float reserveRight = 0)
+    {
+        var icons = SlotNames.All.Length + 1;
+        var spacing = ImGui.GetStyle().ItemSpacing.X;
+        return Math.Clamp((ImGui.GetContentRegionAvail().X - reserveRight - spacing * (icons - 1)) / icons, 21f * UiScale.Global, 38f * UiScale.Global);
+    }
+
+    public static bool Draw(string id, ref FilterState filter, Theme.Theme theme, float edge)
     {
         var slots = SlotNames.All;
-        var icons = slots.Length + 3;
-        var spacing = ImGui.GetStyle().ItemSpacing.X;
-        var edge = Math.Clamp((ImGui.GetContentRegionAvail().X - reserveRight - spacing * (icons - 1)) / icons, 21f * UiScale.Global, 38f * UiScale.Global);
 
         var changed = false;
         for (var i = 0; i < slots.Length; i++)
@@ -41,7 +46,13 @@ public static class SlotBar
             filter = SlotSelection.ToggleMode(filter, BrowseMode.Sets);
             changed = true;
         }
-        ImGui.SameLine();
+        return changed;
+    }
+
+    /// <summary>The modes "Meine Sets" and "Wunschliste", for the row under the slot icons.</summary>
+    public static bool DrawModes(string id, ref FilterState filter, Theme.Theme theme, float edge)
+    {
+        var changed = false;
         if (IconToggle.Draw($"{id}-mysets", SlotIcons.MySets, new Vector2(edge), filter.Mode == BrowseMode.MySets, "Meine Sets", theme, FontAwesomeIcon.Clone))
         {
             filter = SlotSelection.ToggleMode(filter, BrowseMode.MySets);

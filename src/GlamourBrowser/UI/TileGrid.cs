@@ -66,6 +66,7 @@ public sealed class TileGrid
     private readonly GlamourPlateBridge plates;
     private readonly MemoryStats memory;
     private readonly TryOnService tryOn;
+    private readonly TileFilterControls filterControls;
     // What the last import did, shown next to its button for a moment.
     private (string Text, DateTime At)? importStatus;
     private const string ContextPopup = "##tilecontext";
@@ -79,9 +80,10 @@ public sealed class TileGrid
     public TileGrid(BrowserState state, TileCache<IDalamudTextureWrap> cache, RenderPool pool, OwnershipService ownership,
                     LivePreview live, Configuration config, Theme.Theme theme, SourceService sources, JobCatalog jobs,
                     WishlistService wishlist, WishlistPlanView planView, CustomSetService customSets, CustomSetEditor editor, GlamourPlateBridge plates,
-                    MemoryStats memory, TryOnService tryOn)
+                    MemoryStats memory, TryOnService tryOn, TileFilterControls filterControls)
     {
         this.tryOn = tryOn;
+        this.filterControls = filterControls;
         this.memory = memory;
         this.sources = sources;
         this.wishlist = wishlist;
@@ -102,9 +104,14 @@ public sealed class TileGrid
 
     public void Draw()
     {
-        // Slot selection sits above the tiles it filters, the tile display options right-aligned next to it.
+        // Slot selection sits above the tiles it filters, the tile display options right-aligned next to it; the modes
+        // "Meine Sets" and "Wunschliste", the tile dye and the jobs in a second row below.
         var filter = state.Filter;
-        if (SlotBar.Draw("slotbar", ref filter, theme, DisplayOptionsWidth()))
+        var edge = SlotBar.Edge(DisplayOptionsWidth());
+        var changed = SlotBar.Draw("slotbar", ref filter, theme, edge);
+        DrawDisplayOptions();
+        changed |= SlotBar.DrawModes("slotbar", ref filter, theme, edge);
+        if (changed)
         {
             state.Filter = filter;
             // A selection of another slot goes: the camera button would otherwise calibrate that slot. The set editor
@@ -115,7 +122,7 @@ public sealed class TileGrid
                 live.Select(null);
             }
         }
-        DrawDisplayOptions();
+        DrawFilterControls(edge);
         ImGui.Spacing();
 
         // Logged out the render pool pauses too; the wishlist mode says why it is empty.
@@ -380,6 +387,19 @@ public sealed class TileGrid
     private const string DimLabel = "Abdunkeln";
 
     private static float CheckboxWidth(string label) => ImGui.GetFrameHeight() + ImGui.GetStyle().ItemInnerSpacing.X + ImGui.CalcTextSize(label).X;
+
+    /// <summary>Tile dye and jobs right of the mode icons, centred on their height; the jobs wrap when the row is full.</summary>
+    private void DrawFilterControls(float edge)
+    {
+        var spacing = ImGui.GetStyle().ItemSpacing.X;
+        ImGui.SameLine(0, spacing * 3);
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + MathF.Max(0, (edge - ImGui.GetFrameHeight()) / 2));
+        filterControls.DrawDye();
+        ImGui.SameLine(0, spacing * 3);
+        if (ImGui.GetContentRegionAvail().X < filterControls.JobsWidth())
+            ImGui.NewLine();
+        filterControls.DrawJobs();
+    }
 
     private static float DisplayOptionsWidth()
     {
