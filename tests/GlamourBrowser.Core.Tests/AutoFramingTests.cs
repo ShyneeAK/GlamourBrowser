@@ -14,7 +14,7 @@ public class AutoFramingTests
     // Her hand calibrations and the game's default view, to which the proportions were fitted.
     [Theory]
     [InlineData(EquipSlot.Head, -0.655f, -0.575f, 0.714f)]
-    [InlineData(EquipSlot.Hands, 1.055f, 0f, 0.714f)]
+    [InlineData(EquipSlot.Hands, 1.055f, 0.021f, 0.714f)]
     [InlineData(EquipSlot.Feet, 0f, 0.467f, 1.392f)]
     [InlineData(EquipSlot.Body, 0f, 0f, 1.818f)]
     public void For_MatchesTheHandCalibrations(EquipSlot slot, float rotation, float positionY, float distance)
@@ -82,16 +82,28 @@ public class AutoFramingTests
     }
 
     [Fact]
-    public void For_HandsFarApartStayInside()
+    public void For_HandsAreTheRightHandFromTheSideOnEveryBody()
     {
-        // The arms held away from the body (an Au'Ra in his idle pose): both hands with room for the fingers.
-        var wide = Miqote with { HandLeft = new Vector3(0.45f, 0.85f, 0.02f), HandRight = new Vector3(-0.42f, 0.83f, 0.1f) };
-        var camera = AutoFraming.For(EquipSlot.Hands, wide);
-        float OnScreenX(Vector3 hand) => Vector3.Transform(hand, Quaternion.CreateFromAxisAngle(Vector3.UnitY, camera.Rotation)).X + camera.PositionX;
-        var halfWidth = camera.Distance * AutoFraming.Aspect / 2;
+        // Measured in the live view: an Au'Ra in the standard pose, the right hand behind the hip.
+        var aura = new BodyMeasures(Neck: new Vector3(0.045f, 1.284f, 0f), Head: new Vector3(0.039f, 1.368f, 0.043f), Waist: new Vector3(0.033f, 0.949f, 0.043f),
+                                    HandLeft: new Vector3(0.26f, 0.803f, 0.073f), HandRight: new Vector3(-0.15f, 0.797f, -0.077f));
+        foreach (var body in new[] { Miqote, aura })
+        {
+            var camera = AutoFraming.For(EquipSlot.Hands, body);
+            var hand = Vector3.Transform(body.HandRight, Quaternion.CreateFromAxisAngle(Vector3.UnitY, camera.Rotation)) + new Vector3(camera.PositionX, camera.PositionY, 0);
 
-        Assert.True(camera.Distance > AutoFraming.For(EquipSlot.Hands, Miqote).Distance);
-        Assert.InRange(OnScreenX(wide.HandLeft), -halfWidth + 0.1f, halfWidth - 0.1f);
-        Assert.InRange(OnScreenX(wide.HandRight), -halfWidth + 0.1f, halfWidth - 0.1f);
+            Assert.Equal(0f, hand.X, 0.0001f);
+            Assert.Equal(AutoFraming.ViewCentreY, hand.Y, 0.0001f);
+            Assert.Equal(camera, AutoFraming.For(EquipSlot.RingRight, body));
+        }
+    }
+
+    [Fact]
+    public void For_TheZoomShrinksTheViewAroundTheSameMiddle()
+    {
+        var plain = AutoFraming.For(EquipSlot.Head, Miqote);
+        var zoomed = AutoFraming.For(EquipSlot.Head, Miqote, zoom: 2f);
+
+        Assert.Equal(plain with { Distance = plain.Distance / 2 }, zoomed);
     }
 }

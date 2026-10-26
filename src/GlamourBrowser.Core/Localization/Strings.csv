@@ -404,3 +404,5 @@ Zurück zur vorherigen Ansicht,Back to the previous view,Retour à la vue préc�
 Gehört zu {0} Ausrüstungs-Sets: eins auswählen und seine Teile als Kacheln zeigen,Part of {0} gear sets: pick one to show its pieces as tiles,Fait partie de {0} ensembles d’équipement : en choisir un pour afficher ses pièces en vignettes,{0}個の装備セットに含まれます：1つ選んでパーツをタイルで表示
 Rückgängig,Undo,Annuler,元に戻す
 Wiederholen,Redo,Rétablir,やり直す
+Zoom der automatischen Kamera,Automatic camera zoom,Zoom de la caméra automatique,自動カメラのズーム
+"Wie nah die automatische Kamera an jeden Slot heranzoomt (über 100 % näher, darunter weiter weg); eigene Kalibrierungen bleiben, wie sie sind.","How close the automatic camera zooms in on every slot (above 100 % closer, below further away); your own calibrations stay as they are.","À quelle distance la caméra automatique zoome sur chaque emplacement (au-dessus de 100 % plus près, en dessous plus loin) ; vos propres calibrages restent inchangés.",自動カメラが各スロットにどれだけ寄るか（100 %より上で近く、下で遠く）。自分のキャリブレーションはそのままです。

@@ -186,6 +186,17 @@ public sealed class SettingsWindow : Window
         ImGui.TextDisabled(Loc.T("Kamera-Kalibrierung dieses Charakters"));
         ImGui.TextWrapped(Loc.T("Kalibriert wird in der Live-Ansicht: Item eines Slots auswählen, Ansicht einstellen, „Kamera-Position festlegen“ klicken."));
 
+        var zoom = (int)MathF.Round(config.AutoFramingZoom * 100);
+        if (ImGui.SliderInt(Loc.T("Zoom der automatischen Kamera"), ref zoom, 50, 200, "%d %%", ImGuiSliderFlags.AlwaysClamp))
+        {
+            config.AutoFramingZoom = zoom / 100f;
+            config.Save();
+            state.InvalidateTiles();
+        }
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip(Loc.T("Wie nah die automatische Kamera an jeden Slot heranzoomt (über 100 % näher, darunter weiter weg); "
+                                   + "eigene Kalibrierungen bleiben, wie sie sind."));
+
         var contentId = Plugin.PlayerState.ContentId;
         calibration.Ensure(contentId);
         var calibrated = calibration.Calibrations.For(contentId);

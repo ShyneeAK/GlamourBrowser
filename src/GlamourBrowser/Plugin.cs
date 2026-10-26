@@ -273,7 +273,8 @@ public sealed class Plugin : IDalamudPlugin
         var slot = subject?.CameraSlot ?? EquipSlot.Body;
         var wrist = subject is ItemSubject { Item: { Slot: EquipSlot.Wrists } bracelet } ? wristSides.Of(bracelet.Id) : WristSide.Both;
         return calibration.Get(PlayerState.ContentId, slot)
-               ?? framing.For(PlayerState.ContentId, slot, appearance.CustomizeHash, config.UseIdlePose ? appearance.IdlePose : TileKey.StandardPose, wrist);
+               ?? framing.For(PlayerState.ContentId, slot, appearance.CustomizeHash, config.UseIdlePose ? appearance.IdlePose : TileKey.StandardPose, wrist,
+                              config.AutoFramingZoom);
     }
 
     private void OnFrameworkUpdate(IFramework framework)

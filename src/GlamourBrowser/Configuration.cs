@@ -56,6 +56,8 @@ public sealed class Configuration : IPluginConfiguration
     public float RotateSensitivity { get; set; } = 0.5f;
     public float PanSensitivity { get; set; } = 0.5f;
     public float ZoomSensitivity { get; set; } = 3f;
+    /// <summary>Zoom of the automatic camera on the tiles (1: as measured, 2: twice as close); own calibrations stay as they are.</summary>
+    public float AutoFramingZoom { get; set; } = 1f;
 
     /// <summary>Only read once to migrate old data; calibrations now live in per-character files (CalibrationService).</summary>
     public Dictionary<ulong, Dictionary<EquipSlot, CameraPreset>> CameraCalibrations { get; set; } = new();

@@ -24,8 +24,8 @@ public sealed class AutoFramingService
     public event Action? Changed;
 
     /// <summary>The automatic camera for the slot; null until the character was measured in this face, body and pose.</summary>
-    public CameraPreset? For(ulong contentId, EquipSlot slot, ulong customize, byte pose, WristSide wrist = WristSide.Both)
-        => Current(contentId, customize, pose) is { } body ? AutoFraming.For(slot, body, wrist) : null;
+    public CameraPreset? For(ulong contentId, EquipSlot slot, ulong customize, byte pose, WristSide wrist = WristSide.Both, float zoom = 1f)
+        => Current(contentId, customize, pose) is { } body ? AutoFraming.For(slot, body, wrist, zoom) : null;
 
     public bool Needs(ulong contentId, ulong customize, byte pose) => contentId != 0 && Current(contentId, customize, pose) == null;
 
