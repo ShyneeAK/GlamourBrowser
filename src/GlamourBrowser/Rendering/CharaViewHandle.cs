@@ -199,7 +199,13 @@ public sealed unsafe class CharaViewHandle : IDisposable
             if (character == null)
                 return false;
             // A pose without its own timeline (e.g. the default idle) simply shows the standard pose.
-            character->Timeline.BaseOverride = PoseTimelines.For(pose);
+            var timeline = PoseTimelines.For(pose);
+            character->Timeline.BaseOverride = timeline;
+            // Poses 5 and 6 only have a loop of priority 7 (1 to 4 one of 4), which keeps playing once the override is gone
+            // and covers the battle stance of a drawn weapon (seen with /glamourdresser trace): the standard idle ends it.
+            ref var sequencer = ref character->Timeline.TimelineSequencer;
+            if (timeline == 0 && PoseTimelines.IsPose(sequencer.TimelineIds[0]))
+                sequencer.PlayTimeline(PoseTimelines.StandardIdle, null);
             return true;
         }
         catch (Exception e)

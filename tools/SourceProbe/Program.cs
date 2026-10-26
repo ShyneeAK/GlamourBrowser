@@ -1,5 +1,5 @@
 // Offline check of the source index against the game data (not part of the plugin).
-// Usage: SourceProbe <sqpack> [itemId ...] [--find "name part"] [--samples] [--sets] [--blocks]
+// Usage: SourceProbe <sqpack> [itemId ...] [--find "name part"] [--samples] [--sets] [--blocks] [--timeline [id ...]]
 using System.Diagnostics;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Sets;
@@ -36,6 +36,23 @@ if (args.Contains("--blocks"))
     {
         var blocked = string.Join(" ", Enum.GetValues<EquipSlot>().Where(s => SlotMask.Contains(group.Key.Blocks, s)));
         Console.WriteLine($"{group.Key.Slot} blocks {blocked}: {group.Count()} items, e.g. {string.Join(", ", group.Take(3).Select(x => x.Item.Name.ExtractText()))}");
+    }
+    return 0;
+}
+
+var timelineIndex = Array.IndexOf(args, "--timeline");
+if (timelineIndex >= 0)
+{
+    // ActionTimeline keys of ids seen in a trace, or all idle pose timelines without ids.
+    var timelines = data.GetExcelSheet<ActionTimeline>()!;
+    var ids = args.Skip(timelineIndex + 1).TakeWhile(a => uint.TryParse(a, out _)).Select(uint.Parse).ToList();
+    var rows = ids.Count > 0 ? ids.Select(id => timelines.GetRow(id)) : timelines.Where(t => t.Key.ExtractText().StartsWith("emote/pose"));
+    foreach (var row in rows)
+    {
+        var fields = typeof(ActionTimeline).GetProperties()
+            .Where(f => f.Name is not ("Key" or "RowId" or "SubrowId" or "ExcelPage" or "RowOffset"))
+            .Select(f => $"{f.Name}={FieldText(f.GetValue(row))}");
+        Console.WriteLine($"{row.RowId}: {row.Key.ExtractText()} | {string.Join(" ", fields)}");
     }
     return 0;
 }
@@ -99,3 +116,5 @@ foreach (var (category, count) in index.Counts(relevant).OrderBy(kv => kv.Key))
     Console.WriteLine($"  {SourceCategories.DisplayName(category)}: {count}");
 Console.WriteLine(index.HasFailures ? "Failures: " + string.Join(", ", index.Failures) : "No failures");
 return 0;
+
+static string FieldText(object? value) => value?.GetType().GetProperty("RowId")?.GetValue(value)?.ToString() ?? value?.ToString() ?? "";
