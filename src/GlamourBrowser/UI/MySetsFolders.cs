@@ -27,6 +27,7 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
     private const string DragType = "GB_CUSTOMSET";
     private const string FolderPopup = "##foldercontext";
     private const string NamePopup = "##foldername";
+    private const string DeletePopup = "##folderdelete";
 
     // The custom sets being dragged (the payload carries no data).
     private IReadOnlyList<uint> draggedSets = [];
@@ -35,6 +36,8 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
     private uint marksFolder;
     private int headerFrame;
     private CustomFolder? contextFolder;
+    // The folder whose trash glyph was clicked, asked about before it goes.
+    private CustomFolder? deleting;
     // The folder being renamed; null while a new one is named.
     private CustomFolder? renaming;
     private string nameInput = "";
@@ -65,9 +68,6 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
                 ImGui.TextUnformatted(FontAwesomeIcon.FolderOpen.ToIconString());
             ImGui.SameLine();
             ImGui.TextUnformatted(open.Name);
-            ImGui.SameLine();
-            if (IconButton.Draw("##renamefolder", 0, FontAwesomeIcon.Pen, Loc.T("Ordner umbenennen"), theme))
-                StartNaming(open);
             ImGui.SameLine();
         }
         else
@@ -167,6 +167,23 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
             ImGui.EndPopup();
         }
 
+        if (ImGui.BeginPopup(DeletePopup))
+        {
+            if (deleting is { } folder)
+            {
+                ImGui.TextUnformatted(Loc.F("Ordner „{0}“ löschen? Die Sets darin bleiben erhalten.", folder.Name));
+                if (ImGui.Button(Loc.T("Löschen")))
+                {
+                    customSets.Current?.RemoveFolder(folder.Id);
+                    ImGui.CloseCurrentPopup();
+                }
+                ImGui.SameLine();
+                if (ImGui.Button(Loc.T("Abbrechen")))
+                    ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
+
         if (ImGui.BeginPopup(FolderPopup))
         {
             if (contextFolder is { } folder)
@@ -189,16 +206,36 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
         const float rounding = 8f;
         var colors = theme.Colors;
         var pos = ImGui.GetCursorScreenPos();
-        if (ImGui.InvisibleButton($"##folder{folder.Folder.Id}", size))
-            state.ShowFolder(folder.Folder.Id);
+        var clicked = ImGui.InvisibleButton($"##folder{folder.Folder.Id}", size);
         var hovered = ImGui.IsItemHovered();
+        // "Umbenennen" and "Löschen" in the top-left corner, where a set tile has its star and its own buttons; decided
+        // where the button went down, like there.
+        var glyphBox = TileGrid.WishStarSize();
+        var renameRect = TileGrid.GlyphRect(pos + new Vector2(6, 5), glyphBox);
+        var deleteRect = TileGrid.GlyphRect(pos + new Vector2(6, 5 + glyphBox.Y + 8), glyphBox);
+        var overRename = hovered && ImGui.IsMouseHoveringRect(renameRect.Min, renameRect.Max);
+        var overDelete = hovered && ImGui.IsMouseHoveringRect(deleteRect.Min, deleteRect.Max);
+        var pressed = ImGui.GetIO().MouseClickedPos[0];
+        if (clicked && TileGrid.Inside(pressed, renameRect))
+            StartNaming(folder.Folder);
+        else if (clicked && TileGrid.Inside(pressed, deleteRect))
+        {
+            deleting = folder.Folder;
+            ImGui.OpenPopup(DeletePopup);
+        }
+        else if (clicked)
+            state.ShowFolder(folder.Folder.Id);
         if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
         {
             contextFolder = folder.Folder;
             ImGui.OpenPopup(FolderPopup);
         }
         var dropping = DropTarget(folder.Folder.Id);
-        if (hovered && !ImGui.IsMouseDragging(ImGuiMouseButton.Left))
+        if (overRename)
+            ImGui.SetTooltip(Loc.T("Ordner umbenennen"));
+        else if (overDelete)
+            ImGui.SetTooltip(Loc.T("Ordner löschen (die Sets bleiben)"));
+        else if (hovered && !ImGui.IsMouseDragging(ImGuiMouseButton.Left))
             ImGui.SetTooltip(Loc.T("Klick: Ordner öffnen\nRechtsklick: umbenennen, löschen\nSet hierher ziehen: hineinlegen"));
 
         var drawList = ImGui.GetWindowDrawList();
@@ -256,6 +293,12 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
 
         // Always the accent frame: a folder stands out from the set tiles; thicker while a set is dragged over it.
         drawList.AddRect(pos, pos + size, colors.Accent, rounding, ImDrawFlags.None, dropping ? 3f : 2f);
+        if (hovered)
+        {
+            var muted = (colors.TextMuted & 0x00FFFFFF) | 0xA0000000;
+            TileGrid.DrawTileGlyph(drawList, FontAwesomeIcon.Pen, renameRect, overRename ? colors.Text : muted);
+            TileGrid.DrawTileGlyph(drawList, FontAwesomeIcon.Trash, deleteRect, overDelete ? colors.Text : muted);
+        }
     }
 
     /// <summary>

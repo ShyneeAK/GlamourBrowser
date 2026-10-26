@@ -730,13 +730,13 @@ public sealed class TileGrid
         };
     }
 
-    private static (Vector2 Min, Vector2 Max) GlyphRect(Vector2 at, Vector2 size) => (at - new Vector2(3), at + size + new Vector2(3));
+    internal static (Vector2 Min, Vector2 Max) GlyphRect(Vector2 at, Vector2 size) => (at - new Vector2(3), at + size + new Vector2(3));
 
-    private static bool Inside(Vector2 point, (Vector2 Min, Vector2 Max) rect)
+    internal static bool Inside(Vector2 point, (Vector2 Min, Vector2 Max) rect)
         => point.X >= rect.Min.X && point.Y >= rect.Min.Y && point.X <= rect.Max.X && point.Y <= rect.Max.Y;
 
     /// <summary>A glyph button on a tile (edit, delete), centred in its rect, with a dark shadow like the star.</summary>
-    private static void DrawTileGlyph(ImDrawListPtr drawList, FontAwesomeIcon icon, (Vector2 Min, Vector2 Max) rect, uint color)
+    internal static void DrawTileGlyph(ImDrawListPtr drawList, FontAwesomeIcon icon, (Vector2 Min, Vector2 Max) rect, uint color)
     {
         using (UiScale.PushIcons())
         {
@@ -783,7 +783,7 @@ public sealed class TileGrid
         }
     }
 
-    private static Vector2 WishStarSize()
+    internal static Vector2 WishStarSize()
     {
         using (UiScale.PushIcons())
             return ImGui.CalcTextSize(FontAwesomeIcon.Star.ToIconString());

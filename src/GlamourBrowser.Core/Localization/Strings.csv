@@ -393,3 +393,4 @@ Zurücksetzen,Reset,Réinitialiser,リセット
 Markierung aufheben,Clear selection,Annuler la sélection,選択を解除
 Strg+Klick oder Umschalt+Klick: mehrere Sets markieren,Ctrl+click or Shift+click: mark several sets,Ctrl+clic ou Maj+clic : sélectionner plusieurs ensembles,Ctrl+クリックまたはShift+クリック：複数のセットを選択
 {0} Sets in Ordner verschieben,Move {0} sets to folder,Déplacer {0} ensembles vers un dossier,{0}セットをフォルダーへ移動
+"Ordner „{0}“ löschen? Die Sets darin bleiben erhalten.","Delete the folder ""{0}""? Its sets stay.","Supprimer le dossier « {0} » ? Ses ensembles restent.",フォルダー「{0}」を削除しますか？中のセットは残ります。
