@@ -17,7 +17,7 @@ using GlamourBrowser.UI.Widgets;
 
 namespace GlamourBrowser.UI;
 
-/// <summary>Search, tile mode, sort, grid size, hit count, filter-column toggle and the active filter chips (jobs and tile dye sit under the slot bar, paging below the grid).</summary>
+/// <summary>Search, tile mode, sort, grid size, hit count and the active filter chips (jobs and tile dye sit under the slot bar, paging below the grid).</summary>
 public sealed class TopBar
 {
     private readonly BrowserState state;
@@ -42,19 +42,9 @@ public sealed class TopBar
         var scale = UiScale.Global;
         var spacing = ImGui.GetStyle().ItemSpacing.X;
 
-        // The filter-column toggle comes first so it can never be pushed out of a narrow window.
-        if (IconButton.Draw("##filtercolumn", 0, FontAwesomeIcon.Filter, "", theme))
-        {
-            config.FilterColumnVisible = !config.FilterColumnVisible;
-            config.Save();
-        }
-        if (ImGui.IsItemHovered())
-            ImGui.SetTooltip(config.FilterColumnVisible ? Loc.T("Filterspalte ausblenden") : Loc.T("Filterspalte einblenden"));
-
         // Follow external changes (e.g. a removed search chip) unless the user is typing.
         if (!searchActive)
             search = state.Filter.SearchText;
-        NextOnLine(180 * scale);
         ImGui.SetNextItemWidth(180 * scale);
         if (ImGui.InputTextWithHint("##search", Loc.T("Suchen …"), ref search, 100))
             state.Filter = state.Filter with { SearchText = search };
@@ -63,26 +53,26 @@ public sealed class TopBar
         // Sort does not apply to the wishlist and the custom sets (newest first).
         var onlySearch = BrowseModes.OnlySearch(state.Filter.Mode);
 
-        NextOnLine(130 * scale);
-        ImGui.SetNextItemWidth(130 * scale);
         var mode = (int)config.TileMode;
-        if (ImGui.Combo("##mode", ref mode, [Loc.T("Aktuelles Outfit"), Loc.T("Unterwäsche")], 2))
+        if (LabeledCombo("##mode", Loc.T("Kachel-Modus"), 130 * scale, ref mode, [Loc.T("Aktuelles Outfit"), Loc.T("Unterwäsche")]))
             state.SetTileMode((TileMode)mode);
 
-        NextOnLine(130 * scale);
-        ImGui.SetNextItemWidth(130 * scale);
-        var sort = (int)config.Sort;
+        var sort = Array.IndexOf(SortOrders, config.Sort);
         using (ImRaii.Disabled(onlySearch))
         {
-            if (ImGui.Combo("##sort", ref sort, [Loc.T("Nach Level"), Loc.T("Neueste zuerst")], 2))
-                state.SetSort((SortOrder)sort);
+            if (LabeledCombo("##sort", Loc.T("Sortierung"), 150 * scale, ref sort, SortOrders.Select(SortName).ToArray()) && sort >= 0)
+                state.SetSort(SortOrders[sort]);
         }
         DisabledHint(onlySearch);
 
         // A picker instead of drag fields: its grid shows the size and takes a new one with one click.
         var columns = config.Columns;
         var rows = config.Rows;
-        NextOnLine(ImGui.CalcTextSize("10 × 6").X + ImGui.GetStyle().FramePadding.X * 2);
+        var gridLabel = Loc.T("Kacheln pro Seite");
+        NextOnLine(ImGui.CalcTextSize(gridLabel).X + spacing + ImGui.CalcTextSize("10 × 6").X + ImGui.GetStyle().FramePadding.X * 2);
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextUnformatted(gridLabel);
+        ImGui.SameLine();
         if (GridPicker.Draw("gridsize", ref columns, ref rows, theme))
             state.SetGrid(columns, rows);
 
@@ -92,6 +82,31 @@ public sealed class TopBar
         ImGui.TextDisabled(hitsText);
 
         DrawChips();
+    }
+
+    // The order in the sort combo (the enum keeps the order the values were added in).
+    private static readonly SortOrder[] SortOrders =
+        [SortOrder.Level, SortOrder.LevelAscending, SortOrder.Newest, SortOrder.Oldest, SortOrder.NameAscending, SortOrder.NameDescending];
+
+    private static string SortName(SortOrder sort) => Loc.T(sort switch
+    {
+        SortOrder.LevelAscending => "Level aufsteigend",
+        SortOrder.Newest => "Neueste zuerst",
+        SortOrder.Oldest => "Älteste zuerst",
+        SortOrder.NameAscending => "Name A–Z",
+        SortOrder.NameDescending => "Name Z–A",
+        _ => "Level absteigend",
+    });
+
+    /// <summary>A combo with its label in front, kept on one line (both wrap together).</summary>
+    private static bool LabeledCombo(string id, string label, float width, ref int index, string[] items)
+    {
+        NextOnLine(ImGui.CalcTextSize(label).X + ImGui.GetStyle().ItemSpacing.X + width);
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextUnformatted(label);
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(width);
+        return ImGui.Combo(id, ref index, items, items.Length);
     }
 
     /// <summary>Continues on the current line when <paramref name="width"/> still fits, otherwise starts a new one.</summary>

@@ -46,6 +46,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly WindowSystem windowSystem = new("ShyneesGlamourDresser");
     private readonly MainWindow mainWindow;
     private readonly SettingsWindow settingsWindow;
+    private readonly ChangelogWindow changelogWindow;
     private readonly OwnershipService ownership;
     private readonly WishlistService wishlist;
     private readonly CustomSetService customSets;
@@ -71,7 +72,8 @@ public sealed class Plugin : IDalamudPlugin
 
     public Plugin()
     {
-        config = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+        var saved = PluginInterface.GetPluginConfig() as Configuration;
+        config = saved ?? new Configuration();
         if (config.Version < 3)
         {
             // Saved before the page cache default went up: an old default would stay otherwise (a chosen value stays).
@@ -135,13 +137,14 @@ public sealed class Plugin : IDalamudPlugin
         };
         memoryStats = new MemoryStats(cache);
         // Before the main window: its title bar button opens it.
-        settingsWindow = new SettingsWindow(config, browser, pool, calibration, theme);
+        changelogWindow = new ChangelogWindow(config, theme, typeof(Plugin).Assembly.GetName().Version ?? new Version(0, 0));
+        settingsWindow = new SettingsWindow(config, browser, pool, calibration, theme, changelogWindow.ShowAll);
         plates = new GlamourPlate.GlamourPlateBridge(variants, ownership, dyes, id => browser.ItemOf(id)?.Name ?? Loc.F("Item {0}", id),
             id => browser.ItemOf(id)?.DyeCount ?? 0);
         var filterControls = new TileFilterControls(browser, jobs, dyes, theme);
         mainWindow = new MainWindow(
             new LivePane(browser, ownership, live, calibration, jobs, theme, sources, wishlist, customSets, dyes, editor,
-                         new SetEditorPane(editor, browser, dyes, theme, plates), plates, tryOn),
+                         new SetEditorPane(editor, browser, dyes, theme, plates), plates, tryOn, config),
             new TopBar(browser, config, theme, dyes, filterControls),
             new FilterColumn(browser, ownership, config, sources, theme),
             new TileGrid(browser, cache, pool, ownership, live, config, theme, sources, jobs, wishlist,
@@ -152,6 +155,8 @@ public sealed class Plugin : IDalamudPlugin
             settingsWindow.Toggle);
         windowSystem.AddWindow(mainWindow);
         windowSystem.AddWindow(settingsWindow);
+        windowSystem.AddWindow(changelogWindow);
+        changelogWindow.ShowAfterUpdate(freshInstall: saved == null);
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {

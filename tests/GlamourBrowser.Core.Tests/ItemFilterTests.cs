@@ -1,4 +1,5 @@
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Sources;
 
 namespace GlamourBrowser.Core.Tests;
 
@@ -125,6 +126,21 @@ public class ItemFilterTests
     {
         var items = new[] { Item(1, "beta", EquipSlot.Body, 50), Item(2, "Alpha", EquipSlot.Body, 50), Item(3, "Zeta", EquipSlot.Body, 90) };
         Assert.Equal([3u, 2u, 1u], Ids(Apply(items, new FilterState())));
+    }
+
+    [Fact]
+    public void Sort_LevelAscThenName()
+    {
+        var items = new[] { Item(1, "beta", EquipSlot.Body, 50), Item(2, "Alpha", EquipSlot.Body, 50), Item(3, "Zeta", EquipSlot.Body, 10) };
+        Assert.Equal([3u, 2u, 1u], Ids(Apply(items, new FilterState { Sort = SortOrder.LevelAscending })));
+    }
+
+    [Fact]
+    public void Sort_NameAlphabetically_UmlautsWithTheirLetter()
+    {
+        var items = new[] { Item(1, "Zeta", EquipSlot.Body), Item(2, "Äther", EquipSlot.Body), Item(3, "beta", EquipSlot.Body) };
+        Assert.Equal([2u, 3u, 1u], Ids(Apply(items, new FilterState { Sort = SortOrder.NameAscending })));
+        Assert.Equal([1u, 3u, 2u], Ids(Apply(items, new FilterState { Sort = SortOrder.NameDescending })));
     }
 
     [Fact]

@@ -45,6 +45,7 @@ public sealed unsafe class LivePane
     private readonly SetEditorPane editorPane;
     private readonly GlamourPlateBridge plates;
     private readonly TryOnService tryOn;
+    private readonly Configuration config;
     // When the try-on was last saved as a set, for a short confirmation next to the button.
     private DateTime? savedAt;
     private readonly HashSet<(uint Item, SourceCategory Category)> expanded = new();
@@ -54,8 +55,9 @@ public sealed unsafe class LivePane
 
     public LivePane(BrowserState state, OwnershipService ownership, LivePreview live, CalibrationService calibration, JobCatalog jobs, Theme.Theme theme,
                     SourceService sources, WishlistService wishlist, CustomSetService customSets, DyeCatalog dyes, CustomSetEditor editor,
-                    SetEditorPane editorPane, GlamourPlateBridge plates, TryOnService tryOn)
+                    SetEditorPane editorPane, GlamourPlateBridge plates, TryOnService tryOn, Configuration config)
     {
+        this.config = config;
         this.tryOn = tryOn;
         this.plates = plates;
         this.editor = editor;
@@ -240,7 +242,37 @@ public sealed unsafe class LivePane
                     live.WeaponVisible ? Loc.T("Waffe ausblenden") : Loc.T("Waffe anzeigen"), theme))
                 live.WeaponVisible = !live.WeaponVisible;
         }
+
+        // Bottom-right: how fast dragging and the wheel move the view, at hand where it is used.
+        ImGui.SetCursorScreenPos(pos + size - new Vector2(ImGui.GetFrameHeight() + 8, ImGui.GetFrameHeight() + 8));
+        if (IconButton.Draw("##livesettings", 0, FontAwesomeIcon.Cog, Loc.T("Empfindlichkeit der Live-Ansicht"), theme))
+            ImGui.OpenPopup("##livesensitivity");
+        DrawSensitivityPopup();
         ImGui.SetCursorScreenPos(origin + new Vector2(0, area.Y + ImGui.GetStyle().ItemSpacing.Y));
+    }
+
+    private void DrawSensitivityPopup()
+    {
+        if (!ImGui.BeginPopup("##livesensitivity"))
+            return;
+        ImGui.TextDisabled(Loc.T("Empfindlichkeit der Live-Ansicht"));
+        var rotate = config.RotateSensitivity;
+        var pan = config.PanSensitivity;
+        var zoom = config.ZoomSensitivity;
+        ImGui.SetNextItemWidth(180 * UiScale.Global);
+        var changed = ImGui.SliderFloat(Loc.T("Drehen"), ref rotate, 0.01f, 20f, "%.2f", ImGuiSliderFlags.Logarithmic);
+        ImGui.SetNextItemWidth(180 * UiScale.Global);
+        changed |= ImGui.SliderFloat(Loc.T("Verschieben"), ref pan, 0.01f, 20f, "%.2f", ImGuiSliderFlags.Logarithmic);
+        ImGui.SetNextItemWidth(180 * UiScale.Global);
+        changed |= ImGui.SliderFloat(Loc.T("Zoom"), ref zoom, 0.1f, 20f, "%.2f", ImGuiSliderFlags.Logarithmic);
+        if (changed)
+        {
+            config.RotateSensitivity = rotate;
+            config.PanSensitivity = pan;
+            config.ZoomSensitivity = zoom;
+            config.Save();
+        }
+        ImGui.EndPopup();
     }
 
     /// <summary>

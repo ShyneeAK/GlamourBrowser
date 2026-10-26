@@ -411,10 +411,10 @@ public sealed class TileGrid
     private static float DisplayOptionsWidth()
     {
         var spacing = ImGui.GetStyle().ItemSpacing.X;
-        return CheckboxWidth(WeaponsLabel) + ImGui.GetFrameHeight() + CheckboxWidth(DimLabel) + spacing * 4;
+        return CheckboxWidth(WeaponsLabel) + ImGui.GetFrameHeight() + CheckboxWidth(DimLabel) + ImGui.GetFrameHeight() + spacing * 5;
     }
 
-    /// <summary>Checkboxes right of the slot bar: drawn weapons (slower, with a warning) and dimming of missing items.</summary>
+    /// <summary>Right of the slot bar: drawn weapons (slower, with a warning), dimming of missing items and the filter-column toggle.</summary>
     private void DrawDisplayOptions()
     {
         var spacing = ImGui.GetStyle().ItemSpacing.X;
@@ -427,12 +427,22 @@ public sealed class TileGrid
         var drawn = config.TileWeaponsDrawn;
         if (ImGui.Checkbox(WeaponsLabel, ref drawn))
             state.SetTileWeaponsDrawn(drawn);
+        // The warning glyph is taller than the text: drawn by hand, centred on the checkbox.
         ImGui.SameLine(0, 2);
-        ImGui.SetCursorPosY(rowY + ImGui.GetStyle().FramePadding.Y);
+        var iconPos = new Vector2(ImGui.GetCursorScreenPos().X, ImGui.GetWindowPos().Y - ImGui.GetScrollY() + rowY);
+        string glyph;
+        Vector2 glyphSize;
         using (UiScale.PushIcons())
-            ImGui.TextColored(new Vector4(1f, 0.8f, 0.3f, 1f), FontAwesomeIcon.ExclamationTriangle.ToIconString());
+        {
+            glyph = FontAwesomeIcon.ExclamationTriangle.ToIconString();
+            glyphSize = ImGui.CalcTextSize(glyph);
+        }
+        ImGui.SetCursorScreenPos(iconPos);
+        ImGui.Dummy(new Vector2(glyphSize.X, ImGui.GetFrameHeight()));
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(Loc.T("Waffen-Kacheln mit gezogener Waffe: jede Kachel spielt das Ziehen ab, das Rendern dauert deutlich länger."));
+        using (UiScale.PushIcons())
+            ImGui.GetWindowDrawList().AddText(iconPos + new Vector2(0, (ImGui.GetFrameHeight() - glyphSize.Y) / 2), ImGui.GetColorU32(new Vector4(1f, 0.8f, 0.3f, 1f)), glyph);
 
         ImGui.SameLine();
         ImGui.SetCursorPosY(rowY);
@@ -442,6 +452,17 @@ public sealed class TileGrid
             config.DimMissingTiles = dim;
             config.Save();
         }
+
+        // The filter column belongs to the display options; shown or hidden from here.
+        ImGui.SameLine();
+        ImGui.SetCursorPosY(rowY);
+        if (IconButton.Draw("##filtercolumn", 0, FontAwesomeIcon.Filter, "", theme))
+        {
+            config.FilterColumnVisible = !config.FilterColumnVisible;
+            config.Save();
+        }
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip(config.FilterColumnVisible ? Loc.T("Filterspalte ausblenden") : Loc.T("Filterspalte einblenden"));
     }
 
     private void DrawTile(TileSubject subject, Vector2 size)

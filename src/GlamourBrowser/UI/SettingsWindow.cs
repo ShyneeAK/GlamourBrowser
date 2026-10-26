@@ -18,6 +18,7 @@ public sealed class SettingsWindow : Window
     private readonly RenderPool pool;
     private readonly CalibrationService calibration;
     private readonly Theme.Theme theme;
+    private readonly Action showChangelog;
     private IDisposable? themeScope;
     private IDisposable? fontScope;
     private int? scaleDraft;
@@ -30,7 +31,8 @@ public sealed class SettingsWindow : Window
 
     private static readonly string[] AccentNames = [Loc.T("Blau"), Loc.T("Violett"), Loc.T("Türkis"), Loc.T("Rosé"), Loc.T("Bernstein")];
 
-    public SettingsWindow(Configuration config, BrowserState state, RenderPool pool, CalibrationService calibration, Theme.Theme theme)
+    public SettingsWindow(Configuration config, BrowserState state, RenderPool pool, CalibrationService calibration, Theme.Theme theme,
+                          Action showChangelog)
         : base(Loc.T("Shynees Glamour Dresser – Einstellungen") + "##ShyneesGlamourDresserSettings")
     {
         this.config = config;
@@ -38,6 +40,7 @@ public sealed class SettingsWindow : Window
         this.pool = pool;
         this.calibration = calibration;
         this.theme = theme;
+        this.showChangelog = showChangelog;
         SizeConstraints = new WindowSizeConstraints { MinimumSize = new Vector2(420, 380) };
     }
 
@@ -90,6 +93,8 @@ public sealed class SettingsWindow : Window
 
 
         DrawLanguage();
+        if (ImGui.Button(Loc.T("Neuigkeiten anzeigen")))
+            showChangelog();
 
         // The value being dragged is kept across frames; fonts are rebuilt only once the slider is released.
         var percent = scaleDraft ?? (int)MathF.Round(config.UiScale * 100);
@@ -116,22 +121,6 @@ public sealed class SettingsWindow : Window
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(Loc.T("Wie viele Seiten nach der aktuellen schon im Voraus gerendert werden, die nächste zuerst.\n"
                                    + "Weiterblättern zeigt die Bilder dann sofort. Mehr Seiten brauchen mehr Grafikspeicher und Renderzeit."));
-
-        ImGui.Separator();
-        ImGui.TextDisabled(Loc.T("Live-Ansicht"));
-        var rotate = config.RotateSensitivity;
-        var pan = config.PanSensitivity;
-        var zoom = config.ZoomSensitivity;
-        var changed = ImGui.SliderFloat(Loc.T("Drehen"), ref rotate, 0.01f, 20f, "%.2f", ImGuiSliderFlags.Logarithmic);
-        changed |= ImGui.SliderFloat(Loc.T("Verschieben"), ref pan, 0.01f, 20f, "%.2f", ImGuiSliderFlags.Logarithmic);
-        changed |= ImGui.SliderFloat(Loc.T("Zoom"), ref zoom, 0.1f, 20f, "%.2f", ImGuiSliderFlags.Logarithmic);
-        if (changed)
-        {
-            config.RotateSensitivity = rotate;
-            config.PanSensitivity = pan;
-            config.ZoomSensitivity = zoom;
-            config.Save();
-        }
 
         ImGui.Separator();
         DrawCameraPresets();

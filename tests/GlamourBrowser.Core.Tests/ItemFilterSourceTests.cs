@@ -49,6 +49,14 @@ public class ItemFilterSourceTests
     }
 
     [Fact]
+    public void SortOldest_PatchAscThenIdAsc_UnknownLast()
+    {
+        var patches = new Dictionary<uint, float> { [1] = 6.4f, [2] = 7.0f, [3] = 7.0f, [4] = 0f };
+        var filter = new FilterState { Sort = SortOrder.Oldest };
+        Assert.Equal([1u, 2u, 3u, 4u], Apply([Item(4), Item(3), Item(2), Item(1)], filter, null, id => patches[id]));
+    }
+
+    [Fact]
     public void SortNewest_WithoutPatchData_FallsBackToLevel()
     {
         var filter = new FilterState { Sort = SortOrder.Newest };

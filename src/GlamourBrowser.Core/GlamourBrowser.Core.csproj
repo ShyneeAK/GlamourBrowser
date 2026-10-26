@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Localization\Strings.csv" LogicalName="GlamourBrowser.Core.Localization.Strings.csv" />
+    <EmbeddedResource Include="Changelog\*.md" LogicalName="GlamourBrowser.Core.Changelog.%(Filename).md" />
   </ItemGroup>
 
 </Project>

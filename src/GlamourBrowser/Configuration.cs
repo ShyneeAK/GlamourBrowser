@@ -23,6 +23,8 @@ public sealed class Configuration : IPluginConfiguration
     public TileMode TileMode { get; set; } = TileMode.CurrentOutfit;
     /// <summary>Tiles rendered at the same time, 1–3; a debug setting.</summary>
     public int ParallelViews { get; set; } = 3;
+    /// <summary>The plugin version whose news the player has seen; the changelog shows what came after it.</summary>
+    public string LastSeenVersion { get; set; } = "";
     /// <summary>The plugin's language: "de", "en", "fr" or "ja"; empty follows the game client.</summary>
     public string Language { get; set; } = "";
     /// <summary>How many recently shown pages stay rendered besides the current one and the ones ahead, 0–100.</summary>

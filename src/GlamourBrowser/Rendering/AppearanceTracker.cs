@@ -50,7 +50,11 @@ public sealed unsafe class AppearanceTracker : IDisposable
         if (character == null)
             return;
 
+        // While the game loads the inventory (first login, zone change) the equipped items are missing although the
+        // character visibly wears gear: wait for them, else the try-on's basis and every tile show the underwear.
         var outfit = OutfitSnapshot.FromEquipped();
+        if (outfit == null || outfit.Entries.Count == 0 && WearsGear(character))
+            return;
         var customize = &character->DrawData.CustomizeData;
         var hash = Fnv1a(new ReadOnlySpan<byte>(customize, sizeof(CustomizeData)), outfit);
         var pose = PlayerState.Instance()->CurrentPose(EmoteController.PoseType.Idle);
@@ -58,9 +62,13 @@ public sealed unsafe class AppearanceTracker : IDisposable
             return;
 
         var lookChanged = hash != Hash;
+        var customizeHash = Fnv1a(new ReadOnlySpan<byte>(customize, sizeof(CustomizeData)), OutfitSnapshot.Empty);
+        // Evidence for looks that go wrong at login: what was taken, and when.
+        if (lookChanged)
+            Plugin.Log.Information($"[look] outfit {outfit.Entries.Count} pieces, face/body {(customizeHash != CustomizeHash ? "changed" : "same")}");
         IdlePose = pose;
         Hash = hash;
-        CustomizeHash = Fnv1a(new ReadOnlySpan<byte>(customize, sizeof(CustomizeData)), OutfitSnapshot.Empty);
+        CustomizeHash = customizeHash;
         Outfit = outfit;
         Race = customize->Race;
         Sex = customize->Sex;
@@ -69,6 +77,16 @@ public sealed unsafe class AppearanceTracker : IDisposable
             Changed?.Invoke();
         else
             PoseChanged?.Invoke();
+    }
+
+    private static bool WearsGear(Character* character)
+    {
+        foreach (var model in character->DrawData.EquipmentModelIds)
+        {
+            if (model.Value != 0)
+                return true;
+        }
+        return false;
     }
 
     private static ulong Fnv1a(ReadOnlySpan<byte> customize, OutfitSnapshot outfit)

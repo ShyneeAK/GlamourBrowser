@@ -105,6 +105,22 @@ public class SetFilterTests
     }
 
     [Fact]
+    public void Oldest_SortsByNewestPieceAscending()
+    {
+        float Patch(uint id) => id switch { 11 => 6.0f, 12 => 7.0f, _ => 5.0f };
+        Assert.Equal([2u, 1u], Ids(Apply(new FilterState { Sort = SortOrder.Oldest }, patch: Patch).Results));
+    }
+
+    [Fact]
+    public void OtherSorts_LevelAscendingAndByName()
+    {
+        var c = Set(3, "Alpha-Serie", 90, Item(31, "Alpha-Hut", Head), Item(32, "Alpha-Robe", Body));
+        Assert.Equal([1u, 3u, 2u], Ids(Apply(new FilterState { Sort = SortOrder.LevelAscending }, sets: [A, B, c]).Results));
+        Assert.Equal([3u, 1u, 2u], Ids(Apply(new FilterState { Sort = SortOrder.NameAscending }, sets: [A, B, c]).Results));
+        Assert.Equal([2u, 1u, 3u], Ids(Apply(new FilterState { Sort = SortOrder.NameDescending }, sets: [A, B, c]).Results));
+    }
+
+    [Fact]
     public void DyeAndSlots_AreIgnored()
         => Assert.Equal(2, Apply(new FilterState { DyeableOnly = true, Slots = new HashSet<EquipSlot> { Feet } }).Results.Count);
 

@@ -51,22 +51,7 @@ public static class ItemFilter
     }
 
     private static IReadOnlyList<GlamourItem> Sort(IEnumerable<GlamourItem> items, SortOrder sort, Func<uint, float>? patchOf)
-    {
-        if (sort == SortOrder.Newest && patchOf != null)
-        {
-            // Unknown patch (0) sorts last.
-            return items
-                .OrderByDescending(i => patchOf(i.Id) > 0)
-                .ThenByDescending(i => patchOf(i.Id))
-                .ThenByDescending(i => i.Id)
-                .ToList();
-        }
-
-        return items
-            .OrderByDescending(i => i.LevelEquip)
-            .ThenBy(i => i.Name, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-    }
+        => Sorting.Apply(items, sort, i => i.LevelEquip, i => i.Name, patchOf == null ? null : i => patchOf(i.Id), i => i.Id);
 
     /// <summary>At least one page; a page size below 1 counts as 1 (never divides by zero).</summary>
     public static int PageCount(int itemCount, int pageSize)

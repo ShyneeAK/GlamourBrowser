@@ -14,12 +14,13 @@ public sealed record OutfitSnapshot(IReadOnlyList<OutfitEntry> Entries)
 
     public OutfitEntry? Find(EquipSlot slot) => Entries.FirstOrDefault(e => e.Slot == slot);
 
-    public static unsafe OutfitSnapshot FromEquipped()
+    /// <returns>Null while the game has not loaded the equipped items (yet).</returns>
+    public static unsafe OutfitSnapshot? FromEquipped()
     {
         var manager = InventoryManager.Instance();
         var container = manager != null ? manager->GetInventoryContainer(InventoryType.EquippedItems) : null;
         if (container == null || !container->IsLoaded)
-            return Empty;
+            return null;
 
         var entries = new List<OutfitEntry>();
         foreach (var slot in System.Enum.GetValues<EquipSlot>())

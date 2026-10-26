@@ -56,22 +56,5 @@ public static class SetFilter
     }
 
     private static IReadOnlyList<SetSubject> Sort(IEnumerable<SetSubject> sets, SortOrder sort, Func<uint, float>? patchOf)
-    {
-        if (sort == SortOrder.Newest && patchOf != null)
-        {
-            // Unknown patch (0) sorts last.
-            return sets
-                .Select(s => (Set: s, Patch: PatchOf(s, patchOf)))
-                .OrderByDescending(x => x.Patch > 0)
-                .ThenByDescending(x => x.Patch)
-                .ThenBy(x => x.Set.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(x => x.Set)
-                .ToList();
-        }
-
-        return sets
-            .OrderByDescending(s => s.Set.Level)
-            .ThenBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-    }
+        => Sorting.Apply(sets, sort, s => s.Set.Level, s => s.Name, patchOf == null ? null : s => PatchOf(s, patchOf));
 }

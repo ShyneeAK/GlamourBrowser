@@ -51,6 +51,7 @@ Eigene Sets konnten nicht geladen werden,Your sets could not be loaded,Impossibl
 Eigenes Set,Custom set,Ensemble personnalisé,マイセット
 Einige Quellen konnten nicht geladen werden,Some sources could not be loaded,Certaines sources n'ont pas pu être chargées,一部の入手方法を読み込めませんでした
 Einstellungen,Settings,Paramètres,設定
+Empfindlichkeit der Live-Ansicht,Live view sensitivity,Sensibilité de la vue en direct,ライブビューの感度
 Endwalker,Endwalker,Endwalker,暁月のフィナーレ
 Enter übernimmt,Enter applies,Entrée pour valider,Enterで確定
 Entfernen,Remove,Retirer,外す
@@ -139,6 +140,7 @@ RAM: ゲームプロセスのメモリ使用量。
 Kachel-Cache: {0} Kacheln ≈ {1},Tile cache: {0} tiles ≈ {1},Cache des tuiles : {0} tuiles ≈ {1},タイルキャッシュ: {0}枚 ≈ {1}
 Kachel-Modus,Tile mode,Mode des tuiles,タイル表示
 Kacheln,Tiles,Tuiles,タイル
+Kacheln pro Seite,Tiles per page,Vignettes par page,1ページのタイル数
 Kacheln pro Seite (Spalten × Zeilen),Tiles per page (columns × rows),Tuiles par page (colonnes × lignes),1ページのタイル数(列 × 行)
 "Kalibriert wird in der Live-Ansicht: Item eines Slots auswählen, Ansicht einstellen, „Kamera-Position festlegen“ klicken.","Calibration happens in the live view: select an item of a slot, adjust the view, click “Set camera position”.","Le calibrage se fait dans la vue en direct : sélectionnez un objet d'un emplacement, réglez la vue, puis cliquez sur « Définir la position de la caméra ».",調整はライブビューで行います。部位のアイテムを選び、表示を整えてから「カメラ位置を設定」をクリックしてください。
 Kamera-Kalibrierung dieses Charakters,Camera calibration for this character,Calibrage de la caméra pour ce personnage,このキャラクターのカメラ調整
@@ -167,6 +169,8 @@ Leer,Empty,Vide,空
 leer,empty,vide,空き
 Letzte Seite,Last page,Dernière page,最後のページ
 Level,Level,Niveau,レベル
+Level absteigend,Level descending,Niveau décroissant,レベルの高い順
+Level aufsteigend,Level ascending,Niveau croissant,レベルの低い順
 Level {0},Level {0},Niveau {0},Lv{0}
 Level {0}–{1},Level {0}–{1},Niveau {0}–{1},レベル {0}–{1}
 liegt in: {0},stored in: {0},se trouve dans : {0},保管場所: {0}
@@ -195,12 +199,14 @@ Meine Sets,My Sets,Mes ensembles,マイセット
 Mogstation,Mog Station,Boutique Mog,モグステーション
 Mogstation-Set,Mog Station set,Ensemble de la Boutique Mog,モグステーションのセット
 Monster,Monster,Monstre,モンスター
-Nach Level,By level,Par niveau,レベル順
 Nach Quelle,By source,Par source,入手方法別
 Nahkampf,Melee,Mêlée,近接DPS
+Name A–Z,Name A–Z,Nom A–Z,名前（昇順）
+Name Z–A,Name Z–A,Nom Z–A,名前（降順）
 Nebenhand,Off Hand,Arme secondaire,副兵装
 Neues Set,New Set,Nouvel ensemble,新規セット
 Neueste zuerst,Newest first,Plus récents d'abord,新しい順
+Neuigkeiten anzeigen,Show what's new,Afficher les nouveautés,新機能を表示
 Nicht eingeloggt,Not logged in,Non connecté,ログインしていません
 nicht färbbar,not dyeable,non teintable,染色不可
 Nicht färbbar,Not dyeable,Non teinturable,染色不可
@@ -248,6 +254,7 @@ Satteltasche,Saddlebag,Sacoches,チョコボかばん
 Satteltasche (Premium),Saddlebag (Premium),Sacoches (premium),チョコボかばん（拡張）
 Schatzkiste,Treasure Coffer,Coffre au trésor,宝箱
 Schild/Nebenhand,Off Hand,Arme secondaire,副兵装
+Schließen,Close,Fermer,閉じる
 Scrips,Scrips,Assignats,スクリップ
 Seite {0} / {1},Page {0} / {1},Page {0} / {1},{0} / {1} ページ
 Seiten im Cache,Cached pages,Pages en cache,キャッシュするページ数
@@ -256,8 +263,10 @@ Set „{0}“ löschen?,Delete set “{0}”?,Supprimer l'ensemble « {0} » ?,�
 Shadowbringers,Shadowbringers,Shadowbringers,漆黒のヴィランズ
 Shop,Shop,Boutique,ショップ
 Shynees Glamour Dresser – Einstellungen,Shynees Glamour Dresser – Settings,Shynees Glamour Dresser – Paramètres,Shynees Glamour Dresser – 設定
+Shynees Glamour Dresser – Neuigkeiten,Shynees Glamour Dresser – What's new,Shynees Glamour Dresser – Nouveautés,Shynees Glamour Dresser – 新機能
 Sonstige Inhalte,Other Duties,Autres missions,その他のコンテンツ
 Sonstiges,Other,Autres,その他
+Sortierung,Sort,Tri,並び順
 Spalten,Columns,Colonnes,列
 Speicheranzeige unter dem Raster,Memory display below the grid,Affichage de la mémoire sous la grille,グリッドの下にメモリ使用量を表示
 Speichern,Save,Enregistrer,保存
@@ -279,6 +288,7 @@ Unternehmung,Venture,Tâche,リテイナーベンチャー
 Unterwäsche,Underwear,Sous-vêtements,下着
 Varianten,Variants,Variantes,バリエーション
 Verschieben,Pan,Déplacement,移動
+Version {0},Version {0},Version {0},バージョン {0}
 Verwerfen,Discard,Abandonner,破棄
 Violett,Violet,Violet,紫
 Visier schließen (nur Helme mit Visier),Close visor (only helmets with a visor),Baisser la visière (uniquement les casques à visière),バイザーを閉じる（バイザー付きの頭防具のみ）
@@ -329,6 +339,7 @@ Zurücksetzen,Reset,Réinitialiser,リセット
 {0}: noch nie geöffnet,{0}: never opened,{0} : jamais ouvert,{0}: まだ開いていません
 {0}: Standard,{0}: default,{0} : par défaut,{0}: 標準
 {0}: Standardansicht,{0}: default view,{0} : vue par défaut,{0}：標準ビュー
+Älteste zuerst,Oldest first,Plus anciens d'abord,古い順
 Änderungen verwerfen?,Discard changes?,Abandonner les modifications ?,変更を破棄しますか？
 Öffnet Shynees Glamour Dresser (kurz: /sgd).,Opens Shynees Glamour Dresser (short: /sgd).,Ouvre Shynees Glamour Dresser (raccourci : /sgd).,Shynees Glamour Dresserを開きます（短縮: /sgd）。
 Öffnet Shynees Glamour Dresser.,Opens Shynees Glamour Dresser.,Ouvre Shynees Glamour Dresser.,Shynees Glamour Dresserを開きます。
