@@ -66,7 +66,27 @@ public sealed class TryOnService : IDisposable
             TryOn.SetBasis(Basis());
     }
 
-    private void OnLogout(int type, int code) => Reset();
+    /// <summary>Takes back the last change of the try-on (<see cref="TryOn.Undo"/>).</summary>
+    public void Undo()
+    {
+        lock (RenderSync.Lock)
+            TryOn.Undo();
+    }
+
+    /// <summary>Does the last undone change of the try-on again (<see cref="TryOn.Redo"/>).</summary>
+    public void Redo()
+    {
+        lock (RenderSync.Lock)
+            TryOn.Redo();
+    }
+
+    // The next character starts without the changes of this one.
+    private void OnLogout(int type, int code)
+    {
+        Reset();
+        lock (RenderSync.Lock)
+            TryOn.ClearHistory();
+    }
 
     public void Dispose()
     {

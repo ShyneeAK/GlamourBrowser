@@ -364,4 +364,94 @@ public class TryOnTests
         Assert.True(SlotMask.Contains(Set(SetKind.Custom, Item(1, EquipSlot.MainHand), body).Slots, EquipSlot.MainHand));
         Assert.False(SlotMask.Contains(CustomSetSubjects.LookSlots, EquipSlot.OffHand));
     }
+
+    [Fact]
+    public void Put_ALeftRingsTileGoesOnTheLeftHand()
+    {
+        var tryOn = new TryOn(Basis);
+        tryOn.Put(Item(30, EquipSlot.RingRight) with { Slot = EquipSlot.RingLeft }, default);
+
+        Assert.Equal(Piece(EquipSlot.RingRight, 10), tryOn.PieceIn(EquipSlot.RingRight));
+        Assert.Equal(Piece(EquipSlot.RingLeft, 30), tryOn.PieceIn(EquipSlot.RingLeft));
+    }
+
+    [Fact]
+    public void Undo_TakesBackTheLastChangeAndRedoDoesItAgain()
+    {
+        var tryOn = new TryOn(Basis);
+        tryOn.Put(Item(20, EquipSlot.Body), default);
+        tryOn.TakeOff(EquipSlot.Head);
+
+        Assert.True(tryOn.Undo());
+        Assert.Equal(Piece(EquipSlot.Head, 1, 3), tryOn.PieceIn(EquipSlot.Head));
+        Assert.Equal(20u, tryOn.PieceIn(EquipSlot.Body)?.ItemId);
+        Assert.True(tryOn.Undo());
+        Assert.Equal(Basis, tryOn.Pieces);
+        Assert.False(tryOn.Undo());
+
+        Assert.True(tryOn.Redo());
+        Assert.True(tryOn.Redo());
+        Assert.Null(tryOn.PieceIn(EquipSlot.Head));
+        Assert.False(tryOn.Redo());
+    }
+
+    [Fact]
+    public void Undo_AResetCanBeTakenBack()
+    {
+        var tryOn = new TryOn(Basis);
+        tryOn.Put(Item(20, EquipSlot.Body), default);
+        tryOn.Reset(Basis);
+
+        Assert.True(tryOn.Undo());
+        Assert.Equal(20u, tryOn.PieceIn(EquipSlot.Body)?.ItemId);
+    }
+
+    [Fact]
+    public void Undo_ANewChangeDropsTheRedo()
+    {
+        var tryOn = new TryOn(Basis);
+        tryOn.Put(Item(20, EquipSlot.Body), default);
+        tryOn.Undo();
+        tryOn.Put(Item(21, EquipSlot.Legs), default);
+
+        Assert.False(tryOn.CanRedo);
+    }
+
+    [Fact]
+    public void Undo_NothingChangedIsNoStep()
+    {
+        var tryOn = new TryOn(Basis);
+        tryOn.Put(Item(20, EquipSlot.Body), default);
+        tryOn.Put(Item(20, EquipSlot.Body), default);
+        tryOn.TakeOff(EquipSlot.Feet);
+
+        Assert.True(tryOn.Undo());
+        Assert.False(tryOn.CanUndo);
+    }
+
+    [Fact]
+    public void Undo_PickingThroughTheDyesOfAChannelIsOneStep()
+    {
+        var tryOn = new TryOn(Basis);
+        tryOn.SetStain(EquipSlot.Body, 1, Black, 2);
+        tryOn.SetStain(EquipSlot.Body, 1, White, 2);
+        tryOn.SetStain(EquipSlot.Body, 2, Black, 2);
+
+        Assert.True(tryOn.Undo());
+        Assert.Equal(Piece(EquipSlot.Body, 2, White), tryOn.PieceIn(EquipSlot.Body));
+        Assert.True(tryOn.Undo());
+        Assert.Equal(Piece(EquipSlot.Body, 2), tryOn.PieceIn(EquipSlot.Body));
+        Assert.False(tryOn.CanUndo);
+    }
+
+    [Fact]
+    public void Undo_KeepsTheNewBasis()
+    {
+        var tryOn = new TryOn(Basis);
+        tryOn.Put(Item(20, EquipSlot.Body), default);
+        tryOn.SetBasis([Piece(EquipSlot.Head, 5)]);
+        tryOn.Undo();
+
+        Assert.Equal([Piece(EquipSlot.Head, 5)], tryOn.Pieces);
+    }
 }

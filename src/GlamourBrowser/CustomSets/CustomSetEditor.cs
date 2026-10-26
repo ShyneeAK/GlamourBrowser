@@ -98,12 +98,11 @@ public sealed class CustomSetEditor
         UpdatePreview();
     }
 
-    /// <summary>A click on a slot of the editor: the grid shows that slot's items (rings are all right rings in the catalog).</summary>
+    /// <summary>A click on a slot of the editor: the grid shows that slot's items (a ring slot: the rings on its hand).</summary>
     public void SelectSlot(EquipSlot slot)
     {
         SelectedSlot = slot;
-        var shown = slot == EquipSlot.RingLeft ? EquipSlot.RingRight : slot;
-        state.Filter = state.Filter with { Mode = BrowseMode.Items, Slots = new HashSet<EquipSlot> { shown } };
+        state.Filter = state.Filter with { Mode = BrowseMode.Items, Slots = new HashSet<EquipSlot> { slot } };
     }
 
     public void Remove(EquipSlot slot)

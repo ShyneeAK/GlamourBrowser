@@ -90,10 +90,8 @@ Färbbar ({0} Farbkanäle),Dyeable ({0} channels),Teignable ({0} canaux),染色�
 Färbbar ({0}),Dyeable ({0}),Teinturable ({0}),染色可（{0}）
 Füße,Feet,Pieds,足
 Ganz übernommen wird die Sprache nach einem Neustart des Plugins.,The language is fully applied after the plugin is restarted.,La langue sera entièrement appliquée après un redémarrage du plugin.,言語はプラグインの再起動後に完全に反映されます。
-Ganzes Set anziehen,Put on the whole set,Équiper l'ensemble complet,セット全体を装備
 Gebunden,Untradable,Non échangeable,トレード不可
 Gehilfe {0},Retainer {0},Servant {0},リテイナー {0}
-Gehört zu keinem Ausrüstungs-Set,Not part of any gear set,Ne fait partie d'aucun ensemble d'équipement,どの装備セットにも含まれていません
 Gewinnung,Obtained,Obtention,入手
 Gil-Händler,Gil vendors,Marchands (gils),ギル商人
 gilt nicht für die Wunschliste,does not apply to the Wishlist,ne s'applique pas à la Liste de souhaits,ほしい物リストには適用されません
@@ -276,7 +274,6 @@ Renderfehler: {0},Render error: {0},Erreur de rendu : {0},描画エラー: {0}
 Rezept,Recipe,Recette,レシピ
 Ring links,Left Ring,Bague gauche,左指
 Ring rechts,Right Ring,Bague droite,右指
-Ringe,Rings,Bagues,指
 Rosé,Rose,Rose,ローズ
 Saison-Event,Seasonal Event,Événement saisonnier,シーズナルイベント
 Sammeln,Gathering,Récolte,採集
@@ -399,3 +396,11 @@ Armband nur links,Bracelet on the left only,Bracelet à gauche uniquement,左手
 Armband an beiden Armen,Bracelet on both arms,Bracelet aux deux bras,両手首のブレスレット
 Armband-Seite,Bracelet side,Côté du bracelet,ブレスレットの位置
 Armbänder werden gelesen …,Reading bracelets …,Lecture des bracelets …,ブレスレットを読み込み中 …
+R,R,D,右
+L,L,G,左
+Zurück,Back,Retour,戻る
+Zurück zur vorherigen Ansicht,Back to the previous view,Retour à la vue précédente,前の表示に戻る
+„{0}“: alle Teile als Kacheln zeigen,“{0}”: show all pieces as tiles,« {0} » : afficher toutes les pièces en vignettes,「{0}」：全パーツをタイルで表示
+Gehört zu {0} Ausrüstungs-Sets: eins auswählen und seine Teile als Kacheln zeigen,Part of {0} gear sets: pick one to show its pieces as tiles,Fait partie de {0} ensembles d’équipement : en choisir un pour afficher ses pièces en vignettes,{0}個の装備セットに含まれます：1つ選んでパーツをタイルで表示
+Rückgängig (Strg+Z),Undo (Ctrl+Z),Annuler (Ctrl+Z),元に戻す (Ctrl+Z)
+Wiederholen (Strg+Y),Redo (Ctrl+Y),Rétablir (Ctrl+Y),やり直す (Ctrl+Y)

@@ -149,19 +149,18 @@ public sealed class TileGrid
         if (pool.Status is { } status)
             ImGui.TextColored(new Vector4(1f, 0.8f, 0.3f, 1f), status);
 
-        if (state.Filter.Mode == BrowseMode.MySets && customSets.Current == null)
+        if (state.OpenSets is { } openSets)
+            DrawSetPiecesHeader(openSets);
+        else if (state.Filter.Mode == BrowseMode.MySets && customSets.Current == null)
         {
             ImGui.TextDisabled(customSets.LoadFailed ? Loc.T("Eigene Sets konnten nicht geladen werden") : Loc.T("Nicht eingeloggt"));
             return;
         }
-
-        if (state.Filter.Mode == BrowseMode.MySets && !DrawMySetsHeader())
+        else if (state.Filter.Mode == BrowseMode.MySets && !DrawMySetsHeader())
             return;
-
-        if (state.Filter.Mode == BrowseMode.Wishlist && !DrawWishlistHeader())
+        else if (state.Filter.Mode == BrowseMode.Wishlist && !DrawWishlistHeader())
             return;
-
-        if (state.Filter.Mode == BrowseMode.Sets && state.Results.Count == 0)
+        else if (state.Filter.Mode == BrowseMode.Sets && state.Results.Count == 0)
         {
             if (!sources.IsReady)
             {
@@ -220,6 +219,20 @@ public sealed class TileGrid
             else
                 state.PreviousPage();
         }
+    }
+
+    /// <summary>Above the pieces of the sets opened from the item card: back to the grid before, and the sets' names.</summary>
+    private void DrawSetPiecesHeader(IReadOnlyList<SetSubject> sets)
+    {
+        if (ImGui.Button("← " + Loc.T("Zurück")))
+            state.CloseSetPieces();
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip(Loc.T("Zurück zur vorherigen Ansicht"));
+        ImGui.SameLine();
+        GameIcon.Draw(SlotIcons.Sets, new Vector2(ImGui.GetFrameHeight()), FontAwesomeIcon.LayerGroup, theme.Colors.TextMuted);
+        ImGui.SameLine();
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextUnformatted(string.Join(" · ", sets.Select(s => s.Name)));
     }
 
     /// <summary>The custom set mode's "+ Neues Set" with its start points, and its hints; false when no grid follows.</summary>
@@ -502,7 +515,8 @@ public sealed class TileGrid
         var hovered = ImGui.IsItemHovered();
         if (subject is SetSubject draggable && state.Filter.Mode == BrowseMode.MySets)
             folders.DragSource(draggable, size);
-        if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+        // The right-click menu has the hand of a ring and the folder of an own set; other tiles have none.
+        if (ImGui.IsItemClicked(ImGuiMouseButton.Right) && HasContextMenu(subject))
         {
             contextSubject = subject;
             ImGui.OpenPopup(ContextPopup);
@@ -537,13 +551,13 @@ public sealed class TileGrid
         }
         // While a custom set is edited, a tile goes into it instead of being selected.
         else if (clicked && editor.IsOpen)
-            editor.Put(subject, state.TileDye);
+            editor.Put(subject, state.TileDye, RingHand(subject));
         // Otherwise it is selected and put on in the try-on, dyed like its tile.
         else if (clicked)
         {
             state.Selected = subject;
             live.Select(subject);
-            tryOn.Put(subject, state.TileDye);
+            tryOn.Put(subject, state.TileDye, RingHand(subject));
         }
 
         var drawList = ImGui.GetWindowDrawList();
@@ -634,10 +648,17 @@ public sealed class TileGrid
 
     private bool IsOwned(uint itemId) => ownership.Current?.IsOwned(itemId) ?? false;
 
+    /// <summary>A ring's tile (the hand) and an own set's tile in "Meine Sets" (the folder) have a right-click menu.</summary>
+    private bool HasContextMenu(TileSubject subject) => subject switch
+    {
+        ItemSubject { Item.Slot: EquipSlot.RingRight or EquipSlot.RingLeft } => true,
+        SetSubject { Set.Id.Kind: SetKind.Custom } => state.Filter.Mode == BrowseMode.MySets && customSets.Current is { Folders.Count: > 0 },
+        _ => false,
+    };
+
     /// <summary>
-    /// The right-click menu of a tile: a ring on the right or the left hand, then the other pieces of the item's sets (a
-    /// set tile: its own pieces) to put on one by one, or the whole set. They go on like a click on their tile (into the set editor while it is open), dyed in the
-    /// tile dye; the selection stays, the pieces can be selected below the live view.
+    /// The right-click menu of a tile: a ring on the right or the left hand, an own set into a folder. A set's pieces are
+    /// behind the chest in the item card.
     /// </summary>
     private void DrawContextMenu()
     {
@@ -647,54 +668,13 @@ public sealed class TileGrid
         {
             case SetSubject set:
                 ImGui.TextDisabled(set.Name);
-                DrawSetPieces(set, null);
                 folders.DrawMoveMenu(set);
                 break;
-            case ItemSubject { Item: var item } subject:
-                var isRing = item.Slot is EquipSlot.RingRight or EquipSlot.RingLeft;
-                if (isRing)
-                    DrawRingHands(subject);
-                var sets = state.SetsOf(item.Id);
-                if (sets.Count == 0 && isRing)
-                    break;
-                if (isRing)
-                    ImGui.Separator();
-                if (sets.Count == 0)
-                    ImGui.TextDisabled(sources.IsReady ? Loc.T("Gehört zu keinem Ausrüstungs-Set") : Loc.T("Ausrüstungs-Sets werden geladen …"));
-                else if (sets.Count == 1)
-                {
-                    ImGui.TextDisabled(sets[0].Name);
-                    DrawSetPieces(sets[0], item.Id);
-                }
-                else
-                {
-                    for (var i = 0; i < sets.Count; i++)
-                    {
-                        using var id = ImRaii.PushId(i);
-                        if (ImGui.BeginMenu(sets[i].Name))
-                        {
-                            DrawSetPieces(sets[i], item.Id);
-                            ImGui.EndMenu();
-                        }
-                    }
-                }
+            case ItemSubject ring:
+                DrawRingHands(ring);
                 break;
         }
         ImGui.EndPopup();
-    }
-
-    /// <summary>One entry per piece ("Kopf anziehen: …", checked while worn) and one for the whole set; <paramref name="except"/> is the tile's own item.</summary>
-    private void DrawSetPieces(SetSubject set, uint? except)
-    {
-        foreach (var piece in set.Pieces.Where(p => p.Id != except))
-        {
-            var worn = editor.Draft?.PieceIn(piece.Slot)?.ItemId == piece.Id || !editor.IsOpen && tryOn.TryOn.SlotOf(piece.Id) != null;
-            if (ImGui.MenuItem(Loc.F("{0} anziehen: {1}", SlotNames.Full(piece.Slot), piece.Name) + $"##{piece.Id}", "", worn))
-                PutOn(state.ItemSubjectFor(piece.Id) ?? new ItemSubject(piece));
-        }
-        ImGui.Separator();
-        if (ImGui.MenuItem(Loc.T("Ganzes Set anziehen")))
-            PutOn(set);
     }
 
     /// <summary>A ring's two entries, right and left hand (checked while it is worn there); a click on the tile picks the hand by itself.</summary>
@@ -707,6 +687,10 @@ public sealed class TileGrid
                 PutOn(ring, hand);
         }
     }
+
+    /// <summary>The hand a ring's tile puts it on: the ring slot chosen in the slot bar (<see cref="SlotSelection.ClickedRingHand"/>).</summary>
+    private EquipSlot? RingHand(TileSubject subject)
+        => subject is ItemSubject { Item: var item } ? SlotSelection.ClickedRingHand(item, state.Filter.Slots) : null;
 
     /// <summary>Like a click on the subject's tile, but without selecting it; a ring on the hand in <paramref name="ring"/> when given.</summary>
     private void PutOn(TileSubject subject, EquipSlot? ring = null)

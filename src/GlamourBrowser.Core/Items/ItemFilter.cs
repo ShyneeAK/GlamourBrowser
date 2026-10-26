@@ -37,7 +37,7 @@ public static class ItemFilter
         var jobs = new JobFilter(filter.Jobs, parentOf ?? (job => job), filter.JobsExclusive);
         return items
             .Where(i => search.Length == 0 || i.Name.Contains(search, StringComparison.OrdinalIgnoreCase))
-            .Where(i => filter.Slots.Count == 0 || filter.Slots.Contains(i.Slot))
+            .Where(i => Ui.SlotSelection.Shows(filter.Slots, i.Slot))
             .Where(i => filter.Jobs.Count == 0 || jobs.Fits(i.ClassJobIds))
             .Where(i => i.LevelEquip >= filter.MinLevel && i.LevelEquip <= filter.MaxLevel)
             .Where(i => !filter.DyeableOnly || i.DyeCount > 0)

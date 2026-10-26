@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Interface.Textures.TextureWraps;
 using GlamourBrowser.Core.Items;
+using GlamourBrowser.Core.Ui;
 using GlamourBrowser.Core.Layout;
 using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Core.Sets;
@@ -35,6 +36,8 @@ public sealed class BrowserState
     private readonly Func<uint, uint> parentOf;
     // One subject per catalog item, made once instead of on every refresh.
     private readonly IReadOnlyDictionary<uint, ItemSubject> itemSubjects;
+    // The rings once more as left rings, for "Ring links" in the slot bar (worn and framed on the left hand).
+    private readonly IReadOnlyDictionary<uint, ItemSubject> leftRings;
     private FilterState filter = new();
     private readonly PageMemory pages = new();
     private readonly PageHistory history = new();
@@ -55,6 +58,7 @@ public sealed class BrowserState
         this.wishlist = wishlist;
         this.catalog = catalog;
         itemSubjects = catalog.ToDictionary(i => i.Id, i => new ItemSubject(i));
+        leftRings = catalog.Where(i => i.Slot == EquipSlot.RingRight).ToDictionary(i => i.Id, i => new ItemSubject(i with { Slot = EquipSlot.RingLeft }));
         this.ownership = ownership;
         this.appearance = appearance;
         this.queue = queue;
@@ -83,6 +87,13 @@ public sealed class BrowserState
         get => filter;
         set
         {
+            // Another filter closes the pieces of an opened set, back on the page they were opened from; the tile dye
+            // dyes them anew.
+            if (OpenSets != null && value with { Dye = filter.Dye } != filter)
+            {
+                OpenSets = null;
+                PageIndex = pageBeforeSets;
+            }
             // Back on a slot (or mode) the page it was left on; Refresh clamps it to the new results.
             PageIndex = pages.Switch(filter, PageIndex, value);
             // Another mode closes an open folder of "Meine Sets".
@@ -130,6 +141,40 @@ public sealed class BrowserState
                 return;
             OpenFolder = 0;
             PageIndex = pageBeforeFolder;
+            Refresh();
+        }
+    }
+
+    /// <summary>
+    /// The sets whose pieces the grid shows as item tiles (opened with the chest in the item card), instead of what the
+    /// filter finds; null while closed.
+    /// </summary>
+    public IReadOnlyList<SetSubject>? OpenSets { get; private set; }
+    // The page the pieces were opened from, to go back to it.
+    private int pageBeforeSets;
+
+    /// <summary>Shows the pieces of the sets as tiles, on their first page; the filter stays for going back.</summary>
+    public void ShowSetPieces(IReadOnlyList<SetSubject> sets)
+    {
+        lock (RenderSync.Lock)
+        {
+            if (OpenSets == null)
+                pageBeforeSets = PageIndex;
+            OpenSets = sets;
+            PageIndex = 0;
+            Refresh();
+        }
+    }
+
+    /// <summary>Back to what the filter finds, on the page the pieces were opened from.</summary>
+    public void CloseSetPieces()
+    {
+        lock (RenderSync.Lock)
+        {
+            if (OpenSets == null)
+                return;
+            OpenSets = null;
+            PageIndex = pageBeforeSets;
             Refresh();
         }
     }
@@ -288,14 +333,19 @@ public sealed class BrowserState
         var (stain0, stain1) = TileDyes.For(item, TileDye);
         var stance = StanceFor(item);
         return new(item.Id, stain0, stain1, config.TileMode, LookHash(item.Covers), RenderWidth,
-                   stance.WeaponDrawn ? TileKey.StandardPose : stance.Pose, stance.WeaponDrawn);
+                   stance.WeaponDrawn ? TileKey.StandardPose : stance.Pose, stance.WeaponDrawn, LeftHand: item.Slot == EquipSlot.RingLeft);
     }
 
     /// <summary>The catalog item's subject, the same instance the grid shows (null for an item outside the catalog).</summary>
     public ItemSubject? ItemSubjectFor(uint itemId) => itemSubjects.GetValueOrDefault(itemId);
 
+    /// <summary>The item's subject as worn in <paramref name="slot"/>: a ring on the left hand is the left ring's tile.</summary>
+    public ItemSubject? ItemSubjectFor(uint itemId, EquipSlot slot)
+        => slot == EquipSlot.RingLeft && leftRings.TryGetValue(itemId, out var left) ? left : itemSubjects.GetValueOrDefault(itemId);
+
     /// <summary>The item or set a tile key was made for (the render pool's lookup).</summary>
-    public TileSubject? SubjectFor(TileKey key) => key.Set.IsSet ? SetSubjectFor(key.Set) : itemSubjects.GetValueOrDefault(key.ItemId);
+    public TileSubject? SubjectFor(TileKey key)
+        => key.Set.IsSet ? SetSubjectFor(key.Set) : ItemSubjectFor(key.ItemId, key.LeftHand ? EquipSlot.RingLeft : EquipSlot.RingRight);
 
     /// <summary>A detected set or one of the custom sets.</summary>
     public SetSubject? SetSubjectFor(SetId id) => id.Kind == SetKind.Custom ? MySets.FirstOrDefault(s => s.Set.Id == id) : sets.Find(id);
@@ -333,7 +383,10 @@ public sealed class BrowserState
             var sorted = filter with { Sort = config.Sort };
             MySets = ResolveMySets();
             WishlistEntries = ResolveWishlist();
-            if (filter.Mode == BrowseMode.MySets)
+            if (OpenSets is { } open)
+                Results = open.SelectMany(set => set.Pieces).DistinctBy(piece => piece.Id)
+                              .Select(piece => ItemSubjectFor(piece.Id)).OfType<TileSubject>().ToList();
+            else if (filter.Mode == BrowseMode.MySets)
             {
                 var folders = customSets.Current?.Folders ?? [];
                 // A deleted folder (or another character's) closes.
@@ -399,7 +452,7 @@ public sealed class BrowserState
         {
             CurrentPage = ItemFilter.Page(Results, PageIndex, PageSize);
             // The plan by source shows no tiles: nothing to render, the cached ones stay for switching back.
-            if (!appearance.IsValid || filter.Mode == BrowseMode.Wishlist && config.WishlistBySource)
+            if (!appearance.IsValid || filter.Mode == BrowseMode.Wishlist && config.WishlistBySource && OpenSets == null)
             {
                 queue.Clear();
                 return;
@@ -423,7 +476,12 @@ public sealed class BrowserState
     private IEnumerable<TileKey> RenderKeys(IEnumerable<TileSubject> subjects)
         => subjects.SelectMany(s => s is FolderSubject folder ? folder.Covers : (IEnumerable<TileSubject>)[s]).Select(KeyFor);
 
-    private IReadOnlyList<TileSubject> Subjects(IReadOnlyList<GlamourItem> items) => items.Select(i => (TileSubject)itemSubjects[i.Id]).ToList();
+    /// <summary>The items' tiles; rings on the hand the slot bar chose.</summary>
+    private IReadOnlyList<TileSubject> Subjects(IReadOnlyList<GlamourItem> items)
+    {
+        var hand = SlotSelection.RingHand(filter.Slots);
+        return items.Select(i => (TileSubject)ItemSubjectFor(i.Id, hand)!).ToList();
+    }
 
     private IReadOnlyList<TileSubject> ResolveWishlist()
         => wishlist.Current is { } store

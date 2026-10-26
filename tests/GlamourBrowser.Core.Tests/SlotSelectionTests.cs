@@ -68,4 +68,41 @@ public class SlotSelectionTests
         Assert.True(SlotSelection.KeepsSelection(Chest, new FilterState { Mode = BrowseMode.Wishlist }));
         Assert.True(SlotSelection.KeepsSelection(null, new FilterState { Slots = Set(EquipSlot.Feet) }));
     }
+
+    [Fact]
+    public void Shows_RingsUnderEitherRingSlot()
+    {
+        Assert.True(SlotSelection.Shows(Set(), EquipSlot.RingRight));
+        Assert.True(SlotSelection.Shows(Set(EquipSlot.RingRight), EquipSlot.RingRight));
+        Assert.True(SlotSelection.Shows(Set(EquipSlot.RingLeft), EquipSlot.RingRight));
+        Assert.False(SlotSelection.Shows(Set(EquipSlot.Head), EquipSlot.RingRight));
+    }
+
+    [Fact]
+    public void RingHand_LeftOnlyWithoutTheRightRing()
+    {
+        Assert.Equal(EquipSlot.RingLeft, SlotSelection.RingHand(Set(EquipSlot.RingLeft, EquipSlot.Head)));
+        Assert.Equal(EquipSlot.RingRight, SlotSelection.RingHand(Set(EquipSlot.RingLeft, EquipSlot.RingRight)));
+        Assert.Equal(EquipSlot.RingRight, SlotSelection.RingHand(Set()));
+    }
+
+    [Fact]
+    public void ClickedRingHand_TheChosenRingSlot()
+    {
+        GlamourItem Ring(EquipSlot slot) => new(1, "Ring", 0, slot, new HashSet<uint>(), 1, 0, RaceGenderRestriction.None);
+        Assert.Equal(EquipSlot.RingLeft, SlotSelection.ClickedRingHand(Ring(EquipSlot.RingLeft), Set(EquipSlot.RingLeft)));
+        Assert.Equal(EquipSlot.RingRight, SlotSelection.ClickedRingHand(Ring(EquipSlot.RingRight), Set(EquipSlot.RingRight)));
+        // All slots: a worn ring stays where it is.
+        Assert.Null(SlotSelection.ClickedRingHand(Ring(EquipSlot.RingRight), Set()));
+    }
+
+    [Fact]
+    public void KeepsSelection_ARingOnlyForItsHand()
+    {
+        var right = new ItemSubject(new GlamourItem(1, "Ring", 0, EquipSlot.RingRight, new HashSet<uint>(), 1, 0, RaceGenderRestriction.None));
+        var left = new ItemSubject(right.Item with { Slot = EquipSlot.RingLeft });
+        Assert.False(SlotSelection.KeepsSelection(right, new FilterState { Slots = Set(EquipSlot.RingLeft) }));
+        Assert.True(SlotSelection.KeepsSelection(left, new FilterState { Slots = Set(EquipSlot.RingLeft) }));
+        Assert.False(SlotSelection.KeepsSelection(left, new FilterState { Slots = Set(EquipSlot.RingRight) }));
+    }
 }

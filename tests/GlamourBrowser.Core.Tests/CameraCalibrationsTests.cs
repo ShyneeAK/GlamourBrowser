@@ -38,12 +38,12 @@ public class CameraCalibrationsTests
     }
 
     [Fact]
-    public void RingLeft_SharesRingRight()
+    public void RingLeft_HasItsOwnCalibration()
     {
         var calibrations = new CameraCalibrations(new());
         calibrations.Set(1, EquipSlot.RingLeft, Head);
 
-        Assert.Equal(Head, calibrations.Get(1, EquipSlot.RingRight));
-        Assert.Single(calibrations.For(1));
+        Assert.Equal(Head, calibrations.Get(1, EquipSlot.RingLeft));
+        Assert.Null(calibrations.Get(1, EquipSlot.RingRight));
     }
 }

@@ -40,6 +40,8 @@ public static class SlotBar
                 filter = SlotSelection.SelectSlot(filter, slot, ImGui.GetIO().KeyCtrl);
                 changed = true;
             }
+            if (slot is EquipSlot.RingRight or EquipSlot.RingLeft)
+                DrawHandMark(Loc.T(slot == EquipSlot.RingRight ? "R" : "L"));
         }
         ImGui.SameLine();
         if (IconToggle.Draw($"{id}-sets", SlotIcons.Sets, new Vector2(edge), filter.Mode == BrowseMode.Sets, Loc.T("Ausrüstungs-Sets"), theme, FontAwesomeIcon.LayerGroup))
@@ -48,6 +50,15 @@ public static class SlotBar
             changed = true;
         }
         return changed;
+    }
+
+    /// <summary>The hand of a ring slot, small in the icon's bottom-right corner (both ring slots share the game's icon).</summary>
+    private static void DrawHandMark(string hand)
+    {
+        var drawList = ImGui.GetWindowDrawList();
+        var at = ImGui.GetItemRectMax() - ImGui.CalcTextSize(hand) - new Vector2(3, 1);
+        drawList.AddText(at + Vector2.One, 0xC0000000, hand);
+        drawList.AddText(at, 0xFFFFFFFF, hand);
     }
 
     /// <summary>The modes "Meine Sets" and "Wunschliste", for the row under the slot icons.</summary>

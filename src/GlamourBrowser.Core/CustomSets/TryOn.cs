@@ -6,14 +6,23 @@ namespace GlamourBrowser.Core.CustomSets;
 
 /// <summary>
 /// The live try-on: a basis (the worn outfit or nothing, after the tile mode) with the clicked pieces over it. Clicks
-/// follow the set editor's rules (rings, dyes only on channels an item has); the basis can change under them.
+/// follow the set editor's rules (rings, dyes only on channels an item has); the basis can change under them. Every
+/// change of the clicked pieces can be undone and redone; the basis follows the worn outfit and is not part of it.
 /// </summary>
 public sealed class TryOn
 {
+    /// <summary>How many changes can be undone.</summary>
+    public const int MaxHistory = 100;
+
     private readonly CustomSetDraft clicked;
     private readonly Func<uint, ushort> blocksOf;
     // The look and its key hash per slots left free for a tile, asked for every tile on every frame; dropped on any change.
     private readonly Dictionary<ushort, (IReadOnlyList<CustomPiece> Look, uint Hash)> looks = new();
+    // The clicked pieces before each change (the last one at the end), and after each undone one.
+    private readonly List<IReadOnlyList<CustomPiece>> undo = new();
+    private readonly List<IReadOnlyList<CustomPiece>> redo = new();
+    // The dye channel the last change dyed: picking through the dyes there is one change.
+    private (EquipSlot Slot, int Channel)? lastDyed;
 
     /// <param name="blocksOf">The slots an item blocks (<see cref="GlamourItem.Blocks"/>), for the basis and the clicked pieces.</param>
     public TryOn(IReadOnlyList<CustomPiece> basis, Func<uint, ushort>? blocksOf = null)
@@ -57,23 +66,26 @@ public sealed class TryOn
 
     /// <summary>
     /// Puts the item on, dyed in <paramref name="dye"/> on the channels it has (as its tile shows it). A ring goes on the
-    /// hand in <paramref name="ring"/> when given; else one that is already worn stays on its finger, so clicking it (to
-    /// see or dye it) does not push the other ring off.
+    /// hand in <paramref name="ring"/> when given (a left ring's tile: the left hand); else one that is already worn stays
+    /// on its finger, so clicking it (to see or dye it) does not push the other ring off.
     /// </summary>
     public void Put(GlamourItem item, DyePair dye, EquipSlot? ring = null)
     {
+        ring ??= item.Slot == EquipSlot.RingLeft ? EquipSlot.RingLeft : null;
         var isRing = item.Slot is EquipSlot.RingRight or EquipSlot.RingLeft;
         var worn = !isRing ? null : ring is EquipSlot.RingRight or EquipSlot.RingLeft ? ring : SlotOf(item.Id);
-        var slot = clicked.Put(item, worn is EquipSlot.RingRight or EquipSlot.RingLeft ? worn : null);
-        Dye(slot, item, dye);
-        OnChanged();
+        Change(() =>
+        {
+            var slot = clicked.Put(item, worn is EquipSlot.RingRight or EquipSlot.RingLeft ? worn : null);
+            Dye(slot, item, dye);
+        });
     }
 
     /// <summary>
     /// Puts every piece of the set on: a custom set with its dyes, a detected one in <paramref name="dye"/>. An own design
     /// is a whole look: the slots it leaves empty (weapons aside) are emptied, also of earlier clicks.
     /// </summary>
-    public void PutAll(SetSubject set, DyePair dye)
+    public void PutAll(SetSubject set, DyePair dye) => Change(() =>
     {
         clicked.PutAll(set);
         if (set.Set.Id.Kind == SetKind.Custom)
@@ -87,8 +99,7 @@ public sealed class TryOn
             foreach (var piece in set.Wear)
                 Dye(piece.Slot, piece, dye);
         }
-        OnChanged();
-    }
+    });
 
     /// <summary>
     /// Empties the slot, also of the basis, until something is put on there again (the weapons too, as on a glamour
@@ -98,8 +109,7 @@ public sealed class TryOn
     {
         if (PieceIn(slot) == null)
             return false;
-        clicked.Set(new CustomPiece(slot, 0, 0, 0));
-        OnChanged();
+        Change(() => clicked.Set(new CustomPiece(slot, 0, 0, 0)));
         return true;
     }
 
@@ -108,10 +118,12 @@ public sealed class TryOn
     {
         if (channel is < 1 or > 2 || channel > dyeCount || PieceIn(slot) is not { } piece)
             return false;
-        if (clicked.PieceIn(slot) == null)
-            clicked.Set(piece);
-        clicked.SetStain(slot, channel, stain, dyeCount);
-        OnChanged();
+        Change(() =>
+        {
+            if (clicked.PieceIn(slot) == null)
+                clicked.Set(piece);
+            clicked.SetStain(slot, channel, stain, dyeCount);
+        }, (slot, channel));
         return true;
     }
 
@@ -127,10 +139,68 @@ public sealed class TryOn
     /// <summary>Back to only the (new) basis.</summary>
     public void Reset(IReadOnlyList<CustomPiece> basis)
     {
+        Basis = basis.ToList();
+        Change(() => Restore([]));
+    }
+
+    public bool CanUndo => undo.Count > 0;
+
+    public bool CanRedo => redo.Count > 0;
+
+    /// <summary>Back to the clicked pieces before the last change (on today's basis); false when there is none.</summary>
+    public bool Undo() => Step(undo, redo);
+
+    /// <summary>The last undone change again; false when there is none (or a new change came after the undo).</summary>
+    public bool Redo() => Step(redo, undo);
+
+    /// <summary>Forgets every change (another character).</summary>
+    public void ClearHistory()
+    {
+        undo.Clear();
+        redo.Clear();
+        lastDyed = null;
+    }
+
+    private bool Step(List<IReadOnlyList<CustomPiece>> from, List<IReadOnlyList<CustomPiece>> to)
+    {
+        if (from.Count == 0)
+            return false;
+        to.Add(clicked.Pieces.ToList());
+        Restore(from[^1]);
+        from.RemoveAt(from.Count - 1);
+        lastDyed = null;
+        OnChanged();
+        return true;
+    }
+
+    /// <summary>
+    /// Runs a change of the clicked pieces and remembers them as they were, unless nothing changed; a dye on the
+    /// channel the last change dyed (<paramref name="dyed"/>) joins that change.
+    /// </summary>
+    private void Change(Action change, (EquipSlot Slot, int Channel)? dyed = null)
+    {
+        var before = clicked.Pieces.ToList();
+        change();
+        if (!clicked.Pieces.SequenceEqual(before))
+        {
+            if (dyed == null || dyed != lastDyed)
+            {
+                undo.Add(before);
+                if (undo.Count > MaxHistory)
+                    undo.RemoveAt(0);
+            }
+            redo.Clear();
+        }
+        lastDyed = dyed;
+        OnChanged();
+    }
+
+    private void Restore(IReadOnlyList<CustomPiece> pieces)
+    {
         foreach (var piece in clicked.Pieces.ToList())
             clicked.Remove(piece.Slot);
-        Basis = basis.ToList();
-        OnChanged();
+        foreach (var piece in pieces)
+            clicked.Set(piece);
     }
 
     /// <summary>The hash of <see cref="LookFor"/>: the try-on's part of the key of a tile that covers <paramref name="cover"/>.</summary>

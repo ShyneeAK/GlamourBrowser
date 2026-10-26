@@ -189,4 +189,11 @@ public class ItemFilterTests
         Assert.Equal(0, ItemFilter.ClampPage(-1, 20, 18));
         Assert.Equal(0, ItemFilter.ClampPage(3, 0, 18));
     }
+
+    [Fact]
+    public void Slots_TheLeftRingShowsTheRings()
+    {
+        var items = new[] { Item(1, "Ring", EquipSlot.RingRight), Item(2, "Hut", EquipSlot.Head) };
+        Assert.Equal([1u], Ids(Apply(items, new FilterState { Slots = new HashSet<EquipSlot> { EquipSlot.RingLeft } })));
+    }
 }

@@ -34,6 +34,7 @@ internal static class SlotNames
         (EquipSlot.Ears, Loc.T("Ohrringe")),
         (EquipSlot.Neck, Loc.T("Halskette")),
         (EquipSlot.Wrists, Loc.T("Armreife")),
-        (EquipSlot.RingRight, Loc.T("Ringe")),
+        (EquipSlot.RingRight, Loc.T("Ring rechts")),
+        (EquipSlot.RingLeft, Loc.T("Ring links")),
     ];
 }

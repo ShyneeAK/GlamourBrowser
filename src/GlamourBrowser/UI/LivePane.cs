@@ -138,9 +138,63 @@ public sealed unsafe class LivePane
         ImGui.SetCursorPos(cursor);
     }
 
-    /// <summary>Below the live view: back to the try-on's basis (tile mode), or the whole try-on as a new custom set.</summary>
+    /// <summary>
+    /// The chest under the dye fields (top right without them) for an item of a gear set: shows the set's pieces as tiles
+    /// in the grid, until its back button; with several sets a menu picks one. The text below starts under it.
+    /// </summary>
+    private void DrawSetChest(IReadOnlyList<SetSubject> sets, Vector2 topRight)
+    {
+        if (sets.Count == 0)
+            return;
+        var cursor = ImGui.GetCursorScreenPos();
+        ImGui.SetCursorScreenPos(topRight - new Vector2(DyeEdge, 0));
+        var tooltip = sets.Count == 1
+            ? Loc.F("„{0}“: alle Teile als Kacheln zeigen", sets[0].Name)
+            : Loc.F("Gehört zu {0} Ausrüstungs-Sets: eins auswählen und seine Teile als Kacheln zeigen", sets.Count);
+        if (IconButton.Draw("##setchest", SlotIcons.Sets, FontAwesomeIcon.LayerGroup, tooltip, theme, DyeEdge))
+        {
+            if (sets.Count == 1)
+                state.ShowSetPieces(sets);
+            else
+                ImGui.OpenPopup("##setchest-sets");
+        }
+        if (ImGui.BeginPopup("##setchest-sets"))
+        {
+            for (var i = 0; i < sets.Count; i++)
+            {
+                if (ImGui.Selectable($"{sets[i].Name}##set{i}"))
+                    state.ShowSetPieces([sets[i]]);
+            }
+            ImGui.EndPopup();
+        }
+        var bottom = topRight.Y + DyeEdge + ImGui.GetStyle().ItemSpacing.Y;
+        ImGui.SetCursorScreenPos(cursor with { Y = MathF.Max(cursor.Y, bottom) });
+    }
+
+    /// <summary>
+    /// Below the live view: undo and redo (also Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z while the window has the focus), back to
+    /// the try-on's basis (tile mode), or the whole try-on as a new custom set.
+    /// </summary>
     private void DrawTryOnButtons()
     {
+        using (ImRaii.Disabled(!tryOn.TryOn.CanUndo))
+        {
+            if (IconButton.Draw("##undo", 0, FontAwesomeIcon.Undo, "", theme))
+                tryOn.Undo();
+        }
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip(Loc.T("Rückgängig (Strg+Z)"));
+        ImGui.SameLine();
+        using (ImRaii.Disabled(!tryOn.TryOn.CanRedo))
+        {
+            if (IconButton.Draw("##redo", 0, FontAwesomeIcon.Redo, "", theme))
+                tryOn.Redo();
+        }
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip(Loc.T("Wiederholen (Strg+Y)"));
+        HandleUndoKeys();
+        ImGui.SameLine();
+
         using (ImRaii.Disabled(!tryOn.TryOn.HasChanges))
         {
             if (ImGui.Button(Loc.T("Zurücksetzen")))
@@ -172,6 +226,23 @@ public sealed unsafe class LivePane
         DrawWornPieces();
     }
 
+    /// <summary>Ctrl+Z undoes, Ctrl+Y or Ctrl+Shift+Z redoes, while the window has the focus and no text field is typed in.</summary>
+    private void HandleUndoKeys()
+    {
+        var io = ImGui.GetIO();
+        if (!io.KeyCtrl || io.WantTextInput || !ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows))
+            return;
+        if (ImGui.IsKeyPressed(ImGuiKey.Z, false))
+        {
+            if (io.KeyShift)
+                tryOn.Redo();
+            else
+                tryOn.Undo();
+        }
+        else if (ImGui.IsKeyPressed(ImGuiKey.Y, false))
+            tryOn.Redo();
+    }
+
     /// <summary>
     /// One icon per piece the try-on wears (known items, in slot order): a click selects it again, for its card, dyes and
     /// camera, without putting anything on, and shows its slot's tiles on the page with it; a right-click takes it off. Wraps when the pane is narrow.
@@ -184,7 +255,7 @@ public sealed unsafe class LivePane
         var first = true;
         foreach (var piece in tryOn.TryOn.Pieces)
         {
-            if (state.ItemSubjectFor(piece.ItemId) is not { } subject)
+            if (state.ItemSubjectFor(piece.ItemId, piece.Slot) is not { } subject)
                 continue;
             if (!first)
             {
@@ -357,7 +428,9 @@ public sealed unsafe class LivePane
         var colors = theme.Colors;
         // The dye fields sit in the top-right corner; name and level wrap before them.
         var topRight = ImGui.GetCursorScreenPos() + new Vector2(ImGui.GetContentRegionAvail().X, 0);
-        var wrapAt = ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X - DyeBoxesWidth(item) - ImGui.GetStyle().ItemSpacing.X;
+        var sets = state.SetsOf(item.Id);
+        var rightWidth = MathF.Max(DyeBoxesWidth(item), sets.Count > 0 ? DyeEdge : 0);
+        var wrapAt = ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X - rightWidth - ImGui.GetStyle().ItemSpacing.X;
         GameIcon.Draw(item.IconId, new Vector2(40 * UiScale.Global), FontAwesomeIcon.Tshirt, colors.TextMuted);
         ImGui.SameLine();
         ImGui.BeginGroup();
@@ -371,6 +444,7 @@ public sealed unsafe class LivePane
         ImGui.PopTextWrapPos();
         ImGui.EndGroup();
         DrawDyeBoxes(item, topRight);
+        DrawSetChest(sets, topRight + new Vector2(0, DyeBoxesWidth(item) > 0 ? DyeEdge + ImGui.GetStyle().ItemSpacing.Y : 0));
 
         DrawTraits(item);
         ImGui.Spacing();
@@ -405,10 +479,15 @@ public sealed unsafe class LivePane
         bool IsOwned(uint id) => ownership.Current?.IsOwned(id) ?? false;
         var progress = SetProgress.Of(set, IsOwned);
         var body = set.Pieces.FirstOrDefault(p => p.Slot == EquipSlot.Body) ?? set.Pieces[0];
+        // The chest in the top-right corner shows the pieces as tiles; the name wraps before it.
+        var topRight = ImGui.GetCursorScreenPos() + new Vector2(ImGui.GetContentRegionAvail().X, 0);
+        var wrapAt = ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X - DyeEdge - ImGui.GetStyle().ItemSpacing.X;
         GameIcon.Draw(body.IconId, new Vector2(40 * UiScale.Global), FontAwesomeIcon.LayerGroup, colors.TextMuted);
         ImGui.SameLine();
         ImGui.BeginGroup();
+        ImGui.PushTextWrapPos(wrapAt);
         ImGui.TextWrapped(set.Name);
+        ImGui.PopTextWrapPos();
         var origin = set.Set.Id.Kind switch
         {
             SetKind.Dresser => Loc.T("Kommoden-Set"),
@@ -418,6 +497,7 @@ public sealed unsafe class LivePane
         };
         ImGui.TextDisabled($"{progress.Owned}/{progress.Total} · {origin}");
         ImGui.EndGroup();
+        DrawSetChest([set], topRight);
         // Wishlist, editing and deleting are on the tile; the card keeps the transfer into the open plate.
         if (set.Set.Id.Kind == SetKind.Custom && customSets.Current?.Find(set.Set.Id.Value) is { } toTransfer)
             PlateTransferUi.DrawButton(plates, toTransfer.Pieces);

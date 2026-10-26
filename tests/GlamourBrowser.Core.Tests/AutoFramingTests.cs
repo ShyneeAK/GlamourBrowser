@@ -66,4 +66,32 @@ public class AutoFramingTests
     [InlineData("j_te_rx\0", WristSide.Both)]
     public void SideOf_TheArmsTheModelIsSkinnedTo(string strings, WristSide side)
         => Assert.Equal(side, WristModels.SideOf(System.Text.Encoding.ASCII.GetBytes("MDL" + strings.Replace("\\0", "\0"))));
+
+    [Fact]
+    public void For_TheLeftRingIsTheMirrorImageOfTheRight()
+    {
+        var right = AutoFraming.For(EquipSlot.RingRight, Miqote);
+        var left = AutoFraming.For(EquipSlot.RingLeft, Miqote);
+        Vector3 OnScreen(Vector3 hand, CameraPreset camera)
+            => Vector3.Transform(hand, Quaternion.CreateFromAxisAngle(Vector3.UnitY, camera.Rotation)) + new Vector3(camera.PositionX, camera.PositionY, 0);
+
+        Assert.Equal(-right.Rotation, left.Rotation);
+        Assert.Equal(right.Distance, left.Distance);
+        Assert.Equal(-OnScreen(Miqote.HandRight, right).X, OnScreen(Miqote.HandLeft, left).X, 0.0001f);
+        Assert.Equal(OnScreen(Miqote.HandRight, right).Y, OnScreen(Miqote.HandLeft, left).Y, 0.0001f);
+    }
+
+    [Fact]
+    public void For_HandsFarApartStayInside()
+    {
+        // The arms held away from the body (an Au'Ra in his idle pose): both hands with room for the fingers.
+        var wide = Miqote with { HandLeft = new Vector3(0.45f, 0.85f, 0.02f), HandRight = new Vector3(-0.42f, 0.83f, 0.1f) };
+        var camera = AutoFraming.For(EquipSlot.Hands, wide);
+        float OnScreenX(Vector3 hand) => Vector3.Transform(hand, Quaternion.CreateFromAxisAngle(Vector3.UnitY, camera.Rotation)).X + camera.PositionX;
+        var halfWidth = camera.Distance * AutoFraming.Aspect / 2;
+
+        Assert.True(camera.Distance > AutoFraming.For(EquipSlot.Hands, Miqote).Distance);
+        Assert.InRange(OnScreenX(wide.HandLeft), -halfWidth + 0.1f, halfWidth - 0.1f);
+        Assert.InRange(OnScreenX(wide.HandRight), -halfWidth + 0.1f, halfWidth - 0.1f);
+    }
 }
