@@ -7,8 +7,8 @@
     <Version>0.4.1.0</Version>
     <Author>ShyneeAK</Author>
     <Name>Shynees Glamour Dresser</Name>
-    <Punchline>Glamour-Raster mit gerenderten Charakter-Kacheln.</Punchline>
-    <Description>Zeigt alle ausruestbaren Items als Seiten-Raster mit gerenderten Bildern des eigenen Charakters, filterbar, mit Besitzstatus und Fundort pro Item.</Description>
+    <Punchline>A glamour grid with every item rendered on your own character.</Punchline>
+    <Description>Browse every equippable item as a paged grid of tiles rendered on your own character: try outfits on live, filter by slot, source, jobs and ownership, preview dyes, keep a wishlist and build your own sets.</Description>
     <RepoUrl>https://github.com/ShyneeAK/GlamourBrowser</RepoUrl>
     <IconUrl>https://raw.githubusercontent.com/ShyneeAK/GlamourBrowser/main/src/GlamourBrowser/images/icon.png</IconUrl>
     <Tags>glamour;transmog</Tags>

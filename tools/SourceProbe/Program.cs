@@ -66,7 +66,7 @@ if (args.Contains("--sets"))
 {
     var sets = index.Sets;
     int Count(SetKind kind) => sets.Count(s => s.Id.Kind == kind);
-    Console.WriteLine($"Sets: {sets.Count} (Kommode {Count(SetKind.Dresser)}, Mogstation {Count(SetKind.MogStation)}, Modell {Count(SetKind.Model)})");
+    Console.WriteLine($"Sets: {sets.Count} (dresser {Count(SetKind.Dresser)}, mog station {Count(SetKind.MogStation)}, model {Count(SetKind.Model)})");
     for (var n = 0; n < 10 && sets.Count > 0; n++)
     {
         var sample = sets[n * sets.Count / 10];
@@ -76,15 +76,15 @@ if (args.Contains("--sets"))
     var passed = true;
     void Check(string what, bool ok)
     {
-        Console.WriteLine($"check {what}: {(ok ? "ok" : "FEHLT")}");
+        Console.WriteLine($"check {what}: {(ok ? "ok" : "MISSING")}");
         passed &= ok;
     }
     EquipSlot[] armour = [EquipSlot.Head, EquipSlot.Body, EquipSlot.Hands, EquipSlot.Legs, EquipSlot.Feet];
     HashSet<uint> ArmourOf(GlamourSet set) => set.Pieces.Where(p => armour.Contains(p.Slot)).Select(p => p.ItemId).ToHashSet();
     var dresserArmour = sets.Where(s => s.Id.Kind == SetKind.Dresser).Select(ArmourOf).ToList();
-    Check("Ao Oni-Set (45275) mit 5 Teilen", sets.Any(s => s.Id == new SetId(SetKind.Dresser, 45275) && s.Name == "Ao Oni-Set" && s.Pieces.Count == 5));
-    Check("Asuran-Set des Spähens mit 5 Teilen", sets.Any(s => s.Name == "Asuran-Set des Spähens" && s.Pieces.Count == 5));
-    Check("kein Modell-Set mit den Rüstungsteilen eines Kommoden-Sets",
+    Check("Ao Oni set (45275) with 5 pieces", sets.Any(s => s.Id == new SetId(SetKind.Dresser, 45275) && s.Name == "Ao Oni-Set" && s.Pieces.Count == 5));
+    Check("Asuran scouting set with 5 pieces", sets.Any(s => s.Name == "Asuran-Set des Spähens" && s.Pieces.Count == 5));
+    Check("no model set with the armour of a dresser set",
         !sets.Where(s => s.Id.Kind == SetKind.Model).Any(m => dresserArmour.Any(d => d.SetEquals(ArmourOf(m)))));
     Console.WriteLine(index.HasFailures ? "Failures: " + string.Join(", ", index.Failures) : "No failures");
     return passed && !index.HasFailures ? 0 : 1;

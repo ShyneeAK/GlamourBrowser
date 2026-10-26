@@ -2,19 +2,22 @@
 
 A [Dalamud](https://github.com/goatcorp/Dalamud) plugin for Final Fantasy XIV that shows every equippable item as a paged grid of tiles, each one rendered on your own character.
 
-The user interface is in German. The plugin is not in the official Dalamud repository; it comes from this repository's own plugin repository (see [Installation](#installation)).
+The plugin speaks your game's language: English, German, French or Japanese (you can also pick one in the settings). It is not in the official Dalamud repository; it comes from this repository's own plugin repository (see [Installation](#installation)).
 
 ## Features
 
-- **Tile grid** of all equippable items, rendered on your character in your current outfit or in underwear, with adjustable columns and rows.
-- **Live try-on**: every item or set you click is put on, so an outfit builds up piece by piece. Rotate, pan and zoom, with a camera position you can calibrate per slot and character; reset it or save it as a set. The tiles show their items on this outfit.
-- **Dye preview**: two tile dyes (channel 1 and 2) render every dyeable tile in them and come along when you click a tile; two dye boxes recolour the selected item.
+- **Tile grid** of all equippable items, rendered on your character in your current outfit or in underwear, with adjustable columns and rows, several sort orders and pages rendered ahead in the direction you page.
+- **Live try-on**: every item or set you click is put on, so an outfit builds up piece by piece; right-click a worn piece to take it off, and pick the hand for a ring from its tile's right-click menu. Rotate, pan and zoom (the camera stays where you put it), open the visor, draw or hide the weapon, and calibrate a camera position per slot and character for the tiles.
+- **Dye preview**: two tile dyes (channel 1 and 2) render every dyeable tile in them and come along when you click a tile; the item card's dye boxes recolour the worn piece.
 - **Filters** by slot, level, ownership, source (shops, quests, duties and more), jobs (gear only certain jobs can wear, several at once or whole groups such as all crafters) and dyeability.
+- **Item card** with the item's sources and costs, buttons for the map, the duty finder, the recipe and the Mog Station, a chat link, copying the name, and links to Garland Tools, Teamcraft and a web search.
+- **Market prices**: hovering the market board icon shows the cheapest listing on your home world and on your data center from [Universalis](https://universalis.app).
 - **Ownership** across inventory, retainers, glamour dresser and armoire, including where an item is stored.
 - **Gear sets** detected from the game data, shown as one tile.
 - **Wishlist** for items and sets, with the missing pieces grouped by where to get them.
-- **My sets**: build your own outfits with dyes, like in the glamour dresser. Start from scratch, from your current outfit or from a glamour plate, import all glamour plates at once, and transfer a set into the open glamour plate editor.
-- **Render cache** with settings for how many recently shown pages stay rendered and how many are rendered ahead, plus an optional memory line (tile cache, VRAM, RAM).
+- **My sets**: build your own outfits with dyes, like in the glamour dresser, and sort them into folders. Start from scratch, from your current outfit or from a glamour plate, import all glamour plates at once, and transfer a set into the open glamour plate editor.
+- **What's new**: after an update a window lists the changes of every version since the one you used last.
+- **Settings** for the UI scale, the text size, the language and the render cache (how many recently shown pages stay rendered, how many are rendered ahead).
 
 ## Installation
 
@@ -25,29 +28,6 @@ The user interface is in German. The plugin is not in the official Dalamud repos
 ## Usage
 
 `/glamourdresser` (short: `/sgd`) opens or closes the main window.
-
-## Building
-
-You need the .NET 10 SDK and an XIVLauncher installation with Dalamud. The build takes Dalamud's assemblies from its dev folder: `%AppData%\XIVLauncher\addon\Hooks\dev\` on Windows, `~/.xlcore/dalamud/Hooks/dev/` on Linux, or the folder in `DALAMUD_HOME`.
-
-```bash
-dotnet build GlamourBrowser.slnx -c Debug
-dotnet test tests/GlamourBrowser.Core.Tests
-```
-
-To load your own build in the game, add `src/GlamourBrowser/bin/Debug/ShyneesGlamourDresser.dll` under Dalamud Settings → Experimental → Dev Plugin Locations and enable it in the plugin installer. Disable the installed Shynees Glamour Dresser first: Dalamud does not load two plugins with the same internal name.
-
-`tools/release.sh [version]` publishes a release: a Release build, a GitHub release with `latest.zip` and an updated `repo.json`.
-
-## Project layout
-
-| Path | Contents |
-|------|----------|
-| `src/GlamourBrowser` | The plugin: ImGui windows, tile rendering through the game's character views, game interop |
-| `src/GlamourBrowser.Core` | Game-independent logic (filters, paging, sets, wishlist, custom sets, plate transfer), covered by tests |
-| `src/GlamourBrowser.Sources` | Builds the item source index from the game data |
-| `tests/GlamourBrowser.Core.Tests` | xUnit tests for the core logic |
-| `tools/SourceProbe` | Offline check of the source index against the game's sqpack files |
 
 ## Credits
 
