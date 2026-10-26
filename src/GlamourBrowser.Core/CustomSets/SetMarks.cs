@@ -37,8 +37,8 @@ public sealed class SetMarks
         anchor = setId;
     }
 
-    /// <summary>The sets an action on <paramref name="setId"/> applies to: all marked ones when it is marked, else only it.</summary>
-    public IReadOnlyList<uint> With(uint setId) => marked.Contains(setId) ? marked.ToList() : [setId];
+    /// <summary>The sets an action on <paramref name="setId"/> applies to: every marked one and it (marked or not).</summary>
+    public IReadOnlyList<uint> With(uint setId) => marked.Append(setId).Distinct().ToList();
 
     public void Clear()
     {

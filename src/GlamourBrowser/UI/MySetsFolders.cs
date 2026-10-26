@@ -289,7 +289,7 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
 
     /// <summary>A custom set's tile can be dragged onto a folder (or the way back); call right after the tile's button.</summary>
     /// <param name="tile">The tile's size: the cursor carries a small copy of it.</param>
-    /// A marked set takes every marked one along.
+    /// Every marked set comes along.
     public void DragSource(SetSubject set, Vector2 tile)
     {
         if (set.Set.Id.Kind != SetKind.Custom || customSets.Current is not { Folders.Count: > 0 } && state.OpenFolder == 0)
@@ -344,7 +344,7 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
             return;
         if (store.Folders.Count == 0 && stored.Folder == 0)
             return;
-        // A marked set moves every marked one.
+        // Every marked set moves along.
         var moving = marks.With(stored.Id);
         ImGui.Separator();
         if (!ImGui.BeginMenu(moving.Count > 1 ? Loc.F("{0} Sets in Ordner verschieben", moving.Count) : Loc.T("In Ordner verschieben")))

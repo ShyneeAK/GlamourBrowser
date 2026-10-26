@@ -37,13 +37,14 @@ public class SetMarksTests
     }
 
     [Fact]
-    public void With_AllMarkedOnlyForAMarkedSet()
+    public void With_EveryMarkedOneAndTheSetItself()
     {
         var marks = new SetMarks();
+        Assert.Equal([1u], marks.With(1));
+
         marks.Toggle(5);
         marks.Toggle(8);
-
         Assert.Equal([5u, 8u], marks.With(8).Order());
-        Assert.Equal([1u], marks.With(1));
+        Assert.Equal([1u, 5u, 8u], marks.With(1).Order());
     }
 }
