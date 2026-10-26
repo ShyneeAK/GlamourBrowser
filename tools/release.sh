@@ -43,7 +43,7 @@ notes=$(awk -v head="## $version" '$0 == head { on = 1; next } /^## / { on = 0 }
 # The packager zips the whole output folder: leftovers of earlier builds (old manifests, the last latest.zip) would
 # end up in the release.
 rm -rf src/GlamourBrowser/bin/Release
-dotnet build "$project" -c Release -warnaserror
+dotnet build "$project" -c Release -warnaserror --disable-build-servers
 
 # The packager's manifest plus the download links Dalamud needs.
 python3 - "$out/ShyneesGlamourDresser.json" "$repo" "$tag" > repo.json <<'EOF'
