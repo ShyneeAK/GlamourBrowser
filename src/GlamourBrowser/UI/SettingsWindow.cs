@@ -4,6 +4,7 @@ using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
 using GlamourBrowser.Browser;
 using System;
+using System.Collections.Generic;
 using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Core.Ui;
 using GlamourBrowser.Core.Localization;
@@ -181,21 +182,37 @@ public sealed class SettingsWindow : Window
             ImGui.TextColored(new Vector4(1f, 0.8f, 0.3f, 1f), Loc.T("Ganz übernommen wird die Sprache nach einem Neustart des Plugins."));
     }
 
+    /// <summary>
+    /// One zoom per slot for the automatic camera (over 100 % closer, below further away, around the same middle);
+    /// sets use the body's. Own calibrations stay as they are.
+    /// </summary>
+    private void DrawAutoZooms()
+    {
+        ImGui.TextDisabled(Loc.T("Zoom der automatischen Kamera"));
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip(Loc.T("Wie nah die automatische Kamera an den Slot heranzoomt (über 100 % näher, darunter weiter weg); "
+                                   + "eigene Kalibrierungen bleiben, wie sie sind."));
+        foreach (var (slot, name) in SlotNames.All)
+        {
+            var zoom = (int)MathF.Round(config.AutoFramingZooms.GetValueOrDefault(slot, 1f) * 100);
+            if (!ImGui.SliderInt($"{name}##autozoom{slot}", ref zoom, 50, 200, "%d %%", ImGuiSliderFlags.AlwaysClamp))
+                continue;
+            if (zoom == 100)
+                config.AutoFramingZooms.Remove(slot);
+            else
+                config.AutoFramingZooms[slot] = zoom / 100f;
+            config.Save();
+            state.InvalidateTiles();
+        }
+        ImGui.Spacing();
+    }
+
     private void DrawCameraPresets()
     {
         ImGui.TextDisabled(Loc.T("Kamera-Kalibrierung dieses Charakters"));
         ImGui.TextWrapped(Loc.T("Kalibriert wird in der Live-Ansicht: Item eines Slots auswählen, Ansicht einstellen, „Kamera-Position festlegen“ klicken."));
 
-        var zoom = (int)MathF.Round(config.AutoFramingZoom * 100);
-        if (ImGui.SliderInt(Loc.T("Zoom der automatischen Kamera"), ref zoom, 50, 200, "%d %%", ImGuiSliderFlags.AlwaysClamp))
-        {
-            config.AutoFramingZoom = zoom / 100f;
-            config.Save();
-            state.InvalidateTiles();
-        }
-        if (ImGui.IsItemHovered())
-            ImGui.SetTooltip(Loc.T("Wie nah die automatische Kamera an jeden Slot heranzoomt (über 100 % näher, darunter weiter weg); "
-                                   + "eigene Kalibrierungen bleiben, wie sie sind."));
+        DrawAutoZooms();
 
         var contentId = Plugin.PlayerState.ContentId;
         calibration.Ensure(contentId);
