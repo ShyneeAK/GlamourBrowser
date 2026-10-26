@@ -170,7 +170,7 @@ public sealed class FilterColumn
         var checkbox = ImGui.GetFrameHeight() + style.ItemInnerSpacing.X;
         var categories = Enum.GetValues<SourceCategory>()
             .Select(c => ImGui.CalcTextSize($"{SourceCategories.DisplayName(c)} ({counts.GetValueOrDefault(c)})").X)
-            .Max() + ImGui.GetFrameHeight() + ImGui.GetTextLineHeight() + style.ItemSpacing.X * 2;
+            .Max() + ImGui.GetFrameHeight() * 2 + style.ItemSpacing.X * 2;
         var expansions = Enum.GetValues<Expansion>().Select(e => ImGui.CalcTextSize(Expansions.LongName(e)).X).Max() + checkbox;
         // The section indent, the child's padding and border, and the scrollbar.
         return MathF.Max(categories, expansions) + 6 + style.WindowPadding.X * 2 + style.ScrollbarSize + 2;
@@ -183,7 +183,8 @@ public sealed class FilterColumn
 
         using var disabled = ImRaii.Disabled(!sources.IsReady);
         var counts = state.CountsWithoutCategories;
-        var iconSize = new Vector2(ImGui.GetTextLineHeight());
+        // The icons as large as the checkboxes, the text centred on the row.
+        var iconSize = new Vector2(ImGui.GetFrameHeight());
         foreach (var category in Enum.GetValues<SourceCategory>())
         {
             var on = f.Categories.Contains(category);
@@ -191,6 +192,7 @@ public sealed class FilterColumn
             ImGui.SameLine();
             GameIcon.Draw(SourceIcons.IconFor(category), iconSize, SourceIcons.Fallback(category), theme.Colors.TextMuted);
             ImGui.SameLine();
+            ImGui.AlignTextToFramePadding();
             ImGui.TextUnformatted($"{SourceCategories.DisplayName(category)} ({counts.GetValueOrDefault(category)})");
             if (changed)
                 state.Filter = f with { Categories = Toggle(f.Categories, category, on) };
