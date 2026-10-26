@@ -1,3 +1,4 @@
+using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Sources;
 
@@ -18,6 +19,21 @@ public class ItemFilterTests
         => ItemFilter.Apply(items, filter, isOwned ?? (_ => false), Miqote, Female, parentOf: ParentOf);
 
     private static uint[] Ids(IEnumerable<GlamourItem> items) => items.Select(i => i.Id).ToArray();
+
+    [Fact]
+    public void Wrists_CombineSidesAndLeaveOtherSlots()
+    {
+        var items = new[] { Item(1, "Rechts", EquipSlot.Wrists), Item(2, "Links", EquipSlot.Wrists), Item(3, "Beide", EquipSlot.Wrists), Item(4, "Ring", EquipSlot.RingRight) };
+        WristSide SideOf(uint id) => id switch { 1 => WristSide.Right, 2 => WristSide.Left, _ => WristSide.Both };
+        IReadOnlyList<GlamourItem> Filtered(params WristSide[] sides)
+            => ItemFilter.Apply(items, new FilterState { Wrists = sides.ToHashSet() }, _ => false, Miqote, Female, wristOf: SideOf);
+
+        Assert.Equal([1u, 2u, 3u, 4u], Ids(Filtered()).Order());
+        Assert.Equal([2u, 4u], Ids(Filtered(WristSide.Left)).Order());
+        Assert.Equal([2u, 3u, 4u], Ids(Filtered(WristSide.Left, WristSide.Both)).Order());
+        // Until every bracelet is read the side filter waits.
+        Assert.Equal(4, ItemFilter.Apply(items, new FilterState { Wrists = new HashSet<WristSide> { WristSide.Left } }, _ => false, Miqote, Female).Count);
+    }
 
     [Fact]
     public void Dye_DoesNotFilter()

@@ -3,6 +3,9 @@ using System.Linq;
 using System.Numerics;
 using System;
 using Dalamud.Bindings.ImGui;
+using GlamourBrowser.Rendering;
+using GlamourBrowser.Core.Ui;
+using GlamourBrowser.Core.Rendering;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -28,8 +31,11 @@ public sealed class FilterColumn
 
     private static readonly Vector4 WarningColor = new(1f, 0.8f, 0.3f, 1f);
 
-    public FilterColumn(BrowserState state, OwnershipService ownership, Configuration config, SourceService sources, Theme.Theme theme)
+    private readonly WristSides wristSides;
+
+    public FilterColumn(BrowserState state, OwnershipService ownership, Configuration config, SourceService sources, Theme.Theme theme, WristSides wristSides)
     {
+        this.wristSides = wristSides;
         this.state = state;
         this.ownership = ownership;
         this.config = config;
@@ -85,6 +91,23 @@ public sealed class FilterColumn
         if (f.Mode == BrowseMode.Sets && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip(Loc.T("gilt nur für einzelne Items"));
         ImGui.Spacing();
+
+        // Only with the bracelets shown: many are on one arm, and the sides combine.
+        if (f.Mode == BrowseMode.Items && f.Slots.Contains(EquipSlot.Wrists) && Section.Begin("wrists", Loc.T("Armband-Seite"), config))
+        {
+            if (!wristSides.IsReady)
+                ImGui.TextDisabled(Loc.T("Armbänder werden gelesen …"));
+            using (ImRaii.Disabled(!wristSides.IsReady))
+            {
+                foreach (var side in Enum.GetValues<WristSide>())
+                {
+                    var on = f.Wrists.Contains(side);
+                    if (ImGui.Checkbox(FilterChips.WristSideName(side), ref on))
+                        state.Filter = f with { Wrists = Toggle(f.Wrists, side, on) };
+                }
+            }
+            Section.End();
+        }
 
         if (Section.Begin("ownership", Loc.T("Besitz"), config))
         {

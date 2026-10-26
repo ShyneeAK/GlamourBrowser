@@ -39,11 +39,14 @@ public sealed class BrowserState
     private readonly PageMemory pages = new();
     private readonly PageHistory history = new();
     private readonly TryOnService tryOn;
+    // The arm each bracelet is on, for the side filter once every bracelet is read.
+    private readonly WristSides wristSides;
 
     public BrowserState(IReadOnlyList<GlamourItem> catalog, OwnershipService ownership, AppearanceTracker appearance,
                         TileQueue queue, TileCache<IDalamudTextureWrap> cache, RenderPool pool, Configuration config, SourceService sources, SetCatalog sets,
-                        WishlistService wishlist, JobCatalog jobs, CustomSetService customSets, TryOnService tryOn)
+                        WishlistService wishlist, JobCatalog jobs, CustomSetService customSets, TryOnService tryOn, WristSides wristSides)
     {
+        this.wristSides = wristSides;
         this.tryOn = tryOn;
         this.customSets = customSets;
         parentOf = jobs.ParentOf;
@@ -71,6 +74,7 @@ public sealed class BrowserState
         customSets.Changed += OnCustomSetsChanged;
         pool.Disrupted += RequestTiles;
         sources.Ready += Refresh;
+        wristSides.Ready += Refresh;
         Refresh();
     }
 
@@ -302,6 +306,8 @@ public sealed class BrowserState
     /// <summary>The catalog item for a custom set piece (null when the catalog does not know it).</summary>
     public GlamourItem? ItemOf(uint itemId) => itemSubjects.TryGetValue(itemId, out var subject) ? subject.Item : null;
 
+    private Func<uint, WristSide>? WristOf => wristSides.IsReady ? wristSides.Of : null;
+
     private int RenderWidth => Layout.RenderWidth == 0 ? PageLayout.RenderSteps[0] : Layout.RenderWidth;
 
     public static readonly Stance WeaponDrawnStance = new(true, 0);
@@ -349,12 +355,12 @@ public sealed class BrowserState
                     CountsWithoutCategories = SetFilter.Counts(withoutCategories, index.CategoriesOf);
             }
             else if (index == null)
-                Results = Subjects(ItemFilter.Apply(catalog, sorted, isOwned, appearance.Race, appearance.Sex, parentOf: parentOf));
+                Results = Subjects(ItemFilter.Apply(catalog, sorted, isOwned, appearance.Race, appearance.Sex, parentOf: parentOf, wristOf: WristOf));
             else
             {
                 // One pass for both: the numbers behind the category checkboxes ignore the categories themselves.
                 var (items, withoutCategories) = ItemFilter.ApplyWithCategoryBase(catalog, sorted, isOwned,
-                    appearance.Race, appearance.Sex, index.CategoriesOf, index.PatchOf, parentOf);
+                    appearance.Race, appearance.Sex, index.CategoriesOf, index.PatchOf, parentOf, wristOf: WristOf);
                 Results = Subjects(items);
                 CountsWithoutCategories = index.Counts(withoutCategories.Select(i => i.Id));
             }

@@ -394,3 +394,8 @@ Strg+Klick oder Umschalt+Klick: mehrere Sets markieren,Ctrl+click or Shift+click
 Ordner „{0}“ löschen? Die Sets darin bleiben erhalten.,"Delete the folder ""{0}""? Its sets stay.",Supprimer le dossier « {0} » ? Ses ensembles restent.,フォルダー「{0}」を削除しますか？中のセットは残ります。
 Kamera-Position für ({0}) zurück auf automatisch,Camera position for ({0}) back to automatic,Position de la caméra pour ({0}) : revenir à l'automatique,({0})のカメラ位置を自動に戻す
 {0}: automatisch,{0}: automatic,{0} : automatique,{0}：自動
+Armband nur rechts,Bracelet on the right only,Bracelet à droite uniquement,右手首のみのブレスレット
+Armband nur links,Bracelet on the left only,Bracelet à gauche uniquement,左手首のみのブレスレット
+Armband an beiden Armen,Bracelet on both arms,Bracelet aux deux bras,両手首のブレスレット
+Armband-Seite,Bracelet side,Côté du bracelet,ブレスレットの位置
+Armbänder werden gelesen …,Reading bracelets …,Lecture des bracelets …,ブレスレットを読み込み中 …

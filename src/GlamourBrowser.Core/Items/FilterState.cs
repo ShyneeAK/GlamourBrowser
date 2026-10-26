@@ -25,6 +25,8 @@ public sealed record FilterState
     public int MaxLevel { get; init; } = 100;
     /// <summary>Only items with at least one dye channel ("Nur Färbbare").</summary>
     public bool DyeableOnly { get; init; }
+    /// <summary>Only bracelets on these arms (right only, left only, both; any combination); empty for every bracelet. Other slots stay.</summary>
+    public IReadOnlySet<Rendering.WristSide> Wrists { get; init; } = new HashSet<Rendering.WristSide>();
     /// <summary>The tile dye ("Farbe 1/2" next to the job picker): dyeable items render in it on their channels, nothing is hidden.</summary>
     public DyePair Dye { get; init; }
     public OwnershipFilter Ownership { get; init; } = OwnershipFilter.All;

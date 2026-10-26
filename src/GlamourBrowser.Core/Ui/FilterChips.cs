@@ -1,5 +1,6 @@
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Localization;
+using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Core.Sources;
 
 namespace GlamourBrowser.Core.Ui;
@@ -44,6 +45,9 @@ public static class FilterChips
         if (state.DyeableOnly)
             chips.Add(new FilterChip(Loc.T("Nur Färbbare"), state with { DyeableOnly = false }));
 
+        foreach (var wrist in Enum.GetValues<WristSide>().Where(state.Wrists.Contains))
+            chips.Add(new FilterChip(WristSideName(wrist), state with { Wrists = state.Wrists.Where(w => w != wrist).ToHashSet() }));
+
         string Name(byte id) => dyeName?.Invoke(id) ?? id.ToString();
         if (state.Dye.First != 0)
             chips.Add(new FilterChip(Loc.F("Farbe 1: {0}", Name(state.Dye.First)), state with { Dye = state.Dye with { First = 0 } }));
@@ -64,4 +68,12 @@ public static class FilterChips
 
         return chips;
     }
+
+    /// <summary>The name of a bracelet side, for its checkbox and its chip.</summary>
+    public static string WristSideName(WristSide side) => side switch
+    {
+        WristSide.Right => Loc.T("Armband nur rechts"),
+        WristSide.Left => Loc.T("Armband nur links"),
+        _ => Loc.T("Armband an beiden Armen"),
+    };
 }

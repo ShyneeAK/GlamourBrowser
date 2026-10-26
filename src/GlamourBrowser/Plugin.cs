@@ -118,9 +118,11 @@ public sealed class Plugin : IDalamudPlugin
         var sets = new SetCatalog(byId, variants, sources);
         var jobs = new JobCatalog(DataManager);
         var dyes = new DyeCatalog(DataManager);
-        browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets, wishlist, jobs, customSets, tryOn);
+        browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets, wishlist, jobs, customSets, tryOn, wristSides);
         // A new measure of the body frames the slots anew.
         framing.Changed += browser.InvalidateTiles;
+        // The side of every bracelet for its filter, read in the background.
+        wristSides.LoadAll(catalog.Where(i => i.Slot == EquipSlot.Wrists).Select(i => i.Id).ToList());
         UI.UiScale.Set(config.UiScale, config.FontScale);
         var theme = new UI.Theme.Theme(config);
         var editor = new CustomSetEditor(browser, customSets, live, variants, appearance, BlocksOf);
@@ -152,7 +154,7 @@ public sealed class Plugin : IDalamudPlugin
             new LivePane(browser, ownership, live, calibration, jobs, theme, sources, wishlist, customSets, dyes, editor,
                          new SetEditorPane(editor, browser, dyes, theme, plates), plates, tryOn, market, config),
             new TopBar(browser, config, theme, dyes, filterControls),
-            new FilterColumn(browser, ownership, config, sources, theme),
+            new FilterColumn(browser, ownership, config, sources, theme, wristSides),
             new TileGrid(browser, cache, pool, ownership, live, config, theme, sources, jobs, wishlist,
                          new WishlistPlanView(browser, ownership, wishlist, sources, live, theme, customSets, tryOn), customSets, editor, plates,
                          memoryStats, tryOn, filterControls, market),
@@ -337,6 +339,7 @@ public sealed class Plugin : IDalamudPlugin
             cache.Dispose();
         }).Wait();
         memoryStats.Dispose();
+        wristSides.Dispose();
         market.Dispose();
         tryOn.Dispose();
         appearance.Dispose();
