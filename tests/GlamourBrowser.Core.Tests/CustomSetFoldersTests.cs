@@ -25,6 +25,7 @@ public class CustomSetFoldersTests
         Assert.Equal(["Alltag", "Raid", "Set 1", "Set 4"], view.Select(s => s.Name));
         var raid = Assert.IsType<FolderSubject>(view[1]);
         Assert.Equal("Set 2", raid.Cover?.Name);
+        Assert.Equal(["Set 2", "Set 3"], raid.Covers.Select(c => c.Name));
         Assert.Null(Assert.IsType<FolderSubject>(view[0]).Cover);
     }
 
@@ -35,4 +36,11 @@ public class CustomSetFoldersTests
     [Fact]
     public void View_ASearchAtTheTopFindsTheSetsOfEveryFolder()
         => Assert.Equal(["Set 1", "Set 2", "Set 3", "Set 4"], CustomSetFolders.View(Sets, [Alltag, Raid], FolderOf, open: 0, searching: true).Select(s => s.Name));
+
+    [Fact]
+    public void Covers_AtMostTheFirstFour()
+    {
+        var folder = new FolderSubject(Raid, [Set(1), Set(2), Set(3), Set(4), Set(5)]);
+        Assert.Equal(["Set 1", "Set 2", "Set 3", "Set 4"], folder.Covers.Select(c => c.Name));
+    }
 }

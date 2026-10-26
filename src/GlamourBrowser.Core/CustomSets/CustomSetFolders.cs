@@ -3,15 +3,21 @@ using GlamourBrowser.Core.Sets;
 
 namespace GlamourBrowser.Core.CustomSets;
 
-/// <summary>A folder's tile in "Meine Sets": it shows its first set (<see cref="Cover"/>); a click opens it.</summary>
+/// <summary>A folder's tile in "Meine Sets": it shows its first sets as a collage (<see cref="Covers"/>); a click opens it.</summary>
 /// <param name="Sets">The folder's sets in the order "Meine Sets" shows them.</param>
 public sealed record FolderSubject(CustomFolder Folder, IReadOnlyList<SetSubject> Sets) : TileSubject
 {
     public override (uint ItemId, SetId Set) Id => (0, new SetId(SetKind.CustomFolder, Folder.Id));
     public override string Name => Folder.Name;
 
-    /// <summary>The set whose render the folder's tile shows; null for an empty folder.</summary>
+    /// <summary>The most sets the folder's tile shows.</summary>
+    public const int MaxCovers = 4;
+
+    /// <summary>The first set; null for an empty folder.</summary>
     public SetSubject? Cover => Sets.Count > 0 ? Sets[0] : null;
+
+    /// <summary>The sets whose renders the folder's tile shows, 2×2: the first <see cref="MaxCovers"/>.</summary>
+    public IReadOnlyList<SetSubject> Covers => Sets.Take(MaxCovers).ToList();
 
     public override IReadOnlyList<GlamourItem> Wear => Cover?.Wear ?? [];
     public override EquipSlot CameraSlot => EquipSlot.Body;

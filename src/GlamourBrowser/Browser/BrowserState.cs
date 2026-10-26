@@ -413,9 +413,9 @@ public sealed class BrowserState
     private List<TileKey> PageKeys(int page)
         => page >= 0 && page < PageCount ? RenderKeys(ItemFilter.Page(Results, page, PageSize)).ToList() : [];
 
-    /// <summary>The keys to render for the subjects: a folder renders its first set, an empty one nothing.</summary>
+    /// <summary>The keys to render for the subjects: a folder renders its first sets (its collage), an empty one nothing.</summary>
     private IEnumerable<TileKey> RenderKeys(IEnumerable<TileSubject> subjects)
-        => subjects.Select(s => s is FolderSubject folder ? folder.Cover : s).OfType<TileSubject>().Select(KeyFor);
+        => subjects.SelectMany(s => s is FolderSubject folder ? folder.Covers : (IEnumerable<TileSubject>)[s]).Select(KeyFor);
 
     private IReadOnlyList<TileSubject> Subjects(IReadOnlyList<GlamourItem> items) => items.Select(i => (TileSubject)itemSubjects[i.Id]).ToList();
 

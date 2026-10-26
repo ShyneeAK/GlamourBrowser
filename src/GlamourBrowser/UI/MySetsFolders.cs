@@ -17,7 +17,7 @@ using GlamourBrowser.UI.Widgets;
 namespace GlamourBrowser.UI;
 
 /// <summary>
-/// The folders of "Meine Sets": their tiles (the first set's render, a click opens it), "+ Neuer Ordner", the way back,
+/// The folders of "Meine Sets": their tiles (a collage of the first sets, a click opens it), "+ Neuer Ordner", the way back,
 /// renaming and deleting, and moving sets in by dragging their tile or by the tile's right-click menu.
 /// </summary>
 public sealed class MySetsFolders(BrowserState state, CustomSetService customSets, TileCache<IDalamudTextureWrap> cache, Theme.Theme theme)
@@ -107,7 +107,7 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
         }
     }
 
-    /// <summary>A folder's tile: the render of its first set (a folder glyph while empty), its name and number of sets.</summary>
+    /// <summary>A folder's tile with an accent frame: its first four sets as a 2×2 collage (a folder glyph while empty), its name and number of sets.</summary>
     public void DrawTile(FolderSubject folder, Vector2 size, bool dimmed)
     {
         const float rounding = 8f;
@@ -127,22 +127,37 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
 
         var drawList = ImGui.GetWindowDrawList();
         drawList.AddRectFilled(pos, pos + size, hovered || dropping ? colors.CardRaised : colors.Card, rounding);
-        if (folder.Cover is { } cover && cache.TryGet(state.KeyFor(cover), out var texture) && texture != null)
-            drawList.AddImageRounded(texture.Handle, pos, pos + size, Vector2.Zero, Vector2.One, dimmed ? 0xFFA0A0A0 : 0xFFFFFFFF, rounding);
-        else if (folder.Cover == null)
+
+        // The first sets as a 2×2 collage above the name strip; an empty folder shows a large folder glyph.
+        var lineHeight = ImGui.GetTextLineHeight();
+        var stripHeight = lineHeight * 2.2f + 4;
+        const float gap = 4f;
+        var areaMin = pos + new Vector2(gap + 2);
+        var areaMax = pos + size - new Vector2(gap + 2, stripHeight + gap);
+        if (folder.Covers.Count == 0)
         {
             using (UiScale.PushIcons())
             {
                 var glyph = FontAwesomeIcon.Folder.ToIconString();
                 var scale = MathF.Min(size.X, size.Y) * 0.35f / ImGui.GetFontSize();
                 var glyphSize = ImGui.CalcTextSize(glyph) * scale;
-                drawList.AddText(ImGui.GetFont(), ImGui.GetFontSize() * scale, pos + (size - glyphSize) / 2, colors.TextMuted, glyph);
+                drawList.AddText(ImGui.GetFont(), ImGui.GetFontSize() * scale, (areaMin + areaMax - glyphSize) / 2, colors.TextMuted, glyph);
+            }
+        }
+        else
+        {
+            var cell = (areaMax - areaMin - new Vector2(gap)) / 2;
+            for (var i = 0; i < FolderSubject.MaxCovers; i++)
+            {
+                var min = areaMin + new Vector2(i % 2, i / 2) * (cell + new Vector2(gap));
+                if (i < folder.Covers.Count)
+                    DrawCover(drawList, folder.Covers[i], min, cell, size, dimmed);
+                else
+                    drawList.AddRectFilled(min, min + cell, colors.CardRaised, 5f);
             }
         }
 
         // The folder glyph and name on the dark strip along the bottom, like the set tiles.
-        var lineHeight = ImGui.GetTextLineHeight();
-        var stripHeight = lineHeight * 2.2f + 4;
         var shadeTop = pos + new Vector2(0, size.Y - stripHeight);
         drawList.PushClipRect(pos, pos + size, true);
         drawList.AddRectFilled(shadeTop, pos + size, 0xB0000000, rounding, ImDrawFlags.RoundCornersBottom);
@@ -160,7 +175,40 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
         drawList.AddText(shadeTop + new Vector2(textX, 4 + lineHeight), colors.TextMuted, count);
         drawList.PopClipRect();
 
-        drawList.AddRect(pos, pos + size, dropping ? colors.Accent : colors.Border, rounding, ImDrawFlags.None, dropping ? 2f : 1f);
+        // Always the accent frame: a folder stands out from the set tiles; thicker while a set is dragged over it.
+        drawList.AddRect(pos, pos + size, colors.Accent, rounding, ImDrawFlags.None, dropping ? 3f : 2f);
+    }
+
+    /// <summary>
+    /// One set of the collage: the middle of its render cut to the cell (the render has the tile's shape), or its body
+    /// piece's icon until the render is there.
+    /// </summary>
+    private void DrawCover(ImDrawListPtr drawList, SetSubject set, Vector2 min, Vector2 cell, Vector2 tile, bool dimmed)
+    {
+        if (cache.TryGet(state.KeyFor(set), out var texture) && texture != null)
+        {
+            var (uvMin, uvMax) = CoverUv(tile.X / tile.Y, cell.X / cell.Y);
+            drawList.AddImageRounded(texture.Handle, min, min + cell, uvMin, uvMax, dimmed ? 0xFFA0A0A0 : 0xFFFFFFFF, 5f);
+            return;
+        }
+        drawList.AddRectFilled(min, min + cell, theme.Colors.CardRaised, 5f);
+        var piece = set.Wear.FirstOrDefault(w => w.Slot == EquipSlot.Body) ?? set.Wear.FirstOrDefault();
+        if (piece == null)
+            return;
+        var edge = new Vector2(MathF.Min(cell.X, cell.Y) * 0.6f);
+        GameIcon.DrawAt(drawList, piece.IconId, min + (cell - edge) / 2, edge, FontAwesomeIcon.Tshirt, theme.Colors.TextMuted);
+    }
+
+    /// <summary>The part of a render (aspect <paramref name="image"/>) that fills a cell (aspect <paramref name="cell"/>): its middle.</summary>
+    private static (Vector2 Min, Vector2 Max) CoverUv(float image, float cell)
+    {
+        if (cell > image)
+        {
+            var height = image / cell;
+            return (new Vector2(0, (1 - height) / 2), new Vector2(1, (1 + height) / 2));
+        }
+        var width = cell / image;
+        return (new Vector2((1 - width) / 2, 0), new Vector2((1 + width) / 2, 1));
     }
 
     /// <summary>A custom set's tile can be dragged onto a folder (or the way back); call right after the tile's button.</summary>
