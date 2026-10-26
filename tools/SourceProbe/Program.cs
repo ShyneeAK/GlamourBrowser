@@ -1,5 +1,5 @@
 // Offline check of the source index against the game data (not part of the plugin).
-// Usage: SourceProbe <sqpack> [itemId ...] [--find "name part"] [--samples] [--sets] [--blocks] [--timeline [id ...]]
+// Usage: SourceProbe <sqpack> [itemId ...] [--find "name part"] [--samples] [--sets] [--blocks] [--timeline [id ...]] [--accessories]
 using System.Diagnostics;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Sets;
@@ -37,6 +37,48 @@ if (args.Contains("--blocks"))
         var blocked = string.Join(" ", Enum.GetValues<EquipSlot>().Where(s => SlotMask.Contains(group.Key.Blocks, s)));
         Console.WriteLine($"{group.Key.Slot} blocks {blocked}: {group.Count()} items, e.g. {string.Join(", ", group.Take(3).Select(x => x.Item.Name.ExtractText()))}");
     }
+    return 0;
+}
+
+if (args.Contains("--accessories"))
+{
+    // Ring models per hand (_rir/_ril) and the side of bracelet models (bounding box x: + is the character's left).
+    var (right, left, both, none) = (0, 0, 0, 0);
+    foreach (var item in items.Where(i => i.ModelMain != 0 && ItemSlots.SlotOf(i.EquipSlotCategory.Value) is EquipSlot.RingRight or EquipSlot.RingLeft))
+    {
+        var set = item.ModelMain & 0xFFFF;
+        bool Has(string suffix) => new[] { "c0101", "c0201" }.Any(race => data.FileExists($"chara/accessory/a{set:D4}/model/{race}a{set:D4}_{suffix}.mdl"));
+        var (r, l) = (Has("rir"), Has("ril"));
+        int Size(string suffix) => new[] { "c0101", "c0201" }.Select(race => data.GetFile($"chara/accessory/a{set:D4}/model/{race}a{set:D4}_{suffix}.mdl")?.Data.Length ?? 0).Max();
+        var (rs, ls) = (Size("rir"), Size("ril"));
+        if (Math.Min(rs, ls) * 3 < Math.Max(rs, ls))
+            Console.WriteLine($"ring {item.RowId} {item.Name.ExtractText()} a{set:D4}: sizes right {rs}, left {ls}");
+        if (r && l) both++; else if (r) right++; else if (l) left++; else none++;
+        if (r != l)
+            Console.WriteLine($"ring {item.RowId} {item.Name.ExtractText()} a{set:D4}: only {(r ? "right" : "left")}");
+    }
+    Console.WriteLine($"rings: both {both}, right only {right}, left only {left}, none {none}");
+
+    var sides = new Dictionary<string, int>();
+    foreach (var item in items.Where(i => i.ModelMain != 0 && ItemSlots.SlotOf(i.EquipSlotCategory.Value) == EquipSlot.Wrists))
+    {
+        var set = item.ModelMain & 0xFFFF;
+        var file = new[] { "c0101", "c0201" }.Select(race => $"chara/accessory/a{set:D4}/model/{race}a{set:D4}_wrs.mdl").FirstOrDefault(data.FileExists);
+        if (file == null)
+        {
+            sides["no model"] = sides.GetValueOrDefault("no model") + 1;
+            continue;
+        }
+        // The bones the model is skinned to are named in its string block: a bracelet on one wrist names only that arm's.
+        var text = System.Text.Encoding.ASCII.GetString(data.GetFile(file)!.Data);
+        bool Names(string side) => text.Contains($"j_te_{side}\0") || text.Contains($"j_ude_b_{side}\0") || text.Contains($"n_hte_{side}\0");
+        var (onRight, onLeft) = (Names("r"), Names("l"));
+        var side = onRight && onLeft ? "both" : onRight ? "right" : onLeft ? "left" : "unknown";
+        sides[side] = sides.GetValueOrDefault(side) + 1;
+        if (side is "right" or "left" ? sides[side] <= 8 : side == "unknown")
+            Console.WriteLine($"bracelet {item.RowId} {item.Name.ExtractText()} a{set:D4}: {side}");
+    }
+    Console.WriteLine("bracelets: " + string.Join(", ", sides.Select(kv => $"{kv.Key} {kv.Value}")));
     return 0;
 }
 

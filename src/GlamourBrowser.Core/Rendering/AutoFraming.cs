@@ -32,19 +32,24 @@ public static class AutoFraming
     /// <summary>The height the CharaView camera looks at; the character's position shifts it there.</summary>
     public const float ViewCentreY = 0.848f;
 
-    // Turned three quarters for a head, from the side for hands (the rings and bracelets show).
+    // Turned three quarters for a head, from the side for hands (the rings and bracelets show): the right hand faces
+    // the camera, the left one for a bracelet on the left arm only.
     private const float HeadTurn = -0.655f;
     private const float HandTurn = 1.055f;
 
-    public static CameraPreset For(EquipSlot slot, BodyMeasures body)
+    /// <param name="wrist">For a bracelet on one arm: that hand faces the camera and is in the middle.</param>
+    public static CameraPreset For(EquipSlot slot, BodyMeasures body, WristSide wrist = WristSide.Both)
     {
         var head = body.HeadSize;
         return slot switch
         {
+            EquipSlot.Wrists when wrist == WristSide.Right => Frame(body.HandRight, 8.1f * head, HandTurn),
+            EquipSlot.Wrists when wrist == WristSide.Left => Frame(body.HandLeft, 8.1f * head, -HandTurn),
             EquipSlot.Head or EquipSlot.Ears => Frame(body.Head + new Vector3(0, 0.26f * head, 0), 8.1f * head, HeadTurn),
             EquipSlot.Neck => Frame(body.Neck - new Vector3(0, 0.5f * head, 0), 8.1f * head, 0),
-            EquipSlot.Hands or EquipSlot.Wrists or EquipSlot.RingRight or EquipSlot.RingLeft
-                => Frame((body.HandLeft + body.HandRight) / 2, 8.1f * head, HandTurn),
+            EquipSlot.Hands or EquipSlot.Wrists => Frame((body.HandLeft + body.HandRight) / 2, 8.1f * head, HandTurn),
+            // A ring tile always wears it on the right hand.
+            EquipSlot.RingRight or EquipSlot.RingLeft => Frame(body.HandRight, 8.1f * head, HandTurn),
             EquipSlot.Feet => Frame(new Vector3(body.Waist.X, 0.25f * body.Top, body.Waist.Z), 0.92f * body.Top, 0, keepX: true),
             // Body, legs and weapons: the whole character, like the game's view of a Miqo'te of middle height.
             _ => Frame(new Vector3(0, 0.56f * body.Top, 0), 1.2f * body.Top, 0, keepX: true),

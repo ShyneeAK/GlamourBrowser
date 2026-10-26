@@ -24,7 +24,7 @@ public sealed unsafe class LivePreview : IDisposable
     private readonly RenderPool pool;
     private readonly AppearanceTracker appearance;
     private readonly Configuration config;
-    private readonly Func<EquipSlot, CameraPreset?> cameraFor;
+    private readonly Func<TileSubject?, CameraPreset?> cameraFor;
     private readonly AutoFramingService autoFraming;
     // Ticks the view has been ready for a measure (see MeasureBody).
     private int measureTicks;
@@ -43,7 +43,7 @@ public sealed unsafe class LivePreview : IDisposable
     private float rotateX, rotateY, panX, panY, zoom;
     private bool reset;
 
-    public LivePreview(RenderPool pool, AppearanceTracker appearance, Configuration config, Func<EquipSlot, CameraPreset?> cameraFor,
+    public LivePreview(RenderPool pool, AppearanceTracker appearance, Configuration config, Func<TileSubject?, CameraPreset?> cameraFor,
                        AutoFramingService autoFraming)
     {
         this.autoFraming = autoFraming;
@@ -176,7 +176,7 @@ public sealed unsafe class LivePreview : IDisposable
             hashedLook = look;
             lookHash = Looks.Hash(look);
         }
-        framing = cameraFor(subject?.CameraSlot ?? EquipSlot.Body);
+        framing = cameraFor(subject);
         var wanted = (lookHash, appearance.CustomizeHash);
 
         // The game picks the stance when a weapon is drawn and keeps it for the next weapon loaded into the hand: before

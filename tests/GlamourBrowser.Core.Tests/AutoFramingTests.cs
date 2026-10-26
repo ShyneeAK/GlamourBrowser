@@ -42,4 +42,25 @@ public class AutoFramingTests
         Assert.True(Miqote.CloseTo(Miqote with { Head = Miqote.Head + new Vector3(0, 0.005f, 0) }));
         Assert.False(Miqote.CloseTo(Miqote with { Head = Miqote.Head + new Vector3(0, 0.02f, 0) }));
     }
+
+    [Fact]
+    public void For_ABraceletOnOneArmFacesThatHand()
+    {
+        var right = AutoFraming.For(EquipSlot.Wrists, Miqote, WristSide.Right);
+        var left = AutoFraming.For(EquipSlot.Wrists, Miqote, WristSide.Left);
+
+        Assert.True(right.Rotation > 0);
+        Assert.Equal(-right.Rotation, left.Rotation);
+        Assert.Equal(AutoFraming.ViewCentreY - Miqote.HandLeft.Y, left.PositionY, 0.001f);
+        Assert.Equal(AutoFraming.For(EquipSlot.Hands, Miqote), AutoFraming.For(EquipSlot.Wrists, Miqote, WristSide.Both));
+    }
+
+    [Theory]
+    [InlineData("j_kosi\0j_te_r\0j_ude_b_r\0", WristSide.Right)]
+    [InlineData("j_kosi\0n_hte_l\0", WristSide.Left)]
+    [InlineData("j_te_r\0j_te_l\0", WristSide.Both)]
+    [InlineData("j_kosi\0", WristSide.Both)]
+    [InlineData("j_te_rx\0", WristSide.Both)]
+    public void SideOf_TheArmsTheModelIsSkinnedTo(string strings, WristSide side)
+        => Assert.Equal(side, WristModels.SideOf(System.Text.Encoding.ASCII.GetBytes("MDL" + strings.Replace("\\0", "\0"))));
 }

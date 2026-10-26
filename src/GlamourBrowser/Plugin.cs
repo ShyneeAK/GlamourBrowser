@@ -66,6 +66,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly Configuration config;
     private readonly CalibrationService calibration;
     private readonly AutoFramingService framing;
+    private readonly WristSides wristSides = new();
     private readonly SourceService sources;
     private readonly MemoryStats memoryStats;
     private bool paused;
@@ -205,8 +206,8 @@ public sealed class Plugin : IDalamudPlugin
                 List<string> lines;
                 lock (RenderSync.Lock)
                     lines = live.DescribeCamera();
-                if (live.Selected?.CameraSlot is { } slot && CameraFor(slot) is { } calibrated)
-                    lines.Insert(1, $"calibration of {slot}: {calibrated}");
+                if (live.Selected is { } selected && CameraFor(selected) is { } camera)
+                    lines.Insert(1, $"camera of {selected.CameraSlot}: {camera}");
                 var path = System.IO.Path.Combine(PluginInterface.ConfigDirectory.FullName, "camera-probe.txt");
                 PluginInterface.ConfigDirectory.Create();
                 System.IO.File.AppendAllLines(path, ["", $"=== {DateTime.Now:HH:mm:ss}", .. lines]);
@@ -261,10 +262,17 @@ public sealed class Plugin : IDalamudPlugin
             Log.Information($"[trace] {frame} tryon: draw {tryon->CharaView.DrawWeapon} | {CharaViewHandle.DescribeTrace(&tryon->CharaView.CharaView)}");
     }
 
-    /// <summary>The slot's camera: the player's own calibration, else the automatic framing from the measured body.</summary>
-    private CameraPreset? CameraFor(EquipSlot slot)
-        => calibration.Get(PlayerState.ContentId, slot)
-           ?? framing.For(PlayerState.ContentId, slot, appearance.CustomizeHash, config.UseIdlePose ? appearance.IdlePose : TileKey.StandardPose);
+    /// <summary>
+    /// The camera for an item or set (its camera slot; the body's without a selection): the player's own calibration of
+    /// the slot, else the automatic framing from the measured body, facing the arm a bracelet is on.
+    /// </summary>
+    private CameraPreset? CameraFor(TileSubject? subject)
+    {
+        var slot = subject?.CameraSlot ?? EquipSlot.Body;
+        var wrist = subject is ItemSubject { Item: { Slot: EquipSlot.Wrists } bracelet } ? wristSides.Of(bracelet.Id) : WristSide.Both;
+        return calibration.Get(PlayerState.ContentId, slot)
+               ?? framing.For(PlayerState.ContentId, slot, appearance.CustomizeHash, config.UseIdlePose ? appearance.IdlePose : TileKey.StandardPose, wrist);
+    }
 
     private void OnFrameworkUpdate(IFramework framework)
     {

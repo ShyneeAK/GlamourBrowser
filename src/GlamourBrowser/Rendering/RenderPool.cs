@@ -88,7 +88,7 @@ public sealed unsafe class RenderPool : IDisposable
     private readonly TileCache<IDalamudTextureWrap> cache;
     private readonly Func<TileKey, TileSubject?> lookup;
     private readonly AppearanceTracker appearance;
-    private readonly Func<EquipSlot, CameraPreset?> cameraFor;
+    private readonly Func<TileSubject?, CameraPreset?> cameraFor;
     // The try-on without the slots a tile covers and without what blocks them (TryOn.LookFor).
     private readonly Func<ushort, IReadOnlyList<CustomPiece>> look;
     private readonly Func<uint, GlamourItem?> itemOf;
@@ -101,7 +101,7 @@ public sealed unsafe class RenderPool : IDisposable
     private bool freezeWarned;
 
     public RenderPool(TileQueue queue, TileCache<IDalamudTextureWrap> cache, Func<TileKey, TileSubject?> lookup,
-                      AppearanceTracker appearance, Func<EquipSlot, CameraPreset?> cameraFor, Func<ushort, IReadOnlyList<CustomPiece>> look,
+                      AppearanceTracker appearance, Func<TileSubject?, CameraPreset?> cameraFor, Func<ushort, IReadOnlyList<CustomPiece>> look,
                       Func<uint, GlamourItem?> itemOf)
     {
         this.itemOf = itemOf;
@@ -242,7 +242,7 @@ public sealed unsafe class RenderPool : IDisposable
         }
         // The weapon is drawn or sheathed once the item has loaded (Loading phase), and that has to finish
         // first (DrawGate in the Pose phase).
-        view.ApplyCamera(cameraFor(subject.CameraSlot));
+        view.ApplyCamera(cameraFor(subject));
         // A view keeps its pose and frozen moment from tile to tile; only a change (or a re-dress, which may
         // rebuild the character) lets the animation run again and waits for it in the Pose phase.
         // Weapon tiles always let the animation run: the weapon is attached to the hand by the animation.
