@@ -116,7 +116,6 @@ Händler-NPCs,Vendor NPCs,PNJ marchands,商人NPC
 Händler-Orte,Vendor locations,Emplacements des marchands,商人の場所
 Händler-Orte (Supplemental),Vendor locations (Supplemental),Emplacements des marchands (Supplemental),商人の場所（Supplemental）
 Händler-Zuordnung (Supplemental),Vendor assignment (Supplemental),Attribution des marchands (Supplemental),商人の割り当て（Supplemental）
-In der Slot-Auswahl zeigen: springt zur Seite mit diesem Item,Show in the slot view: jumps to the page with this item,Afficher dans la vue par emplacement : va à la page de cet objet,部位一覧で表示：このアイテムのページへ移動
 In Glamour-Plate übertragen,Transfer to glamour plate,Transférer vers la tenue de mirage,ミラージュプレートに転送
 Inhalte,Duties,Missions,コンテンツ
 Inhalts-Ketten,Duty chains,Chaînes de missions,コンテンツ経由
@@ -163,10 +162,10 @@ Kisten-Inhalt,Coffer contents,Contenu des coffres,コファーの中身
 Klassen/Jobs,Classes/Jobs,Classes/Jobs,クラス/ジョブ
 Klick: auf Universalis öffnen,Click: open on Universalis,Clic : ouvrir sur Universalis,クリック：Universalisで開く
 Klick: auswählen,Click: select,Clic : sélectionner,クリック：選択
-"Klick: auswählen
-Rechtsklick: ausziehen","Click: select
-Right-click: take off","Clic : sélectionner
-Clic droit : retirer","クリック：選択
+"Klick: auswählen und in den Kacheln zeigen
+Rechtsklick: ausziehen","Click: select and show in the tiles
+Right-click: take off","Clic : sélectionner et afficher dans les vignettes
+Clic droit : retirer","クリック：選択してタイルに表示
 右クリック：外す"
 Kommode,Glamour Dresser,Commode à mirages,ミラージュドレッサー
 Kommoden-Set,Glamour Dresser set,Ensemble de la commode à mirages,ミラージュドレッサーのセット

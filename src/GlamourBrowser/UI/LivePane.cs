@@ -172,7 +172,7 @@ public sealed unsafe class LivePane
 
     /// <summary>
     /// One icon per piece the try-on wears (known items, in slot order): a click selects it again, for its card, dyes and
-    /// camera, without putting anything on; a right-click takes it off. Wraps when the pane is narrow.
+    /// camera, without putting anything on, and shows its slot's tiles on the page with it; a right-click takes it off. Wraps when the pane is narrow.
     /// </summary>
     private void DrawWornPieces()
     {
@@ -193,11 +193,12 @@ public sealed unsafe class LivePane
             first = false;
             var selected = state.Selected is ItemSubject { Item.Id: var id } && id == piece.ItemId;
             if (IconToggle.Draw($"##worn{(int)piece.Slot}", subject.Item.IconId, size, selected,
-                    $"{SlotNames.Full(piece.Slot)}: {subject.Name}\n" + Loc.T("Klick: auswählen\nRechtsklick: ausziehen"),
+                    $"{SlotNames.Full(piece.Slot)}: {subject.Name}\n" + Loc.T("Klick: auswählen und in den Kacheln zeigen\nRechtsklick: ausziehen"),
                     theme, FontAwesomeIcon.Tshirt))
             {
                 state.Selected = subject;
                 live.Select(subject);
+                state.ShowInGrid(subject.Item);
             }
             if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
                 tryOn.TryOn.TakeOff(piece.Slot);
@@ -387,9 +388,6 @@ public sealed unsafe class LivePane
         ImGui.SameLine();
         if (IconButton.Draw("##copyname", 0, FontAwesomeIcon.Copy, Loc.T("Namen kopieren"), theme))
             ImGui.SetClipboardText(item.Name);
-        ImGui.SameLine();
-        if (IconButton.Draw("##showingrid", 0, FontAwesomeIcon.Crosshairs, Loc.T("In der Slot-Auswahl zeigen: springt zur Seite mit diesem Item"), theme))
-            state.ShowInGrid(item);
         ImGui.SameLine();
         DrawCalibration(item);
 
