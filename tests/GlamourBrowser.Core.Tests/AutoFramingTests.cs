@@ -44,15 +44,18 @@ public class AutoFramingTests
     }
 
     [Fact]
-    public void For_ABraceletOnOneArmFacesThatHand()
+    public void For_ABraceletOnTheLeftArmIsTheMirrorImage()
     {
         var right = AutoFraming.For(EquipSlot.Wrists, Miqote, WristSide.Right);
         var left = AutoFraming.For(EquipSlot.Wrists, Miqote, WristSide.Left);
+        Vector3 OnScreen(Vector3 hand, CameraPreset camera)
+            => Vector3.Transform(hand, Quaternion.CreateFromAxisAngle(Vector3.UnitY, camera.Rotation)) + new Vector3(camera.PositionX, camera.PositionY, 0);
 
-        Assert.True(right.Rotation > 0);
+        Assert.Equal(AutoFraming.For(EquipSlot.Hands, Miqote), right);
         Assert.Equal(-right.Rotation, left.Rotation);
-        Assert.Equal(AutoFraming.ViewCentreY - Miqote.HandLeft.Y, left.PositionY, 0.001f);
-        Assert.Equal(AutoFraming.For(EquipSlot.Hands, Miqote), AutoFraming.For(EquipSlot.Wrists, Miqote, WristSide.Both));
+        Assert.Equal(right.Distance, left.Distance);
+        Assert.Equal(-OnScreen(Miqote.HandRight, right).X, OnScreen(Miqote.HandLeft, left).X, 0.0001f);
+        Assert.Equal(OnScreen(Miqote.HandRight, right).Y, OnScreen(Miqote.HandLeft, left).Y, 0.0001f);
     }
 
     [Theory]

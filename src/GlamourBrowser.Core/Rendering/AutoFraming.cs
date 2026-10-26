@@ -37,14 +37,13 @@ public static class AutoFraming
     private const float HeadTurn = -0.655f;
     private const float HandTurn = 1.055f;
 
-    /// <param name="wrist">For a bracelet on one arm: that hand faces the camera and is in the middle.</param>
+    /// <param name="wrist">For a bracelet on the left arm only: the mirror image of the hands' camera, the left hand facing it.</param>
     public static CameraPreset For(EquipSlot slot, BodyMeasures body, WristSide wrist = WristSide.Both)
     {
         var head = body.HeadSize;
         return slot switch
         {
-            EquipSlot.Wrists when wrist == WristSide.Right => Frame(body.HandRight, 8.1f * head, HandTurn),
-            EquipSlot.Wrists when wrist == WristSide.Left => Frame(body.HandLeft, 8.1f * head, -HandTurn),
+            EquipSlot.Wrists when wrist == WristSide.Left => Mirrored(body, Frame((body.HandLeft + body.HandRight) / 2, 8.1f * head, HandTurn)),
             EquipSlot.Head or EquipSlot.Ears => Frame(body.Head + new Vector3(0, 0.26f * head, 0), 8.1f * head, HeadTurn),
             EquipSlot.Neck => Frame(body.Neck - new Vector3(0, 0.5f * head, 0), 8.1f * head, 0),
             EquipSlot.Hands or EquipSlot.Wrists => Frame((body.HandLeft + body.HandRight) / 2, 8.1f * head, HandTurn),
@@ -56,11 +55,25 @@ public static class AutoFraming
         };
     }
 
+    /// <summary>
+    /// The mirror image of the hands' camera for a bracelet on the left arm: turned the other way, the left hand where
+    /// the right one is in <paramref name="right"/> but on the other side of the middle, at the same height and zoom; so
+    /// the tiles look alike while scrolling.
+    /// </summary>
+    private static CameraPreset Mirrored(BodyMeasures body, CameraPreset right)
+    {
+        var rightHand = Turn(body.HandRight, right.Rotation) + new Vector3(right.PositionX, right.PositionY, 0);
+        var leftHand = Turn(body.HandLeft, -right.Rotation);
+        return new CameraPreset(-right.Rotation, -rightHand.X - leftHand.X, rightHand.Y - leftHand.Y, right.Distance);
+    }
+
+    private static Vector3 Turn(Vector3 point, float turn) => Vector3.Transform(point, Quaternion.CreateFromAxisAngle(Vector3.UnitY, turn));
+
     /// <summary>The preset that shows <paramref name="centre"/> (model space) in the middle of a view <paramref name="height"/> high.</summary>
     /// <param name="keepX">Not shifted sideways (the whole body stands in the middle as it is).</param>
     private static CameraPreset Frame(Vector3 centre, float height, float turn, bool keepX = false)
     {
-        var turned = Vector3.Transform(centre, Quaternion.CreateFromAxisAngle(Vector3.UnitY, turn));
+        var turned = Turn(centre, turn);
         return new CameraPreset(turn, keepX ? 0 : -turned.X, ViewCentreY - turned.Y, height);
     }
 }
