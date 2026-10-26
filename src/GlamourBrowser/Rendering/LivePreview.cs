@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using GlamourBrowser.Core.CustomSets;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Rendering;
@@ -60,6 +61,9 @@ public sealed unsafe class LivePreview : IDisposable
     private int sheatheFrames = -1;
     private int toggleTicks;
     private int toggleRetries;
+
+    /// <summary>The look holds a main hand; without one (taken off) the weapon is hidden and the weapon toggles do nothing.</summary>
+    public bool HasMainHand { get; private set; } = true;
 
     /// <summary>Weapon shown or hidden, toggled from the UI like the game's try-on window.</summary>
     public bool WeaponVisible { get; set; } = true;
@@ -160,7 +164,8 @@ public sealed unsafe class LivePreview : IDisposable
 
         // The game picks the stance when a weapon is drawn and keeps it for the next weapon loaded into the hand: before
         // another kind of weapon loads, the drawn one is sheathed (only while nothing loads), and drawn anew below.
-        var (weaponDrawn, weaponVisible) = LiveWeapons.Effective(subject, WeaponDrawn, WeaponVisible);
+        HasMainHand = look.Any(p => p.Slot == EquipSlot.MainHand && p.ItemId != 0);
+        var (weaponDrawn, weaponVisible) = LiveWeapons.Effective(subject, WeaponDrawn, WeaponVisible, HasMainHand);
         // The drawn weapon is the look's main hand, whatever is selected (a hat, or nothing after a reset).
         var stance = WeaponStance.OfLook(look, ItemOf) ?? RenderPool.OwnWeapon;
         if (applied != wanted && weaponDrawn && appliedWeaponDrawn == true && inHandStance != stance && sheatheFrames < 0 && view.IsIdle

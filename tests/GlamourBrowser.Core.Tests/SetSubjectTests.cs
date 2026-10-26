@@ -94,6 +94,13 @@ public class SetSubjectTests
         => Assert.Equal((true, false), LiveWeapons.Effective(null, drawn: true, visible: false));
 
     [Fact]
+    public void LiveWeapons_WithoutAMainHandTheWeaponIsHiddenAndSheathed()
+    {
+        Assert.Equal((false, false), LiveWeapons.Effective(null, drawn: true, visible: true, hasMainHand: false));
+        Assert.Equal((false, false), LiveWeapons.Effective(Subject(Item(2, Body)), drawn: false, visible: true, hasMainHand: false));
+    }
+
+    [Fact]
     public void LiveWeapons_ItemsKeepTheToggles()
         => Assert.Equal((true, false), LiveWeapons.Effective(new ItemSubject(Item(1, MainHand)), drawn: true, visible: false));
 

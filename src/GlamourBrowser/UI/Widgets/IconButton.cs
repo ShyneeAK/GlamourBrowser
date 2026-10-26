@@ -21,7 +21,11 @@ public static class IconButton
         if (hovered)
             drawList.AddRect(min, min + edge, colors.Border, 5f, ImDrawFlags.None, 1f);
         var pad = new Vector2(edge.X * 0.15f);
-        GameIcon.DrawAt(drawList, gameIcon, min + pad, edge - pad * 2, fallback, hovered ? colors.Text : colors.TextMuted);
+        // Inside ImRaii.Disabled (style alpha lowered) the icon or glyph is faded, like IconToggle's disabled look.
+        var faded = ImGui.GetStyle().Alpha < 1f;
+        GameIcon.DrawAt(drawList, gameIcon, min + pad, edge - pad * 2, fallback,
+                        faded ? (colors.TextMuted & 0x00FFFFFF) | 0x60000000 : hovered ? colors.Text : colors.TextMuted,
+                        faded ? 0x60FFFFFF : 0xFFFFFFFF);
 
         if (hovered && tooltip.Length > 0)
             ImGui.SetTooltip(tooltip);

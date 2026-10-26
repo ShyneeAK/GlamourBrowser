@@ -262,13 +262,20 @@ public sealed unsafe class LivePane
             live.VisorClosed = !live.VisorClosed;
         if (state.Selected is not SetSubject)
         {
-            ImGui.SetCursorScreenPos(buttonPos += step);
-            if (IconButton.Draw("##draw", 0, FontAwesomeIcon.FistRaised, live.WeaponDrawn ? Loc.T("Waffe wegstecken") : Loc.T("Waffe ziehen"), theme))
-                live.WeaponDrawn = !live.WeaponDrawn;
-            ImGui.SetCursorScreenPos(buttonPos + step);
-            if (IconButton.Draw("##weaponvisible", 0, live.WeaponVisible ? FontAwesomeIcon.EyeSlash : FontAwesomeIcon.Eye,
-                    live.WeaponVisible ? Loc.T("Waffe ausblenden") : Loc.T("Waffe anzeigen"), theme))
-                live.WeaponVisible = !live.WeaponVisible;
+            // Without a main hand (taken off) there is nothing to draw or show.
+            var noWeapon = !live.HasMainHand;
+            using (ImRaii.Disabled(noWeapon))
+            {
+                ImGui.SetCursorScreenPos(buttonPos += step);
+                if (IconButton.Draw("##draw", 0, FontAwesomeIcon.FistRaised, live.WeaponDrawn ? Loc.T("Waffe wegstecken") : Loc.T("Waffe ziehen"), theme))
+                    live.WeaponDrawn = !live.WeaponDrawn;
+                NoWeaponHint(noWeapon);
+                ImGui.SetCursorScreenPos(buttonPos + step);
+                if (IconButton.Draw("##weaponvisible", 0, live.WeaponVisible ? FontAwesomeIcon.EyeSlash : FontAwesomeIcon.Eye,
+                        live.WeaponVisible ? Loc.T("Waffe ausblenden") : Loc.T("Waffe anzeigen"), theme))
+                    live.WeaponVisible = !live.WeaponVisible;
+                NoWeaponHint(noWeapon);
+            }
         }
 
         // Bottom-right: how fast dragging and the wheel move the view, at hand where it is used.
@@ -277,6 +284,12 @@ public sealed unsafe class LivePane
             ImGui.OpenPopup("##livesensitivity");
         DrawSensitivityPopup();
         ImGui.SetCursorScreenPos(origin + new Vector2(0, area.Y + ImGui.GetStyle().ItemSpacing.Y));
+    }
+
+    private static void NoWeaponHint(bool noWeapon)
+    {
+        if (noWeapon && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip(Loc.T("Keine Waffe angezogen"));
     }
 
     private void DrawSensitivityPopup()
