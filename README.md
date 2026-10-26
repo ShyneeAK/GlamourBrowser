@@ -4,6 +4,10 @@ A [Dalamud](https://github.com/goatcorp/Dalamud) plugin for Final Fantasy XIV th
 
 The plugin speaks your game's language: English, German, French or Japanese (you can also pick one in the settings). It is not in the official Dalamud repository; it comes from this repository's own plugin repository (see [Installation](#installation)).
 
+![The item grid: body pieces rendered on the character, with the live try-on, the item card and the filters](docs/screenshots/items.webp)
+
+![My sets: own outfits as tiles, a folder showing its first four sets, and a set's pieces with where they are stored](docs/screenshots/my-sets.webp)
+
 ## Features
 
 - **Tile grid** of all equippable items, rendered on your character in your current outfit or in underwear, with adjustable columns and rows, several sort orders and pages rendered ahead in the direction you page.
