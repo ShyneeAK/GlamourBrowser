@@ -78,7 +78,7 @@ public sealed class WishlistPlanView
         if (!child.Success)
             return;
 
-        var iconSize = new Vector2(ImGui.GetTextLineHeight());
+        var iconSize = new Vector2(ImGui.GetFrameHeight());
         for (var i = 0; i < plan.Groups.Count; i++)
         {
             using var id = ImRaii.PushId(i);
@@ -100,6 +100,7 @@ public sealed class WishlistPlanView
     private void DrawHeader(WishGroup group, Vector2 iconSize)
     {
         var count = group.Pieces.Count == 1 ? Loc.T("1 Teil") : Loc.F("{0} Teile", group.Pieces.Count);
+        ImGui.AlignTextToFramePadding();
         if (group.Source is not { } source)
         {
             ImGui.TextUnformatted(Loc.T("Quelle unbekannt"));
@@ -112,6 +113,7 @@ public sealed class WishlistPlanView
         ImGui.Dummy(iconSize);
         TileGrid.DrawSourceIcon(ImGui.GetWindowDrawList(), source.Category, iconMin, iconSize.X, theme.Colors.TextMuted);
         ImGui.SameLine();
+        ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted(string.Join(" · ", new[] { SourceCategories.DisplayName(source.Category), source.Title, source.Detail }.Where(t => t.Length > 0)));
         ImGui.SameLine();
         ImGui.TextDisabled(count);
@@ -125,6 +127,8 @@ public sealed class WishlistPlanView
     private void DrawPiece(WishPiece piece, bool ownAction, Vector2 iconSize, CustomSetEditor editor)
     {
         var item = piece.Item;
+        // The row is a frame high (icon, action button), the name centred in it.
+        ImGui.AlignTextToFramePadding();
         GameIcon.Draw(item.IconId, iconSize, FontAwesomeIcon.Tshirt, theme.Colors.TextMuted);
         ImGui.SameLine();
         var selected = state.Selected is ItemSubject { Item.Id: var selectedId } && selectedId == item.Id;

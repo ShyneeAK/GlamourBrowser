@@ -407,10 +407,11 @@ public sealed unsafe class LivePane
         }
         ImGui.Separator();
 
-        var iconSize = new Vector2(ImGui.GetTextLineHeight());
+        var iconSize = new Vector2(ImGui.GetFrameHeight());
         foreach (var piece in set.Pieces)
         {
             var owned = IsOwned(piece.Id);
+            ImGui.AlignTextToFramePadding();
             using (ImRaii.PushColor(ImGuiCol.Text, owned ? colors.Accent : colors.TextMuted))
             using (UiScale.PushIcons())
                 ImGui.TextUnformatted((owned ? FontAwesomeIcon.Check : FontAwesomeIcon.Times).ToIconString());
@@ -449,11 +450,12 @@ public sealed unsafe class LivePane
         if (stain == 0)
             return;
         ImGui.SameLine();
-        var line = ImGui.GetTextLineHeight();
-        var radius = line * 0.35f;
+        // Centred on the row, which is a frame high (the piece icons).
+        var row = ImGui.GetFrameHeight();
+        var radius = ImGui.GetTextLineHeight() * 0.35f;
         var min = ImGui.GetCursorScreenPos();
-        ImGui.Dummy(new Vector2(radius * 2, line));
-        ImGui.GetWindowDrawList().AddCircleFilled(min + new Vector2(radius, line / 2), radius, dyes.Find(stain)?.Color ?? theme.Colors.TextMuted);
+        ImGui.Dummy(new Vector2(radius * 2, row));
+        ImGui.GetWindowDrawList().AddCircleFilled(min + new Vector2(radius, row / 2), radius, dyes.Find(stain)?.Color ?? theme.Colors.TextMuted);
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(dyes.NameOf(stain));
     }
@@ -521,7 +523,7 @@ public sealed unsafe class LivePane
                 for (var i = 0; i < shown.Count; i++)
                     DrawSource(shown[i], $"{group.Key}-{i}");
 
-                if (list.Count > SourcesPerCategory && !expanded.Contains(key) && ImGui.SmallButton(Loc.F("weitere ({0}) …", list.Count - SourcesPerCategory) + $"##more{group.Key}"))
+                if (list.Count > SourcesPerCategory && !expanded.Contains(key) && ImGui.Button(Loc.F("weitere ({0}) …", list.Count - SourcesPerCategory) + $"##more{group.Key}"))
                     expanded.Add(key);
             }
         }
@@ -548,6 +550,8 @@ public sealed unsafe class LivePane
 
     private void DrawSource(ItemSource source, string id)
     {
+        // The row is as high as its action button, the text centred in it.
+        ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted(source.Title);
         ImGui.SameLine();
         ImGui.TextDisabled(source.Detail);
@@ -562,8 +566,9 @@ public sealed unsafe class LivePane
             return;
         ImGui.SameLine();
         var costIcon = SpecialShopCost.IsExactCurrency(source.CostItemId) ? SourceIcons.ItemIcon(source.CostItemId) : SourceIcons.IconFor(SourceCategory.Scrips);
-        GameIcon.Draw(costIcon, new Vector2(ImGui.GetTextLineHeight()), FontAwesomeIcon.Coins, theme.Colors.TextMuted);
+        GameIcon.Draw(costIcon, new Vector2(ImGui.GetFrameHeight()), FontAwesomeIcon.Coins, theme.Colors.TextMuted);
         ImGui.SameLine(0, 2);
+        ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted(source.CostAmount.ToString("N0"));
     }
 
@@ -573,7 +578,7 @@ public sealed unsafe class LivePane
         if (action == null || SourceActions.ButtonFor(action) is not { } b)
             return;
         ImGui.SameLine();
-        if (IconButton.Draw($"##action{id}", b.Icon, b.Fallback, b.Tooltip, theme, ImGui.GetTextLineHeight() + 4))
+        if (IconButton.Draw($"##action{id}", b.Icon, b.Fallback, b.Tooltip, theme))
             SourceActions.Run(action);
     }
 
