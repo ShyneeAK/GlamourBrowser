@@ -35,7 +35,7 @@ Built on [Dalamud](https://github.com/goatcorp/Dalamud), [FFXIVClientStructs](ht
 
 ## AI disclosure
 
-This plugin was developed with AI assistance. Large parts of the code, the tests and this README were written by Anthropic's Claude through [Claude Code](https://claude.com/claude-code). The author decided on the features and the design, reviewed the changes and tested every version in the game.
+This plugin was developed with AI assistance. Large parts of the code were written by [Claude Code](https://claude.com/claude-code). The author decided on the features and the design, reviewed the changes and tested every version in the game.
 
 ## License
 
