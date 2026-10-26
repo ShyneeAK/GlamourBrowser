@@ -1,3 +1,4 @@
+using GlamourBrowser.Core.CustomSets;
 using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Sets;
@@ -103,6 +104,16 @@ public class SetSubjectTests
     [Fact]
     public void LiveWeapons_ItemsKeepTheToggles()
         => Assert.Equal((true, false), LiveWeapons.Effective(new ItemSubject(Item(1, MainHand)), drawn: true, visible: false));
+
+    [Fact]
+    public void LiveWeapons_ATileWithoutAMainHandInItsLookHidesTheWeapons()
+    {
+        Assert.False(LiveWeapons.TileShows(new ItemSubject(Item(2, Body)), [new CustomPiece(MainHand, 0, 0, 0)]));
+        Assert.False(LiveWeapons.TileShows(new ItemSubject(Item(2, Body)), []));
+        Assert.True(LiveWeapons.TileShows(new ItemSubject(Item(2, Body)), [new CustomPiece(MainHand, 5, 0, 0)]));
+        Assert.True(LiveWeapons.TileShows(new ItemSubject(Item(1, MainHand)), []));
+        Assert.True(LiveWeapons.TileShows(Subject(Item(1, OffHand), Item(2, Body)), []));
+    }
 
     [Fact]
     public void ResolveAll_DropsSetsWithTheSamePiecesAsAnEarlierOne()

@@ -157,6 +157,25 @@ public sealed unsafe class CharaViewHandle : IDisposable
         return true;
     }
 
+    /// <summary>Every loaded weapon is hidden (a tile without a main hand in its look).</summary>
+    public bool WeaponsHidden()
+    {
+        var character = view != null && view->State == StateReady ? view->GetCharacter() : null;
+        if (character == null)
+            return true;
+
+        for (var i = 0; i < 2; i++)
+        {
+            ref var weapon = ref character->DrawData.WeaponData[i];
+            if (weapon.ModelId.Value == 0)
+                continue;
+            var drawObject = weapon.DrawData.DrawObject;
+            if (drawObject != null && (weapon.State & WeaponHiddenStateBit) == 0 && (drawObject->Flags & 0x01) != 0)
+                return false;
+        }
+        return true;
+    }
+
     /// <summary>Draws the weapon (in hand) for weapon tiles, sheathes it otherwise.</summary>
     public void SetWeaponDrawn(bool drawn)
     {

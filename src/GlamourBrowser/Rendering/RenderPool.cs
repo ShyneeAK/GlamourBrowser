@@ -73,6 +73,8 @@ public sealed unsafe class RenderPool : IDisposable
         /// <summary>A retry toggled the weapon the other way last frame; this frame toggles it back.</summary>
         public bool RetryPending { get; set; }
         public TileSubject? Subject { get; set; }
+        /// <summary>The tile shows the weapons (<see cref="LiveWeapons.TileShows"/>); else they are hidden, no default sword.</summary>
+        public bool ShowWeapons { get; set; } = true;
         /// <summary>The kind of weapon in hand (<see cref="WeaponStance"/>), whose stance it is held in; null when sheathed.</summary>
         public string? InHandStance { get; set; }
         /// <summary>Diagnostics: frames spent sheathing before this tile (-1: none) and how drawing ended.</summary>
@@ -289,6 +291,7 @@ public sealed unsafe class RenderPool : IDisposable
                 // Taken now, not when dressing: sheathing first can take a while, and a click meanwhile changes the try-on
                 // (the key would then hold another look than the tile shows, and could be shown again later).
                 worker.Look = look(subject.Slots);
+                worker.ShowWeapons = LiveWeapons.TileShows(subject, worker.Look);
                 worker.SheatheFrames = -1;
                 worker.SheatheRetries = 0;
                 worker.DrawOutcome = null;
@@ -379,7 +382,7 @@ public sealed unsafe class RenderPool : IDisposable
                     worker.RetryPending = false;
                     worker.DrawGate = new DrawGate(DrawMinFrames, DrawStableFrames, DrawTimeoutFrames);
                 }
-                view.ApplyVisibility(showWeapons: true);
+                view.ApplyVisibility(worker.ShowWeapons);
                 worker.Gate = new SettleGate(SettleFrames, TimeoutFrames, MaxVisibilityRetries);
                 worker.Phase = Phase.Settle;
                 break;
@@ -387,18 +390,18 @@ public sealed unsafe class RenderPool : IDisposable
             case Phase.Settle:
                 // ApplyVisibility may start another short load, and a weapon that finished loading late
                 // comes back hidden; the gate re-applies a bounded number of times.
-                switch (worker.Gate!.Step(view.IsIdle, view.WeaponsShown()))
+                switch (worker.Gate!.Step(view.IsIdle, worker.ShowWeapons ? view.WeaponsShown() : view.WeaponsHidden()))
                 {
                     case SettleAction.Wait:
                         return;
                     case SettleAction.Reapply:
-                        view.ApplyVisibility(showWeapons: true);
+                        view.ApplyVisibility(worker.ShowWeapons);
                         return;
                     case SettleAction.Timeout:
                         Fail(worker, Loc.T("Zeitüberschreitung beim Laden"));
                         return;
                     case SettleAction.CopyWithoutWeapons:
-                        Plugin.Log.Warning($"Tile {worker.Key!.Value.ItemId}: weapons still hidden after {worker.Gate.Retries} retries, copying anyway");
+                        Plugin.Log.Warning($"Tile {worker.Key!.Value.ItemId}: weapons still {(worker.ShowWeapons ? "hidden" : "shown")} after {worker.Gate.Retries} retries, copying anyway");
                         break;
                 }
                 if (worker.Gate.Retries > 0)
