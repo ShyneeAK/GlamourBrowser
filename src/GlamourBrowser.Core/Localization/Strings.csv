@@ -325,11 +325,11 @@ Waffen gezogen,Weapons drawn,Armes dégainées,抜刀状態
 weitere ({0}) …,more ({0}) …,plus ({0})…,さらに表示（{0}）…
 Wie der Client ({0}),Same as the client ({0}),Comme le client ({0}),クライアントと同じ ({0})
 Wie viele Kacheln gleichzeitig gerendert werden (Standard 3).,How many tiles are rendered at the same time (default 3).,Nombre de tuiles rendues simultanément (3 par défaut).,同時に描画するタイルの数です(標準: 3)。
-"Wie viele Seiten nach der aktuellen schon im Voraus gerendert werden, die nächste zuerst.
-Weiterblättern zeigt die Bilder dann sofort. Mehr Seiten brauchen mehr Grafikspeicher und Renderzeit.","How many pages after the current one are rendered in advance, the next one first.
-Paging forward then shows the images at once. More pages need more video memory and render time.","Nombre de pages après la page actuelle rendues à l'avance, la suivante en premier.
-Passer aux pages suivantes affiche alors les images immédiatement. Plus de pages demandent plus de mémoire graphique et de temps de rendu.","現在のページの後、何ページ分を先に描画しておくか(次のページから順に)。
-ページを進めると画像がすぐに表示されます。ページ数が多いほどビデオメモリと描画時間が増えます。"
+"Wie viele Seiten in Blätterrichtung schon im Voraus gerendert werden, die nächste zuerst; rückwärts die vorherigen, auf der letzten Seite die davor.
+Blättern zeigt die Bilder dann sofort. Mehr Seiten brauchen mehr Grafikspeicher und Renderzeit.","How many pages in the paging direction are rendered in advance, the next one first; paging back the previous ones, on the last page the ones before it.
+Paging then shows the images at once. More pages need more video memory and render time.","Nombre de pages rendues à l'avance dans le sens de navigation, la suivante en premier ; en revenant en arrière les précédentes, sur la dernière page celles d'avant.
+Changer de page affiche alors les images immédiatement. Plus de pages demandent plus de mémoire graphique et de temps de rendu.","ページをめくる方向に何ページ分を先に描画しておくか（次のページから順に）。戻る場合は前のページ、最後のページではその前のページを描画します。
+ページをめくると画像がすぐに表示されます。ページ数が多いほどビデオメモリと描画時間が増えます。"
 "Wie viele zuletzt angezeigte Seiten gerendert bleiben, auch beim Wechsel zwischen Slots und Modi.
 Zurück zu einer solchen Seite zeigt die Bilder sofort. Mehr Seiten brauchen mehr Grafikspeicher.","How many recently shown pages stay rendered, also when switching between slots and modes.
 Going back to such a page shows the images at once. More pages need more video memory.","Nombre de pages récemment affichées qui restent rendues, même en changeant d'emplacement ou de mode.

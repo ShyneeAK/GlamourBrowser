@@ -134,8 +134,9 @@ public sealed class SettingsWindow : Window
         if (ImGui.SliderInt(Loc.T("Seiten vorausrendern"), ref lookahead, 0, Lookahead.MaxPages, "%d", ImGuiSliderFlags.AlwaysClamp))
             state.SetLookaheadPages(lookahead);
         if (ImGui.IsItemHovered())
-            ImGui.SetTooltip(Loc.T("Wie viele Seiten nach der aktuellen schon im Voraus gerendert werden, die nächste zuerst.\n"
-                                   + "Weiterblättern zeigt die Bilder dann sofort. Mehr Seiten brauchen mehr Grafikspeicher und Renderzeit."));
+            ImGui.SetTooltip(Loc.T("Wie viele Seiten in Blätterrichtung schon im Voraus gerendert werden, die nächste zuerst; "
+                                   + "rückwärts die vorherigen, auf der letzten Seite die davor.\n"
+                                   + "Blättern zeigt die Bilder dann sofort. Mehr Seiten brauchen mehr Grafikspeicher und Renderzeit."));
 
         ImGui.Separator();
         DrawCameraPresets();

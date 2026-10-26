@@ -87,6 +87,8 @@ public sealed class BrowserState
     }
 
     public int PageIndex { get; private set; }
+    // The last page change went towards the first page: the pages before render ahead.
+    private bool pagingBack;
     public IReadOnlyList<TileSubject> Results { get; private set; } = [];
     public IReadOnlyList<TileSubject> CurrentPage { get; private set; } = [];
     public int PageSize => config.Columns * config.Rows;
@@ -333,7 +335,10 @@ public sealed class BrowserState
     {
         lock (RenderSync.Lock)
         {
-            PageIndex = ItemFilter.ClampPage(index, Results.Count, PageSize);
+            var page = ItemFilter.ClampPage(index, Results.Count, PageSize);
+            if (page != PageIndex)
+                pagingBack = page < PageIndex;
+            PageIndex = page;
             RequestTiles();
         }
     }
@@ -352,8 +357,9 @@ public sealed class BrowserState
             }
 
             var current = CurrentPage.Select(KeyFor).ToList();
-            // The pages ahead render the next one first; recently shown pages (also of other slots) stay cached for going back.
-            var lookahead = Lookahead.Pages(PageIndex, PageCount, config.LookaheadPages).SelectMany(PageKeys).ToList();
+            // The pages ahead in the paging direction render the nearest first; recently shown pages (also of other slots)
+            // stay cached for going back.
+            var lookahead = Lookahead.Pages(PageIndex, PageCount, config.LookaheadPages, pagingBack).SelectMany(PageKeys).ToList();
             history.Show(current);
 
             cache.Retain(current.Concat(lookahead).Concat(history.Before(config.CachedPages)).ToHashSet());
