@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 using GlamourBrowser.Browser;
@@ -44,8 +45,11 @@ public sealed class TileFilterControls
         var second = dye.Second;
         using (ImRaii.Disabled(onlySearch))
         {
-            ImGui.AlignTextToFramePadding();
-            ImGui.TextUnformatted("Farbe");
+            // Drawn by hand, level with the pickers' text: after the taller mode icons ImGui would put a text lower.
+            var top = ImGui.GetCursorScreenPos();
+            ImGui.Dummy(ImGui.CalcTextSize("Farbe") with { Y = ImGui.GetFrameHeight() });
+            ImGui.GetWindowDrawList().AddText(top + new Vector2(0, ImGui.GetStyle().FramePadding.Y),
+                ImGui.GetColorU32(ImGuiCol.Text), "Farbe");
             ImGui.SameLine();
             if (DyePicker.Draw("##tiledye1", ref first, dyes, theme, enabled: true, label: "Farbe 1"))
                 state.Filter = state.Filter with { Dye = dye with { First = first } };

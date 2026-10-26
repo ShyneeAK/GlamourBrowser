@@ -122,7 +122,7 @@ public sealed class TileGrid
                 live.Select(null);
             }
         }
-        DrawFilterControls(edge);
+        DrawFilterControls();
         ImGui.Spacing();
 
         // Logged out the render pool pauses too; the wishlist mode says why it is empty.
@@ -388,12 +388,11 @@ public sealed class TileGrid
 
     private static float CheckboxWidth(string label) => ImGui.GetFrameHeight() + ImGui.GetStyle().ItemInnerSpacing.X + ImGui.CalcTextSize(label).X;
 
-    /// <summary>Tile dye and jobs right of the mode icons, centred on their height; the jobs wrap when the row is full.</summary>
-    private void DrawFilterControls(float edge)
+    /// <summary>Tile dye and jobs right of the mode icons, level with their top; the jobs wrap when the row is full.</summary>
+    private void DrawFilterControls()
     {
         var spacing = ImGui.GetStyle().ItemSpacing.X;
         ImGui.SameLine(0, spacing * 3);
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + MathF.Max(0, (edge - ImGui.GetFrameHeight()) / 2));
         filterControls.DrawDye();
         ImGui.SameLine(0, spacing * 3);
         if (ImGui.GetContentRegionAvail().X < filterControls.JobsWidth())
