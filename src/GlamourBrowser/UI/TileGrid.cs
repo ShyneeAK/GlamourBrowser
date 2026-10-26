@@ -254,6 +254,7 @@ public sealed class TileGrid
             ImGui.SameLine();
             ImGui.TextDisabled(status.Text);
         }
+        folders.DrawMarks(store);
 
         folders.DrawPopups();
 
@@ -515,6 +516,10 @@ public sealed class TileGrid
         if (clicked && pressedOnStar)
             wishlist.Toggle(subject);
         // While a custom set is edited, a tile goes into it instead of being selected.
+        // Ctrl or Shift on an own set marks it for moving several at once; a plain click drops the marks.
+        else if (clicked && subject is SetSubject markable && state.Filter.Mode == BrowseMode.MySets && folders.Click(markable))
+        {
+        }
         else if (clicked && editor.IsOpen)
             editor.Put(subject, state.TileDye);
         // Otherwise it is selected and put on in the try-on, dyed like its tile.
@@ -598,6 +603,8 @@ public sealed class TileGrid
         var inset = rounding * 0.3f;
         var corner = pos + new Vector2(size.X - inset, inset);
         drawList.AddTriangleFilled(corner, corner - new Vector2(badge, 0), corner + new Vector2(0, badge), frame.BadgeColor);
+        if (folders.IsMarked(subject) && state.Filter.Mode == BrowseMode.MySets)
+            folders.DrawMark(drawList, pos, size);
     }
 
     private bool IsOwned(uint itemId) => ownership.Current?.IsOwned(itemId) ?? false;

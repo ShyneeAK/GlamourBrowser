@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
@@ -18,7 +19,8 @@ namespace GlamourBrowser.UI;
 
 /// <summary>
 /// The folders of "Meine Sets": their tiles (a collage of the first sets, a click opens it), "+ Neuer Ordner", the way back,
-/// renaming and deleting, and moving sets in by dragging their tile or by the tile's right-click menu.
+/// renaming and deleting, and moving sets in by dragging their tile or by the tile's right-click menu, several at once
+/// after marking them with Ctrl+click or Shift+click.
 /// </summary>
 public sealed class MySetsFolders(BrowserState state, CustomSetService customSets, TileCache<IDalamudTextureWrap> cache, Theme.Theme theme)
 {
@@ -26,8 +28,12 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
     private const string FolderPopup = "##foldercontext";
     private const string NamePopup = "##foldername";
 
-    // The custom set being dragged (the payload carries no data).
-    private uint draggedSet;
+    // The custom sets being dragged (the payload carries no data).
+    private IReadOnlyList<uint> draggedSets = [];
+    private readonly SetMarks marks = new();
+    // Where the marks were made: another folder, or leaving "Meine Sets" (no header drawn for a frame), drops them.
+    private uint marksFolder;
+    private int headerFrame;
     private CustomFolder? contextFolder;
     // The folder being renamed; null while a new one is named.
     private CustomFolder? renaming;
@@ -37,6 +43,14 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
     /// <summary>Before "+ Neues Set": in an open folder the way back and its name, at the top "+ Neuer Ordner".</summary>
     public void DrawHeader(CustomSetStore store)
     {
+        var frame = ImGui.GetFrameCount();
+        if (state.OpenFolder != marksFolder || frame - headerFrame > 1)
+        {
+            marks.Clear();
+            marksFolder = state.OpenFolder;
+        }
+        headerFrame = frame;
+
         if (state.OpenFolder != 0 && store.FindFolder(state.OpenFolder) is { } open)
         {
             if (ImGui.Button("← " + Loc.T("Meine Sets")))
@@ -61,6 +75,68 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
             if (ImGui.Button(Loc.T("+ Neuer Ordner")))
                 StartNaming(null);
             ImGui.SameLine();
+        }
+    }
+
+    /// <summary>After the header's buttons: how many sets are marked and a way to drop the marks, or how to mark them.</summary>
+    public void DrawMarks(CustomSetStore store)
+    {
+        if (marks.Count > 0)
+        {
+            ImGui.SameLine();
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextUnformatted(marks.Count == 1 ? Loc.T("1 Set markiert") : Loc.F("{0} Sets markiert", marks.Count));
+            ImGui.SameLine();
+            if (ImGui.Button(Loc.T("Markierung aufheben")))
+                marks.Clear();
+        }
+        else if (store.Folders.Count > 0)
+        {
+            ImGui.SameLine();
+            ImGui.AlignTextToFramePadding();
+            ImGui.TextDisabled(Loc.T("Strg+Klick oder Umschalt+Klick: mehrere Sets markieren"));
+        }
+    }
+
+    public bool IsMarked(TileSubject subject) => subject is SetSubject { Set.Id: { Kind: SetKind.Custom } id } && marks.IsMarked(id.Value);
+
+    /// <summary>
+    /// A click on a custom set's tile: with Ctrl it marks the set (or takes the mark off), with Shift the range from the
+    /// last one; true then, and the tile does nothing else. A plain click drops the marks and is the tile's own.
+    /// </summary>
+    public bool Click(SetSubject set)
+    {
+        if (set.Set.Id.Kind != SetKind.Custom)
+            return false;
+        var io = ImGui.GetIO();
+        if (io.KeyCtrl)
+        {
+            marks.Toggle(set.Set.Id.Value);
+            return true;
+        }
+        if (io.KeyShift)
+        {
+            var shown = state.Results.OfType<SetSubject>().Where(s => s.Set.Id.Kind == SetKind.Custom).Select(s => s.Set.Id.Value).ToList();
+            marks.MarkRange(shown, set.Set.Id.Value);
+            return true;
+        }
+        marks.Clear();
+        return false;
+    }
+
+    /// <summary>A marked tile: a thick accent frame and a check in an accent circle at the top, right of the middle.</summary>
+    public void DrawMark(ImDrawListPtr drawList, Vector2 pos, Vector2 size)
+    {
+        var accent = theme.Colors.Accent;
+        drawList.AddRect(pos, pos + size, accent, 8f, ImDrawFlags.None, 3f);
+        using (UiScale.PushIcons())
+        {
+            var glyph = FontAwesomeIcon.Check.ToIconString();
+            var glyphSize = ImGui.CalcTextSize(glyph);
+            var radius = MathF.Max(glyphSize.X, glyphSize.Y) * 0.75f;
+            var center = pos + new Vector2(size.X - radius - MathF.Max(10f, size.X * 0.12f) - 6, radius + 6);
+            drawList.AddCircleFilled(center, radius, accent);
+            drawList.AddText(center - glyphSize / 2, 0xFFFFFFFF, glyph);
         }
     }
 
@@ -213,26 +289,37 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
 
     /// <summary>A custom set's tile can be dragged onto a folder (or the way back); call right after the tile's button.</summary>
     /// <param name="tile">The tile's size: the cursor carries a small copy of it.</param>
+    /// A marked set takes every marked one along.
     public void DragSource(SetSubject set, Vector2 tile)
     {
         if (set.Set.Id.Kind != SetKind.Custom || customSets.Current is not { Folders.Count: > 0 } && state.OpenFolder == 0)
             return;
         if (!ImGui.BeginDragDropSource())
             return;
-        draggedSet = set.Set.Id.Value;
+        draggedSets = marks.With(set.Set.Id.Value);
         ImGui.SetDragDropPayload(DragType, ReadOnlySpan<byte>.Empty, ImGuiCond.None);
-        DrawMiniature(set, tile);
+        DrawMiniature(set, tile, draggedSets.Count);
         ImGui.EndDragDropSource();
     }
 
-    /// <summary>The dragged tile in small: its render (or its body piece's icon) with an accent frame, the name below.</summary>
-    private void DrawMiniature(SetSubject set, Vector2 tile)
+    /// <summary>
+    /// The dragged tile in small: its render (or its body piece's icon) with an accent frame, the name below; with
+    /// several sets two cards peek out behind it and the number replaces the name.
+    /// </summary>
+    private void DrawMiniature(SetSubject set, Vector2 tile, int count)
     {
         var width = MathF.Min(tile.X * 0.5f, 110 * UiScale.Global);
         var size = new Vector2(width, width * tile.Y / MathF.Max(1, tile.X));
-        var min = ImGui.GetCursorScreenPos();
-        ImGui.Dummy(size);
+        var stack = count > 1 ? 6f : 0f;
+        var min = ImGui.GetCursorScreenPos() + new Vector2(0, stack);
+        ImGui.Dummy(size + new Vector2(stack, stack));
         var drawList = ImGui.GetWindowDrawList();
+        for (var i = 2; i >= 1 && count > 1; i--)
+        {
+            var offset = new Vector2(stack * i / 2, -stack * i / 2);
+            drawList.AddRectFilled(min + offset, min + offset + size, theme.Colors.CardRaised, 6f);
+            drawList.AddRect(min + offset, min + offset + size, theme.Colors.Accent, 6f, ImDrawFlags.None, 1f);
+        }
         if (cache.TryGet(state.KeyFor(set), out var texture) && texture != null)
             drawList.AddImageRounded(texture.Handle, min, min + size, Vector2.Zero, Vector2.One, 0xFFFFFFFF, 6f);
         else
@@ -246,7 +333,7 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
         }
         drawList.AddRect(min, min + size, theme.Colors.Accent, 6f, ImDrawFlags.None, 2f);
         ImGui.PushTextWrapPos(ImGui.GetCursorPosX() + width);
-        ImGui.TextWrapped(set.Name);
+        ImGui.TextWrapped(count > 1 ? Loc.F("{0} Sets", count) : set.Name);
         ImGui.PopTextWrapPos();
     }
 
@@ -257,15 +344,17 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
             return;
         if (store.Folders.Count == 0 && stored.Folder == 0)
             return;
+        // A marked set moves every marked one.
+        var moving = marks.With(stored.Id);
         ImGui.Separator();
-        if (!ImGui.BeginMenu(Loc.T("In Ordner verschieben")))
+        if (!ImGui.BeginMenu(moving.Count > 1 ? Loc.F("{0} Sets in Ordner verschieben", moving.Count) : Loc.T("In Ordner verschieben")))
             return;
         if (ImGui.MenuItem(Loc.T("Kein Ordner"), "", stored.Folder == 0))
-            store.Move(stored.Id, 0);
+            Move(moving, 0);
         foreach (var folder in store.Folders)
         {
             if (ImGui.MenuItem($"{folder.Name}##folder{folder.Id}", "", stored.Folder == folder.Id))
-                store.Move(stored.Id, folder.Id);
+                Move(moving, folder.Id);
         }
         ImGui.EndMenu();
     }
@@ -277,9 +366,19 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
             return false;
         var payload = ImGui.AcceptDragDropPayload(DragType);
         if (!payload.IsNull && payload.IsDelivery())
-            customSets.Current?.Move(draggedSet, folder);
+            Move(draggedSets, folder);
         ImGui.EndDragDropTarget();
         return !payload.IsNull;
+    }
+
+    /// <summary>Moves the sets into the folder (0: out of any); the marks go, the moved sets have left the view.</summary>
+    private void Move(IReadOnlyList<uint> sets, uint folder)
+    {
+        if (customSets.Current is not { } store)
+            return;
+        foreach (var id in sets)
+            store.Move(id, folder);
+        marks.Clear();
     }
 
     private void StartNaming(CustomFolder? folder)
