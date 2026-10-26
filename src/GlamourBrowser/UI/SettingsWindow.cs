@@ -195,7 +195,7 @@ public sealed class SettingsWindow : Window
         foreach (var (slot, name) in SlotNames.All)
         {
             var zoom = (int)MathF.Round(config.AutoFramingZooms.GetValueOrDefault(slot, 1f) * 100);
-            if (!ImGui.SliderInt($"{name}##autozoom{slot}", ref zoom, 50, 200, "%d %%", ImGuiSliderFlags.AlwaysClamp))
+            if (!ImGui.SliderInt($"{name}##autozoom{slot}", ref zoom, 50, 300, "%d %%", ImGuiSliderFlags.AlwaysClamp))
                 continue;
             if (zoom == 100)
                 config.AutoFramingZooms.Remove(slot);
