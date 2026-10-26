@@ -22,7 +22,7 @@ public sealed class TileFilterControls
     private readonly JobCatalog jobs;
     private readonly DyeCatalog dyes;
     private readonly Theme.Theme theme;
-    // Every job and class with its group, for choosing whole groups and naming the choice.
+    // Every job the filter offers with its group, for choosing whole groups and naming the choice.
     private readonly IReadOnlyList<(uint Id, JobGroup Group)> jobGroups;
 
     public TileFilterControls(BrowserState state, JobCatalog jobs, DyeCatalog dyes, Theme.Theme theme)
@@ -31,7 +31,7 @@ public sealed class TileFilterControls
         this.jobs = jobs;
         this.dyes = dyes;
         this.theme = theme;
-        jobGroups = jobs.All.Select(j => (j.Id, j.Group)).ToList();
+        jobGroups = jobs.Pickable.Select(j => (j.Id, j.Group)).ToList();
     }
 
     /// <summary>The chosen jobs as named parts (whole groups by their name), for the button and the filter chips.</summary>

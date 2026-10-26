@@ -29,9 +29,15 @@ public sealed class JobCatalog
             .ToList();
         byId = All.ToDictionary(j => j.Id);
         parents = data.GetExcelSheet<ClassJob>().ToDictionary(j => j.RowId, j => j.ClassJobParent.RowId);
+        // A base class is the parent of another job (GLA of PLD); crafters and gatherers are their own parent only.
+        var baseClasses = parents.Where(p => p.Key != p.Value).Select(p => p.Value).ToHashSet();
+        Pickable = All.Where(j => !baseClasses.Contains(j.Id)).ToList();
     }
 
     public IReadOnlyList<JobInfo> All { get; }
+
+    /// <summary>The jobs the job filter offers: <see cref="All"/> without the base classes (GLA, ROG, …), which a job's filter covers.</summary>
+    public IReadOnlyList<JobInfo> Pickable { get; }
 
     public JobInfo? Find(uint id) => byId.GetValueOrDefault(id);
 

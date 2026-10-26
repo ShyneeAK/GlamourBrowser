@@ -36,7 +36,7 @@ public static class JobPicker
                 : Loc.T("Aus: alles, was einer der gewählten Jobs tragen kann"));
 
         var size = new Vector2(32, 32) * UiScale.Global;
-        foreach (var group in jobs.All.GroupBy(j => j.Group))
+        foreach (var group in jobs.Pickable.GroupBy(j => j.Group))
         {
             ImGui.Spacing();
             var name = JobGroups.DisplayName(group.Key);
