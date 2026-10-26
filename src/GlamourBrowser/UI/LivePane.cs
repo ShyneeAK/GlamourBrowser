@@ -198,7 +198,7 @@ public sealed unsafe class LivePane
 
         drawList.AddRectFilled(origin, origin + area, colors.Card, 8f);
         ImGui.SetCursorScreenPos(pos);
-        // The invisible button captures mouse drags so the window does not move; the visor button drawn over it takes its clicks.
+        // The invisible button captures mouse drags so the window does not move; the buttons drawn over it take their clicks.
         ImGui.InvisibleButton("##liveview", size, ImGuiButtonFlags.MouseButtonLeft | ImGuiButtonFlags.MouseButtonRight);
         ImGui.SetItemAllowOverlap();
         drawList.AddImageRounded(new ImTextureID(texture->D3D11ShaderResourceView), pos, pos + size, Vector2.Zero, uv1, 0xFFFFFFFF, 8f);
@@ -221,10 +221,23 @@ public sealed unsafe class LivePane
 
         DrawHelpIcon(drawList, origin + new Vector2(area.X, 0));
 
-        // In the view's top-left corner, like the game's character window: works on the helmet whatever is selected.
-        ImGui.SetCursorScreenPos(pos + new Vector2(8, 8));
+        // In the view's top-left corner, like the game's character window: the visor works on the helmet whatever is
+        // selected, the weapon toggles everywhere but on sets (which always show the weapon sheathed).
+        var buttonPos = pos + new Vector2(8, 8);
+        var step = new Vector2(0, ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.Y);
+        ImGui.SetCursorScreenPos(buttonPos);
         if (IconButton.Draw("##visor", 0, FontAwesomeIcon.HardHat, live.VisorClosed ? "Visier öffnen" : "Visier schließen (nur Helme mit Visier)", theme))
             live.VisorClosed = !live.VisorClosed;
+        if (state.Selected is not SetSubject)
+        {
+            ImGui.SetCursorScreenPos(buttonPos += step);
+            if (IconButton.Draw("##draw", 0, FontAwesomeIcon.FistRaised, live.WeaponDrawn ? "Waffe wegstecken" : "Waffe ziehen", theme))
+                live.WeaponDrawn = !live.WeaponDrawn;
+            ImGui.SetCursorScreenPos(buttonPos + step);
+            if (IconButton.Draw("##weaponvisible", 0, live.WeaponVisible ? FontAwesomeIcon.EyeSlash : FontAwesomeIcon.Eye,
+                    live.WeaponVisible ? "Waffe ausblenden" : "Waffe anzeigen", theme))
+                live.WeaponVisible = !live.WeaponVisible;
+        }
         ImGui.SetCursorScreenPos(origin + new Vector2(0, area.Y + ImGui.GetStyle().ItemSpacing.Y));
     }
 
@@ -288,13 +301,6 @@ public sealed unsafe class LivePane
             Plugin.ChatGui.Print(new SeStringBuilder().AddText("Shynees Glamour Dresser: ").AddItemLink(item.Id, false).Build());
             ImGui.SetClipboardText(item.Name);
         }
-        ImGui.SameLine();
-        if (IconButton.Draw("##draw", 0, FontAwesomeIcon.FistRaised, live.WeaponDrawn ? "Waffe wegstecken" : "Waffe ziehen", theme))
-            live.WeaponDrawn = !live.WeaponDrawn;
-        ImGui.SameLine();
-        if (IconButton.Draw("##weaponvisible", 0, live.WeaponVisible ? FontAwesomeIcon.EyeSlash : FontAwesomeIcon.Eye,
-                live.WeaponVisible ? "Waffe ausblenden" : "Waffe anzeigen", theme))
-            live.WeaponVisible = !live.WeaponVisible;
         ImGui.SameLine();
         DrawCalibration(item);
         DrawDyeBoxes(item);
