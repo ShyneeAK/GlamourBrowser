@@ -626,13 +626,14 @@ public sealed unsafe class LivePane
         if (calibrated)
         {
             ImGui.SameLine();
-            if (IconButton.Draw("##calibration-reset", 0, FontAwesomeIcon.Undo, Loc.F("Kamera-Position für ({0}) zurücksetzen", slotName), theme)
+            if (IconButton.Draw("##calibration-reset", 0, FontAwesomeIcon.Undo, Loc.F("Kamera-Position für ({0}) zurück auf automatisch", slotName), theme)
                 && calibration.Remove(contentId, item.Slot))
                 state.InvalidateTiles();
         }
         ImGui.SameLine();
         ImGui.AlignTextToFramePadding();
-        ImGui.TextDisabled(calibrated ? Loc.F("{0}: kalibriert", slotName) : Loc.F("{0}: Standardansicht", slotName));
+        // Without an own calibration the camera frames the slot by the character's measured body.
+        ImGui.TextDisabled(calibrated ? Loc.F("{0}: kalibriert", slotName) : Loc.F("{0}: automatisch", slotName));
     }
 
     public static void DrawLocations(OwnershipService ownership, GlamourItem item)

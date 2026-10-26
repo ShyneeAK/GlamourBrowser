@@ -65,6 +65,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly BrowserState browser;
     private readonly Configuration config;
     private readonly CalibrationService calibration;
+    private readonly AutoFramingService framing;
     private readonly SourceService sources;
     private readonly MemoryStats memoryStats;
     private bool paused;
@@ -93,6 +94,7 @@ public sealed class Plugin : IDalamudPlugin
         // First: texts built from here on (slot names, labels) are in this language.
         Loc.Load(LanguageOf(config.Language));
         calibration = new CalibrationService(config);
+        framing = new AutoFramingService();
         var (catalog, variants) = ItemCatalogLoader.Load(DataManager);
         ownership = new OwnershipService(variants);
         wishlist = new WishlistService(variants);
@@ -109,13 +111,15 @@ public sealed class Plugin : IDalamudPlugin
         // The browser state is created below; the pool asks it only once it ticks.
         pool = new RenderPool(queue, cache, key => browser?.SubjectFor(key), appearance, CameraFor, tryOn.TryOn.LookFor,
                               id => browser?.ItemOf(id)) { MaxViews = config.ParallelViews };
-        live = new LivePreview(pool, appearance, config, CameraFor);
+        live = new LivePreview(pool, appearance, config, CameraFor, framing);
         // Variants too: their sources are merged into the base item.
         sources = new SourceService(catalog.Select(i => i.Id).Concat(variants.Keys).ToHashSet());
         var sets = new SetCatalog(byId, variants, sources);
         var jobs = new JobCatalog(DataManager);
         var dyes = new DyeCatalog(DataManager);
         browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets, wishlist, jobs, customSets, tryOn);
+        // A new measure of the body frames the slots anew.
+        framing.Changed += browser.InvalidateTiles;
         UI.UiScale.Set(config.UiScale, config.FontScale);
         var theme = new UI.Theme.Theme(config);
         var editor = new CustomSetEditor(browser, customSets, live, variants, appearance, BlocksOf);
@@ -257,7 +261,10 @@ public sealed class Plugin : IDalamudPlugin
             Log.Information($"[trace] {frame} tryon: draw {tryon->CharaView.DrawWeapon} | {CharaViewHandle.DescribeTrace(&tryon->CharaView.CharaView)}");
     }
 
-    private CameraPreset? CameraFor(EquipSlot slot) => calibration.Get(PlayerState.ContentId, slot);
+    /// <summary>The slot's camera: the player's own calibration, else the automatic framing from the measured body.</summary>
+    private CameraPreset? CameraFor(EquipSlot slot)
+        => calibration.Get(PlayerState.ContentId, slot)
+           ?? framing.For(PlayerState.ContentId, slot, appearance.CustomizeHash, config.UseIdlePose ? appearance.IdlePose : TileKey.StandardPose);
 
     private void OnFrameworkUpdate(IFramework framework)
     {

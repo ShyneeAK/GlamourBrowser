@@ -6,6 +6,7 @@ using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Render;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using GlamourBrowser.Core.Rendering;
 using RenderCamera = FFXIVClientStructs.FFXIV.Client.Graphics.Render.Camera;
 using SceneCamera = FFXIVClientStructs.FFXIV.Client.Graphics.Scene.Camera;
 
@@ -71,6 +72,36 @@ public static unsafe class CameraProbe
             }
         }
         return lines;
+    }
+
+    /// <summary>
+    /// The bones automatic framing needs (neck, head, waist, hands) in model space, scaled like the character; null
+    /// while the body skeleton is not loaded or lacks one of them.
+    /// </summary>
+    public static BodyMeasures? MeasureBody(CharaView* view)
+    {
+        var character = view != null ? view->GetCharacter() : null;
+        var drawObject = character != null ? (CharacterBase*)character->GameObject.DrawObject : null;
+        if (drawObject == null || drawObject->Skeleton == null || drawObject->Skeleton->PartialSkeletonCount == 0)
+            return null;
+        var skeleton = drawObject->Skeleton;
+        var pose = skeleton->PartialSkeletons[0].GetHavokPose(0);
+        if (pose == null || pose->Skeleton == null)
+            return null;
+        var scale = new Vector3(skeleton->Transform.Scale.X, skeleton->Transform.Scale.Y, skeleton->Transform.Scale.Z);
+        var found = new Dictionary<string, Vector3>();
+        for (var b = 0; b < pose->ModelPose.Length && b < pose->Skeleton->Bones.Length; b++)
+        {
+            var name = pose->Skeleton->Bones[b].Name.String;
+            if (name is "j_kubi" or "j_kao" or "j_kosi" or "j_te_l" or "j_te_r")
+            {
+                var t = pose->ModelPose[b].Translation;
+                found[name] = new Vector3(t.X, t.Y, t.Z) * scale;
+            }
+        }
+        return found.Count == 5
+            ? new BodyMeasures(found["j_kubi"], found["j_kao"], found["j_kosi"], found["j_te_l"], found["j_te_r"])
+            : null;
     }
 
     private static string F(float value) => value.ToString("0.###", CultureInfo.InvariantCulture);

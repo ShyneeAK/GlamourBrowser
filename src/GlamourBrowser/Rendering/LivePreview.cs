@@ -25,6 +25,10 @@ public sealed unsafe class LivePreview : IDisposable
     private readonly AppearanceTracker appearance;
     private readonly Configuration config;
     private readonly Func<EquipSlot, CameraPreset?> cameraFor;
+    private readonly AutoFramingService autoFraming;
+    // Ticks the view has been ready for a measure (see MeasureBody).
+    private int measureTicks;
+    private const int MeasureAfterTicks = 60;
     private CharaViewHandle? view;
     private CharaViewHandle? suspended;
     // The look's hash with face and body: any change of the try-on, the draft or the character dresses again.
@@ -39,8 +43,10 @@ public sealed unsafe class LivePreview : IDisposable
     private float rotateX, rotateY, panX, panY, zoom;
     private bool reset;
 
-    public LivePreview(RenderPool pool, AppearanceTracker appearance, Configuration config, Func<EquipSlot, CameraPreset?> cameraFor)
+    public LivePreview(RenderPool pool, AppearanceTracker appearance, Configuration config, Func<EquipSlot, CameraPreset?> cameraFor,
+                       AutoFramingService autoFraming)
     {
+        this.autoFraming = autoFraming;
         this.pool = pool;
         this.appearance = appearance;
         this.config = config;
@@ -217,6 +223,7 @@ public sealed unsafe class LivePreview : IDisposable
             view.ApplyIdlePose(pose);
             appliedPose = pose;
         }
+        MeasureBody(view, pose, weaponDrawn, applied == wanted);
 
         // Visibility has to be applied after the new items have loaded.
         if (appliedWeaponVisible != weaponVisible && view.IsIdle)
@@ -262,6 +269,23 @@ public sealed unsafe class LivePreview : IDisposable
         }
 
         ApplyCameraInput(view);
+    }
+
+    /// <summary>
+    /// Measures the character for automatic framing when its face, body or pose is new: sheathed, in the pose the tiles
+    /// use, a second after the look and the pose came in (the pose's start animation has played by then).
+    /// </summary>
+    private void MeasureBody(CharaViewHandle target, byte pose, bool weaponDrawn, bool dressed)
+    {
+        var contentId = Plugin.PlayerState.ContentId;
+        var settled = dressed && !weaponDrawn && appliedWeaponDrawn == false && appliedPose == pose && target.IsIdle
+                      && autoFraming.Needs(contentId, appearance.CustomizeHash, pose);
+        measureTicks = settled ? measureTicks + 1 : 0;
+        if (measureTicks < MeasureAfterTicks)
+            return;
+        measureTicks = 0;
+        if (target.MeasureBody() is { } body)
+            autoFraming.Offer(contentId, appearance.CustomizeHash, pose, body);
     }
 
     private void ApplyCameraInput(CharaViewHandle target)

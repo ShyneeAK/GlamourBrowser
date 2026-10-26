@@ -150,7 +150,6 @@ Kacheln pro Seite (Spalten × Zeilen),Tiles per page (columns × rows),Tuiles pa
 "Kalibriert wird in der Live-Ansicht: Item eines Slots auswählen, Ansicht einstellen, „Kamera-Position festlegen“ klicken.","Calibration happens in the live view: select an item of a slot, adjust the view, click “Set camera position”.","Le calibrage se fait dans la vue en direct : sélectionnez un objet d'un emplacement, réglez la vue, puis cliquez sur « Définir la position de la caméra ».",調整はライブビューで行います。部位のアイテムを選び、表示を整えてから「カメラ位置を設定」をクリックしてください。
 Kamera-Kalibrierung dieses Charakters,Camera calibration for this character,Calibrage de la caméra pour ce personnage,このキャラクターのカメラ調整
 Kamera-Position festlegen für ({0}),Set camera position for ({0}),Définir la position de la caméra pour ({0}),（{0}）のカメラ位置を設定
-Kamera-Position für ({0}) zurücksetzen,Reset camera position for ({0}),Réinitialiser la position de la caméra pour ({0}),（{0}）のカメラ位置をリセット
 Karte,Map,Carte,マップ
 Kein Item ausgewählt,No item selected,Aucun objet sélectionné,アイテムが選択されていません
 Kein Ordner,No folder,Aucun dossier,フォルダーなし
@@ -378,7 +377,6 @@ Zurücksetzen,Reset,Réinitialiser,リセット
 {0}: kalibriert,{0}: calibrated,{0} : calibré,{0}: 調整済み
 {0}: noch nie geöffnet,{0}: never opened,{0} : jamais ouvert,{0}: まだ開いていません
 {0}: Standard,{0}: default,{0} : par défaut,{0}: 標準
-{0}: Standardansicht,{0}: default view,{0} : vue par défaut,{0}：標準ビュー
 Älteste zuerst,Oldest first,Plus anciens d'abord,古い順
 Änderungen verwerfen?,Discard changes?,Abandonner les modifications ?,変更を破棄しますか？
 Öffnen,Open,Ouvrir,開く
@@ -393,4 +391,6 @@ Zurücksetzen,Reset,Réinitialiser,リセット
 Markierung aufheben,Clear selection,Annuler la sélection,選択を解除
 Strg+Klick oder Umschalt+Klick: mehrere Sets markieren,Ctrl+click or Shift+click: mark several sets,Ctrl+clic ou Maj+clic : sélectionner plusieurs ensembles,Ctrl+クリックまたはShift+クリック：複数のセットを選択
 {0} Sets in Ordner verschieben,Move {0} sets to folder,Déplacer {0} ensembles vers un dossier,{0}セットをフォルダーへ移動
-"Ordner „{0}“ löschen? Die Sets darin bleiben erhalten.","Delete the folder ""{0}""? Its sets stay.","Supprimer le dossier « {0} » ? Ses ensembles restent.",フォルダー「{0}」を削除しますか？中のセットは残ります。
+Ordner „{0}“ löschen? Die Sets darin bleiben erhalten.,"Delete the folder ""{0}""? Its sets stay.",Supprimer le dossier « {0} » ? Ses ensembles restent.,フォルダー「{0}」を削除しますか？中のセットは残ります。
+Kamera-Position für ({0}) zurück auf automatisch,Camera position for ({0}) back to automatic,Position de la caméra pour ({0}) : revenir à l'automatique,({0})のカメラ位置を自動に戻す
+{0}: automatisch,{0}: automatic,{0} : automatique,{0}：自動
