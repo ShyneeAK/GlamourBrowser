@@ -238,12 +238,12 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
         var shadeTop = pos + new Vector2(0, size.Y - stripHeight);
         drawList.PushClipRect(pos, pos + size, true);
         drawList.AddRectFilled(shadeTop, pos + size, 0xB0000000, rounding, ImDrawFlags.RoundCornersBottom);
-        // The folder glyph fills the strip's height, left of the name and the number of sets.
+        // The folder glyph about three quarters of the strip's height, left of the name and the number of sets.
         float iconWidth;
         using (UiScale.PushIcons())
         {
             var icon = FontAwesomeIcon.Folder.ToIconString();
-            var fontSize = (stripHeight - 12) / ImGui.GetTextLineHeight() * ImGui.GetFontSize();
+            var fontSize = (stripHeight - 12) * 0.75f / ImGui.GetTextLineHeight() * ImGui.GetFontSize();
             var iconSize = ImGui.CalcTextSize(icon) * (fontSize / ImGui.GetFontSize());
             iconWidth = iconSize.X;
             drawList.AddText(ImGui.GetFont(), fontSize, shadeTop + new Vector2(8, (stripHeight - iconSize.Y) / 2), colors.Accent, icon);
