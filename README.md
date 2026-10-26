@@ -2,8 +2,6 @@
 
 A [Dalamud](https://github.com/goatcorp/Dalamud) plugin for Final Fantasy XIV that shows every equippable item as a paged grid of tiles, each one rendered on your own character.
 
-The plugin speaks your game's language: English, German, French or Japanese (you can also pick one in the settings). It is not in the official Dalamud repository; it comes from this repository's own plugin repository (see [Installation](#installation)).
-
 ![The item grid: body pieces rendered on the character, with the live try-on, the item card and the filters](docs/screenshots/items.webp)
 
 ![My sets: own outfits as tiles, a folder showing its first four sets, and a set's pieces with where they are stored](docs/screenshots/my-sets.webp)
