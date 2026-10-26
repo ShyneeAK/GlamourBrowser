@@ -1,5 +1,15 @@
 # What's new
 
+## 0.5.0.0
+- Folders for your own sets: create and name folders, put sets in by dragging or with the right-click menu. A folder's tile shows its first four sets as a collage; rename and delete it in the tile's top-left corner (its sets stay).
+- Mark several of your own sets with Ctrl+click or Shift+click and move them together. While dragging, a small copy of the tile follows the cursor.
+- Edit and delete your own sets right on their tile, below the wishlist star.
+- Automatic camera: the tiles frame the head, hands, feet and the whole body to fit your character's race and height. Your own calibration still comes first.
+- Bracelets worn on one arm only are shown from their side, and a new filter shows bracelets on the right, the left or both arms (combinable).
+- The live view's camera stays where you put it; a double-click resets it.
+- The job filter shows jobs only, without base classes such as Gladiator. The filter column no longer cuts off text, and the source icons are larger.
+- After an update over several versions this window shows what's new in all of them.
+
 ## 0.4.1.0
 - Market prices: hovering the market board icon of a tile or the item card shows the cheapest listing on your home world and on your data center (Universalis). A click in the item card opens the item on Universalis.
 - Try-on: right-clicking a piece below the live view takes it off, the weapons too. Without a weapon no default weapon shows up any more, and drawing the weapon is grayed out.

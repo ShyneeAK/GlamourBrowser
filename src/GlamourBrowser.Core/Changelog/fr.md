@@ -1,5 +1,15 @@
 # Nouveautés
 
+## 0.5.0.0
+- Dossiers pour tes propres ensembles : crée et nomme des dossiers, ranges-y des ensembles en les glissant ou avec le clic droit. La vignette d'un dossier montre ses quatre premiers ensembles en mosaïque ; renomme-le ou supprime-le en haut à gauche de la vignette (les ensembles restent).
+- Sélectionne plusieurs de tes ensembles avec Ctrl+clic ou Maj+clic et déplace-les ensemble. Pendant le glisser, une petite copie de la vignette suit le curseur.
+- Modifie et supprime tes ensembles directement sur leur vignette, sous l'étoile de la liste de souhaits.
+- Caméra automatique : les vignettes cadrent la tête, les mains, les pieds et le corps entier selon la race et la taille de ton personnage. Ton propre calibrage reste prioritaire.
+- Les bracelets portés à un seul bras sont montrés de leur côté, et un nouveau filtre affiche les bracelets à droite, à gauche ou aux deux bras (combinables).
+- La caméra de la vue en direct reste là où tu l'as placée ; un double-clic la réinitialise.
+- Le filtre de jobs n'affiche plus que les jobs, sans les classes de base comme Gladiateur. La colonne des filtres ne coupe plus le texte, et les icônes des sources sont plus grandes.
+- Après une mise à jour sur plusieurs versions, cette fenêtre montre les nouveautés de toutes ces versions.
+
 ## 0.4.1.0
 - Prix du marché : survoler l'icône du tableau des ventes d'une vignette ou de la fiche d'objet affiche l'offre la moins chère sur ton monde d'origine et dans ton centre de données (Universalis). Un clic dans la fiche d'objet ouvre l'objet sur Universalis.
 - Essayage : un clic droit sur une pièce sous la vue en direct la retire, les armes aussi. Sans arme, plus aucune arme par défaut n'apparaît, et dégainer est grisé.

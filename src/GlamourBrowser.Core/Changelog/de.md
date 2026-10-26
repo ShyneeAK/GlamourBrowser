@@ -1,5 +1,15 @@
 # Neuigkeiten
 
+## 0.5.0.0
+- Ordner für eigene Sets: Ordner anlegen und benennen, Sets per Ziehen oder Rechtsklick hineinlegen. Die Ordner-Kachel zeigt die ersten vier Sets als Collage; umbenennen und löschen oben links auf der Kachel (die Sets bleiben).
+- Mehrere eigene Sets mit Strg+Klick oder Umschalt+Klick markieren und zusammen verschieben. Beim Ziehen hängt eine kleine Kopie der Kachel am Mauszeiger.
+- Eigene Sets direkt auf der Kachel bearbeiten und löschen, unter dem Wunschlisten-Stern.
+- Automatische Kamera: Die Kacheln rahmen Kopf, Hände, Füße und den ganzen Körper passend zu Rasse und Größe deines Charakters ein. Eine eigene Kalibrierung hat weiter Vorrang.
+- Armbänder, die nur an einem Arm sitzen, werden von ihrer Seite gezeigt, und ein neuer Filter zeigt nur rechte, linke oder beidseitige Armbänder (kombinierbar).
+- Die Kamera der Live-Ansicht bleibt, wie du sie eingestellt hast; ein Doppelklick setzt sie zurück.
+- Der Job-Filter zeigt nur noch Jobs, ohne Basisklassen wie Gladiator. Die Filterspalte schneidet keine Texte mehr ab, und die Quellen-Icons sind größer.
+- Nach einem Update über mehrere Versionen zeigt dieses Fenster die Neuigkeiten aller Versionen.
+
 ## 0.4.1.0
 - Marktpreise: Über dem Marktbrett-Icon einer Kachel oder der Item-Karte zeigt ein Tooltip das günstigste Angebot auf deiner Heimatwelt und in deinem Datenzentrum (Universalis). Ein Klick in der Item-Karte öffnet das Item auf Universalis.
 - Anprobe: Ein Rechtsklick auf ein Teil unter der Live-Ansicht zieht es aus, auch die Waffen. Ohne Waffe wird keine Standardwaffe mehr angezeigt, und Waffe ziehen ist ausgegraut.
