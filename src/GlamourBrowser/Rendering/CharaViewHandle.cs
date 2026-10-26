@@ -330,6 +330,9 @@ public sealed unsafe class CharaViewHandle : IDisposable
 
     public string DescribeTrace() => DescribeTrace(view);
 
+    /// <summary>Diagnostics for automatic framing: camera, character and bones (see <see cref="CameraProbe"/>).</summary>
+    public List<string> DescribeCamera() => CameraProbe.Describe(view, GetTexture());
+
     /// <summary>Diagnostics: the view's model data as hex (0x48–0xE0 of the CharaView), to compare views byte by byte.</summary>
     public static string DescribeModelData(CharaView* view)
     {

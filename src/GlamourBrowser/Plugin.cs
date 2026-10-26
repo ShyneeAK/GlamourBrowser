@@ -194,6 +194,22 @@ public sealed class Plugin : IDalamudPlugin
             Framework.RunOnFrameworkThread(() => GlamourPlate.PlateDiagnostics.Run(parts[1..]));
             return;
         }
+        if (parts.Length > 0 && parts[0] == "camera")
+        {
+            Framework.RunOnFrameworkThread(() =>
+            {
+                List<string> lines;
+                lock (RenderSync.Lock)
+                    lines = live.DescribeCamera();
+                if (live.Selected?.CameraSlot is { } slot && CameraFor(slot) is { } calibrated)
+                    lines.Insert(1, $"calibration of {slot}: {calibrated}");
+                var path = System.IO.Path.Combine(PluginInterface.ConfigDirectory.FullName, "camera-probe.txt");
+                PluginInterface.ConfigDirectory.Create();
+                System.IO.File.AppendAllLines(path, ["", $"=== {DateTime.Now:HH:mm:ss}", .. lines]);
+                ChatGui.Print($"[Glamour Dresser] camera probe: {lines.Count} lines → {path}");
+            });
+            return;
+        }
         if (parts.Length > 0 && parts[0] == "trace")
         {
             Framework.RunOnFrameworkThread(() =>

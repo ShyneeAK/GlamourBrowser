@@ -102,6 +102,14 @@ public sealed unsafe class LivePreview : IDisposable
 
     public string DescribeWeapons() => view?.DescribeWeapons() ?? "live: no view";
 
+    /// <summary>Diagnostics for automatic framing: the selection, the live camera, and the view's camera and bones.</summary>
+    public List<string> DescribeCamera()
+    {
+        var lines = new List<string> { $"selected {Selected?.Name ?? "-"} (camera slot {Selected?.CameraSlot}), live camera {view?.ReadCamera()}" };
+        lines.AddRange(view?.DescribeCamera() ?? ["live: no view"]);
+        return lines;
+    }
+
     /// <summary>Diagnostics for /glamourdresser trace: what the preview asked for and the view's state.</summary>
     public string DescribeTrace()
         => $"want drawn {WeaponDrawn} applied {appliedWeaponDrawn} sheathe {sheatheFrames} stance {inHandStance} | {view?.DescribeTrace() ?? "no view"}";
