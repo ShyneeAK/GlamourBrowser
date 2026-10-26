@@ -99,10 +99,12 @@ public sealed unsafe class LivePane
 
     /// <summary>The width the item's dye fields take in the card's top-right corner; 0 while it is not worn.</summary>
     private float DyeBoxesWidth(GlamourItem item)
-        => tryOn.TryOn.SlotOf(item.Id) is { } slot && tryOn.TryOn.PieceIn(slot) != null ? DyeEdge * 2 + ImGui.GetStyle().ItemSpacing.X : 0;
+        => tryOn.TryOn.SlotOf(item.Id) is { } slot && tryOn.TryOn.PieceIn(slot) != null
+            ? ImGui.CalcTextSize(Loc.T("Farbe")).X + DyeEdge * 2 + ImGui.GetStyle().ItemSpacing.X * 2
+            : 0;
 
     /// <summary>
-    /// The item's two dye fields in the try-on, large in the card's top-right corner (the cursor stays where it was),
+    /// The item's two dye fields in the try-on behind "Farbe", large in the card's top-right corner (the cursor stays where it was),
     /// crossed out where it has no channel; none while it is not worn.
     /// </summary>
     private void DrawDyeBoxes(GlamourItem item, Vector2 topRight)
@@ -111,7 +113,11 @@ public sealed unsafe class LivePane
             return;
         var (first, second) = DyeBoxes.For(item.DyeCount);
         var cursor = ImGui.GetCursorPos();
-        ImGui.SetCursorScreenPos(topRight - new Vector2(DyeBoxesWidth(item), 0));
+        var start = topRight - new Vector2(DyeBoxesWidth(item), 0);
+        var label = Loc.T("Farbe");
+        var labelSize = ImGui.CalcTextSize(label);
+        ImGui.GetWindowDrawList().AddText(start + new Vector2(0, (DyeEdge - labelSize.Y) / 2), ImGui.GetColorU32(ImGuiCol.TextDisabled), label);
+        ImGui.SetCursorScreenPos(start + new Vector2(labelSize.X + ImGui.GetStyle().ItemSpacing.X, 0));
         var stain0 = piece.Stain0;
         if (DyePicker.Draw("##itemdye1", ref stain0, dyes, theme, first, Loc.T("Farbe 1"), DyeEdge))
             tryOn.TryOn.SetStain(slot, 1, stain0, item.DyeCount);

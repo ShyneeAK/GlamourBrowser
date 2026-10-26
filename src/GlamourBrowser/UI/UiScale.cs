@@ -17,6 +17,10 @@ public static class UiScale
 
     private static IFontHandle? text;
     private static IFontHandle? icons;
+    private static IFontHandle? large;
+    private static float largeFactor;
+    // Text that has to stand out next to large icons (the row under the slot bar).
+    private const float LargeText = 1.25f;
 
     public static float Factor { get; private set; } = 1f;
 
@@ -40,13 +44,31 @@ public static class UiScale
         icons = atlas.NewDelegateFontHandle(e => e.OnPreBuild(tk => tk.AddFontAwesomeIconFont(new SafeFontConfig { SizePx = UiBuilder.DefaultFontSizePx * factor })));
     }
 
+    /// <summary>Pushes a text font a quarter larger than the scaled one, built on first use.</summary>
+    public static IDisposable PushLarge()
+    {
+        if (large == null || Math.Abs(largeFactor - Factor) > 0.001f)
+        {
+            large?.Dispose();
+            largeFactor = Factor;
+            var size = UiBuilder.DefaultFontSizePx * Factor * LargeText;
+            large = Plugin.PluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(e => e.OnPreBuild(tk => tk.AddDalamudDefaultFont(size)));
+        }
+        return large.Available ? large.Push() : NoFont.Instance;
+    }
+
     /// <summary>Pushes the scaled text font; wrap a whole window in it.</summary>
     public static IDisposable PushText() => text != null && text.Available ? text.Push() : NoFont.Instance;
 
     /// <summary>Pushes the scaled FontAwesome font (Dalamud's icon font at 100 %).</summary>
     public static IDisposable PushIcons() => icons != null && icons.Available ? icons.Push() : ImRaii.PushFont(UiBuilder.IconFont);
 
-    public static void Dispose() => DisposeFonts();
+    public static void Dispose()
+    {
+        DisposeFonts();
+        large?.Dispose();
+        large = null;
+    }
 
     private static void DisposeFonts()
     {

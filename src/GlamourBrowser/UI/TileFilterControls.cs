@@ -37,8 +37,11 @@ public sealed class TileFilterControls
     /// <summary>The chosen jobs as named parts (whole groups by their name), for the button and the filter chips.</summary>
     public IReadOnlyList<JobPart> JobParts(IReadOnlySet<uint> selected) => JobSelection.Parts(selected, jobGroups, JobName);
 
-    /// <summary>The tile dye, one picker per channel: like a filter (each has a chip), but it colours the dyeable tiles instead of hiding any.</summary>
-    public void DrawDye()
+    /// <summary>
+    /// The tile dye, one picker per channel, as large as the mode icons next to it (<paramref name="edge"/>): like a
+    /// filter (each has a chip), but it colours the dyeable tiles instead of hiding any.
+    /// </summary>
+    public void DrawDye(float edge)
     {
         var onlySearch = BrowseModes.OnlySearch(state.Filter.Mode);
         var dye = state.Filter.Dye;
@@ -46,45 +49,66 @@ public sealed class TileFilterControls
         var second = dye.Second;
         using (ImRaii.Disabled(onlySearch))
         {
-            // Drawn by hand, level with the pickers' text: after the taller mode icons ImGui would put a text lower.
-            var top = ImGui.GetCursorScreenPos();
-            var dyeLabel = Loc.T("Farbe");
-            ImGui.Dummy(ImGui.CalcTextSize(dyeLabel) with { Y = ImGui.GetFrameHeight() });
-            ImGui.GetWindowDrawList().AddText(top + new Vector2(0, ImGui.GetStyle().FramePadding.Y),
-                ImGui.GetColorU32(ImGuiCol.Text), dyeLabel);
+            DrawLargeLabel(Loc.T("Farbe"), edge);
             ImGui.SameLine();
-            if (DyePicker.Draw("##tiledye1", ref first, dyes, theme, enabled: true, label: Loc.T("Farbe 1")))
+            if (DyePicker.Draw("##tiledye1", ref first, dyes, theme, enabled: true, label: Loc.T("Farbe 1"), edge))
                 state.Filter = state.Filter with { Dye = dye with { First = first } };
             DisabledHint(onlySearch);
             ImGui.SameLine();
-            if (DyePicker.Draw("##tiledye2", ref second, dyes, theme, enabled: true, label: Loc.T("Farbe 2")))
+            if (DyePicker.Draw("##tiledye2", ref second, dyes, theme, enabled: true, label: Loc.T("Farbe 2"), edge))
                 state.Filter = state.Filter with { Dye = dye with { Second = second } };
         }
         DisabledHint(onlySearch);
     }
 
-    public void DrawJobs()
+    /// <summary>The job button, as high as the mode icons, in the larger font.</summary>
+    public void DrawJobs(float edge)
     {
         var onlySearch = BrowseModes.OnlySearch(state.Filter.Mode);
         using (ImRaii.Disabled(onlySearch))
         {
-            PopupButton.Draw("jobpicker", JobSelection.Label(JobParts(state.Filter.Jobs)), () =>
+            bool open;
+            using (UiScale.PushLarge())
+            {
+                var label = JobSelection.Label(JobParts(state.Filter.Jobs));
+                var width = ImGui.CalcTextSize(label).X + ImGui.GetStyle().FramePadding.X * 4;
+                open = ImGui.Button($"{label}##jobpicker", new Vector2(width, edge));
+            }
+            if (open)
+                ImGui.OpenPopup("jobpicker");
+            if (ImGui.BeginPopup("jobpicker"))
             {
                 var selected = state.Filter.Jobs;
                 var exclusive = state.Filter.JobsExclusive;
                 if (JobPicker.Draw("jobs", jobs, jobGroups, ref selected, ref exclusive, theme))
                     state.Filter = state.Filter with { Jobs = selected, JobsExclusive = exclusive };
-            });
+                ImGui.EndPopup();
+            }
         }
         DisabledHint(onlySearch);
     }
 
-    /// <summary>The width of the dye controls, to tell whether they still fit on the row.</summary>
-    public static float DyeWidth()
-        => ImGui.CalcTextSize(Loc.T("Farbe")).X + ImGui.GetFrameHeight() * 2 + ImGui.GetStyle().ItemSpacing.X * 2;
-
+    /// <summary>The width of the job button, to tell whether it still fits on the row.</summary>
     public float JobsWidth()
-        => ImGui.CalcTextSize(JobSelection.Label(JobParts(state.Filter.Jobs))).X + ImGui.GetStyle().FramePadding.X * 2;
+    {
+        using (UiScale.PushLarge())
+            return ImGui.CalcTextSize(JobSelection.Label(JobParts(state.Filter.Jobs))).X + ImGui.GetStyle().FramePadding.X * 4;
+    }
+
+    /// <summary>
+    /// A label in the larger font, centred on a row <paramref name="height"/> high. Drawn by hand: after the taller mode
+    /// icons ImGui would put a text lower.
+    /// </summary>
+    private static void DrawLargeLabel(string text, float height)
+    {
+        using (UiScale.PushLarge())
+        {
+            var top = ImGui.GetCursorScreenPos();
+            var size = ImGui.CalcTextSize(text);
+            ImGui.Dummy(size with { Y = height });
+            ImGui.GetWindowDrawList().AddText(top + new Vector2(0, (height - size.Y) / 2), ImGui.GetColorU32(ImGuiCol.Text), text);
+        }
+    }
 
     private string JobName(uint id) => jobs.Find(id)?.Abbreviation ?? id.ToString();
 
