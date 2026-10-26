@@ -351,8 +351,9 @@ public sealed unsafe class LivePane
         DrawDyeBoxes(item, topRight);
 
         DrawTraits(item);
-
+        ImGui.Spacing();
         DrawJobs(item);
+        ImGui.Spacing();
         DrawLocations(ownership, item);
 
         ImGui.Separator();
@@ -372,6 +373,7 @@ public sealed unsafe class LivePane
 
         ImGui.Separator();
         DrawSources(item);
+        DrawLinks(item, atBottom: true);
     }
 
     /// <summary>Name, progress and origin of a set, then its pieces: owned or not, where they are or come from; a click opens a piece's sources.</summary>
@@ -432,7 +434,10 @@ public sealed unsafe class LivePane
                 continue;
             using (ImRaii.PushId((int)piece.Id))
             using (ImRaii.PushIndent(iconSize.X * 2 + ImGui.GetStyle().ItemSpacing.X * 2))
+            {
                 DrawSources(piece);
+                DrawLinks(piece, atBottom: false);
+            }
             ImGui.Separator();
         }
     }
@@ -527,8 +532,16 @@ public sealed unsafe class LivePane
                     expanded.Add(key);
             }
         }
+    }
 
+    /// <summary>Garland Tools, Teamcraft and a web search for the item.</summary>
+    /// <param name="atBottom">At the card's bottom-left while the card has room (the item card); below the sources otherwise.</param>
+    private void DrawLinks(GlamourItem item, bool atBottom)
+    {
         ImGui.Spacing();
+        var bottom = ImGui.GetWindowHeight() - ImGui.GetStyle().WindowPadding.Y - ImGui.GetFrameHeight();
+        if (atBottom && ImGui.GetScrollMaxY() == 0 && ImGui.GetCursorPosY() < bottom)
+            ImGui.SetCursorPosY(bottom);
         if (IconButton.Draw("##garland", 0, FontAwesomeIcon.ExternalLinkAlt, "Garland Tools", theme))
             Util.OpenLink($"https://www.garlandtools.org/db/#item/{item.Id}");
         ImGui.SameLine();
