@@ -206,7 +206,8 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
 
         // The first sets as a 2×2 collage above the name strip; an empty folder shows a large folder glyph.
         var lineHeight = ImGui.GetTextLineHeight();
-        var stripHeight = lineHeight * 2.2f + 4;
+        // As high as the set tiles' strip, so the names line up; at least one line.
+        var stripHeight = MathF.Max(TileGrid.StripHeight(size.Y), lineHeight * 1.2f + 4);
         const float gap = 4f;
         var areaMin = pos + new Vector2(gap + 2);
         var areaMax = pos + size - new Vector2(gap + 2, stripHeight + gap);
@@ -237,15 +238,17 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
         var shadeTop = pos + new Vector2(0, size.Y - stripHeight);
         drawList.PushClipRect(pos, pos + size, true);
         drawList.AddRectFilled(shadeTop, pos + size, 0xB0000000, rounding, ImDrawFlags.RoundCornersBottom);
-        string icon;
-        Vector2 iconSize;
+        // The folder glyph fills the strip's height, left of the name and the number of sets.
+        float iconWidth;
         using (UiScale.PushIcons())
         {
-            icon = FontAwesomeIcon.Folder.ToIconString();
-            iconSize = ImGui.CalcTextSize(icon);
-            drawList.AddText(shadeTop + new Vector2(6, 4), colors.Accent, icon);
+            var icon = FontAwesomeIcon.Folder.ToIconString();
+            var fontSize = (stripHeight - 12) / ImGui.GetTextLineHeight() * ImGui.GetFontSize();
+            var iconSize = ImGui.CalcTextSize(icon) * (fontSize / ImGui.GetFontSize());
+            iconWidth = iconSize.X;
+            drawList.AddText(ImGui.GetFont(), fontSize, shadeTop + new Vector2(8, (stripHeight - iconSize.Y) / 2), colors.Accent, icon);
         }
-        var textX = 6 + iconSize.X + 6;
+        var textX = 8 + iconWidth + 8;
         drawList.AddText(shadeTop + new Vector2(textX, 4), colors.Text, folder.Name);
         var count = folder.Sets.Count == 1 ? Loc.T("1 Set") : Loc.F("{0} Sets", folder.Sets.Count);
         drawList.AddText(shadeTop + new Vector2(textX, 4 + lineHeight), colors.TextMuted, count);

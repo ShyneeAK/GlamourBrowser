@@ -576,7 +576,7 @@ public sealed class TileGrid
         if (rows > 0)
         {
             var iconSize = lineHeight * TraitIconScale;
-            var stripHeight = rows == 3 ? lineHeight * 2.2f + iconSize + 10 : lineHeight * (rows + 0.2f) + 4 + rows;
+            var stripHeight = StripHeight(size.Y);
             var shadeTop = pos + new Vector2(0, size.Y - stripHeight);
             drawList.AddRectFilled(shadeTop, pos + size, 0xB0000000, rounding, ImDrawFlags.RoundCornersBottom);
             var textX = 6f;
@@ -715,6 +715,19 @@ public sealed class TileGrid
             editor.Put(subject, state.TileDye, ring);
         else
             tryOn.Put(subject, state.TileDye, ring);
+    }
+
+    /// <summary>The height of a tile's dark name strip (name, line, trait icons as far as the tile's height allows); 0 without one.</summary>
+    public static float StripHeight(float tileHeight)
+    {
+        var lineHeight = ImGui.GetTextLineHeight();
+        var rows = TileInfo.InfoRows(tileHeight, lineHeight);
+        return rows switch
+        {
+            0 => 0,
+            3 => lineHeight * 2.2f + lineHeight * TraitIconScale + 10,
+            _ => lineHeight * (rows + 0.2f) + 4 + rows,
+        };
     }
 
     private static (Vector2 Min, Vector2 Max) GlyphRect(Vector2 at, Vector2 size) => (at - new Vector2(3), at + size + new Vector2(3));
