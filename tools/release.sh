@@ -29,6 +29,17 @@ if git rev-parse -q --verify "refs/tags/$tag" >/dev/null || gh release view "$ta
   exit 1
 fi
 
+# Every release has its changelog entry in each language: the plugin shows it after the update.
+for file in src/GlamourBrowser.Core/Changelog/*.md; do
+  if ! grep -qx "## $version" "$file"; then
+    echo "No changelog entry '## $version' in $file: write it first." >&2
+    git checkout -- "$project"
+    exit 1
+  fi
+done
+# The English entry is the release's description on GitHub.
+notes=$(awk -v head="## $version" '$0 == head { on = 1; next } /^## / { on = 0 } on' src/GlamourBrowser.Core/Changelog/en.md)
+
 # The packager zips the whole output folder: leftovers of earlier builds (old manifests, the last latest.zip) would
 # end up in the release.
 rm -rf src/GlamourBrowser/bin/Release
@@ -49,7 +60,7 @@ git add "$project" repo.json
 git commit -q -m "release: $tag"
 git tag "$tag"
 git_gh push origin "$tag"
-gh release create "$tag" "$out/latest.zip" --repo "$repo" --verify-tag --title "Shynees Glamour Dresser $version" --generate-notes
+gh release create "$tag" "$out/latest.zip" --repo "$repo" --verify-tag --title "Shynees Glamour Dresser $version" --notes "$notes"
 # Only now: from here on repo.json points at a release that exists.
 git_gh push origin HEAD:main
 echo "Released $tag"
