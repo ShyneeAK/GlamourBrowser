@@ -25,6 +25,8 @@ using GlamourBrowser.UI.Widgets;
 using GlamourBrowser.Wishlist;
 using GlamourBrowser.CustomSets;
 using GlamourBrowser.GlamourPlate;
+using GlamourBrowser.Market;
+using GlamourBrowser.Core.Market;
 
 namespace GlamourBrowser.UI;
 
@@ -45,6 +47,7 @@ public sealed unsafe class LivePane
     private readonly SetEditorPane editorPane;
     private readonly GlamourPlateBridge plates;
     private readonly TryOnService tryOn;
+    private readonly MarketService market;
     private readonly Configuration config;
     // When the try-on was last saved as a set, for a short confirmation next to the button.
     private DateTime? savedAt;
@@ -56,8 +59,9 @@ public sealed unsafe class LivePane
 
     public LivePane(BrowserState state, OwnershipService ownership, LivePreview live, CalibrationService calibration, JobCatalog jobs, Theme.Theme theme,
                     SourceService sources, WishlistService wishlist, CustomSetService customSets, DyeCatalog dyes, CustomSetEditor editor,
-                    SetEditorPane editorPane, GlamourPlateBridge plates, TryOnService tryOn, Configuration config)
+                    SetEditorPane editorPane, GlamourPlateBridge plates, TryOnService tryOn, MarketService market, Configuration config)
     {
+        this.market = market;
         this.config = config;
         this.tryOn = tryOn;
         this.plates = plates;
@@ -169,7 +173,7 @@ public sealed unsafe class LivePane
 
     /// <summary>
     /// One icon per piece the try-on wears (known items, in slot order): a click selects it again, for its card, dyes and
-    /// camera, without putting anything on. Wraps when the pane is narrow.
+    /// camera, without putting anything on; a right-click takes it off (the main hand aside). Wraps when the pane is narrow.
     /// </summary>
     private void DrawWornPieces()
     {
@@ -189,12 +193,15 @@ public sealed unsafe class LivePane
             }
             first = false;
             var selected = state.Selected is ItemSubject { Item.Id: var id } && id == piece.ItemId;
-            if (IconToggle.Draw($"##worn{(int)piece.Slot}", subject.Item.IconId, size, selected, $"{SlotNames.Full(piece.Slot)}: {subject.Name}\n" + Loc.T("Klick: auswählen"),
+            var hint = piece.Slot == EquipSlot.MainHand ? Loc.T("Klick: auswählen") : Loc.T("Klick: auswählen\nRechtsklick: ausziehen");
+            if (IconToggle.Draw($"##worn{(int)piece.Slot}", subject.Item.IconId, size, selected, $"{SlotNames.Full(piece.Slot)}: {subject.Name}\n" + hint,
                     theme, FontAwesomeIcon.Tshirt))
             {
                 state.Selected = subject;
                 live.Select(subject);
             }
+            if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                tryOn.TryOn.TakeOff(piece.Slot);
         }
     }
 
@@ -365,6 +372,9 @@ public sealed unsafe class LivePane
             Plugin.ChatGui.Print(new SeStringBuilder().AddText("Shynees Glamour Dresser: ").AddItemLink(item.Id, false).Build());
             ImGui.SetClipboardText(item.Name);
         }
+        ImGui.SameLine();
+        if (IconButton.Draw("##copyname", 0, FontAwesomeIcon.Copy, Loc.T("Namen kopieren"), theme))
+            ImGui.SetClipboardText(item.Name);
         ImGui.SameLine();
         if (IconButton.Draw("##showingrid", 0, FontAwesomeIcon.Crosshairs, Loc.T("In der Slot-Auswahl zeigen: springt zur Seite mit diesem Item"), theme))
             state.ShowInGrid(item);
@@ -682,10 +692,62 @@ public sealed unsafe class LivePane
             Tradability.Tradable => (TraitIcons.Tradable, FontAwesomeIcon.ExchangeAlt, Loc.T("Handelbar")),
             _ => (0u, FontAwesomeIcon.Lock, Loc.T("Gebunden")),
         };
+        ImGui.BeginGroup();
         GameIcon.Draw(tradeIcon, size, glyph, colors.TextMuted);
         ImGui.SameLine();
         ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted(text);
+        ImGui.EndGroup();
+        if (item.Trade == Tradability.Marketable)
+            DrawMarketHover(item);
+    }
+
+    /// <summary>Over the market trait: the cheapest listing on the home world and on its data center (Universalis); a click opens the item there.</summary>
+    private void DrawMarketHover(GlamourItem item)
+    {
+        if (!ImGui.IsItemHovered())
+            return;
+        ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        if (ImGui.IsItemClicked(ImGuiMouseButton.Left))
+            Util.OpenLink($"https://universalis.app/market/{item.Id}");
+
+        using var tooltip = ImRaii.Tooltip();
+        ImGui.TextUnformatted("Universalis");
+        if (!Plugin.PlayerState.IsLoaded || !Plugin.PlayerState.HomeWorld.IsValid)
+        {
+            ImGui.TextDisabled(Loc.T("Preise erst nach dem Einloggen (Heimatwelt)"));
+        }
+        else
+        {
+            var home = Plugin.PlayerState.HomeWorld.Value;
+            var world = home.Name.ExtractText();
+            var dataCenter = home.DataCenter.Value.Name.ExtractText();
+            ImGui.TextUnformatted(world + ": " + MarketText(market.Get(item.Id, world), withWorld: false));
+            ImGui.TextUnformatted(Loc.F("{0}, günstigstes", dataCenter) + ": " + MarketText(market.Get(item.Id, dataCenter), withWorld: true));
+        }
+        ImGui.Spacing();
+        ImGui.TextDisabled(Loc.T("Klick: auf Universalis öffnen"));
+    }
+
+    private static string MarketText(MarketAnswer answer, bool withWorld) => answer switch
+    {
+        { State: MarketState.Loading } => Loc.T("lädt …"),
+        { State: MarketState.Failed } => Loc.T("nicht erreichbar"),
+        { Price: null } => Loc.T("keine Angebote"),
+        { Price: { } p } => Loc.F("{0} Gil", p.PricePerUnit.ToString("N0", Loc.Culture))
+                            + (p.Hq ? " HQ" : "")
+                            + (withWorld && p.World != null ? " " + Loc.F("auf {0}", p.World) : "")
+                            + " (" + Age(p.Updated) + ")",
+    };
+
+    private static string Age(DateTimeOffset updated)
+    {
+        var age = DateTimeOffset.UtcNow - updated;
+        if (age.TotalHours < 1)
+            return Loc.F("vor {0} Min.", Math.Max(1, (int)age.TotalMinutes));
+        if (age.TotalDays < 1)
+            return Loc.F("vor {0} Std.", (int)age.TotalHours);
+        return Loc.F("vor {0} Tagen", (int)age.TotalDays);
     }
 
     private static string DyeText(int count) => count switch

@@ -295,6 +295,34 @@ public class TryOnTests
     }
 
     [Fact]
+    public void TakeOff_EmptiesTheSlotUntilSomethingIsPutOnAgain()
+    {
+        var tryOn = new TryOn(Outfit);
+
+        Assert.True(tryOn.TakeOff(EquipSlot.Head));
+        Assert.Null(tryOn.PieceIn(EquipSlot.Head));
+        Assert.True(tryOn.HasChanges);
+        Assert.False(tryOn.TakeOff(EquipSlot.Head));
+
+        tryOn.SetBasis([.. Outfit, Piece(EquipSlot.Hands, 7)]);
+        Assert.Null(tryOn.PieceIn(EquipSlot.Head));
+
+        tryOn.Put(Item(30, EquipSlot.Head), default);
+        Assert.Equal(Piece(EquipSlot.Head, 30), tryOn.PieceIn(EquipSlot.Head));
+    }
+
+    [Fact]
+    public void TakeOff_KeepsTheMainHand()
+    {
+        var tryOn = new TryOn(Outfit);
+
+        Assert.False(tryOn.TakeOff(EquipSlot.MainHand));
+        Assert.True(tryOn.TakeOff(EquipSlot.OffHand));
+        Assert.Equal(Piece(EquipSlot.MainHand, 5), tryOn.PieceIn(EquipSlot.MainHand));
+        Assert.Null(tryOn.PieceIn(EquipSlot.OffHand));
+    }
+
+    [Fact]
     public void PutAll_ADetectedSetKeepsTheOutfitAroundIt()
     {
         var tryOn = new TryOn(Outfit);

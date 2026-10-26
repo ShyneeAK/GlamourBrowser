@@ -25,6 +25,7 @@ Armreife,Bracelets,Bracelets,腕
 Arsenal,Armoury Chest,Arsenal,アーマリーチェスト
 Auch nicht tragbare,Include unwearable,Inclure non équipables,装備不可も含む
 Auf die Wunschliste,Add to the wishlist,Ajouter à la liste de souhaits,ほしい物リストに追加
+auf {0},on {0},sur {0},（{0}）
 aus {0},from {0},de {0},{0}から
 "Aus: alles, was einer der gewählten Jobs tragen kann",Off: everything one of the chosen jobs can wear,Désactivé : tout ce qu'un des jobs choisis peut porter,オフ: 選んだジョブのいずれかが装備できるものすべて
 Ausgerüstet,Equipped,Équipé,装備中
@@ -149,6 +150,7 @@ Kamera-Position für ({0}) zurücksetzen,Reset camera position for ({0}),Réinit
 Karte,Map,Carte,マップ
 Kein Item ausgewählt,No item selected,Aucun objet sélectionné,アイテムが選択されていません
 Kein Render-Platz frei (Plätze 5–7 belegt).,No free render slot (slots 5–7 in use).,Aucun emplacement de rendu libre (emplacements 5–7 occupés).,空いている描画枠がありません（枠5～7が使用中）。
+keine Angebote,no listings,aucune offre,出品なし
 Keine Einträge im Katalog gefunden,No entries found in the catalog,Aucune entrée trouvée dans le catalogue,カタログに該当する項目がありません
 Keine Farbe,No dye,Aucune teinture,カララントなし
 keine Farbe,No dye,Aucune teinture,カララントなし
@@ -158,7 +160,13 @@ Keine Treffer,No results,Aucun résultat,該当なし
 Kisten,Coffers,Coffres,コファー
 Kisten-Inhalt,Coffer contents,Contenu des coffres,コファーの中身
 Klassen/Jobs,Classes/Jobs,Classes/Jobs,クラス/ジョブ
+Klick: auf Universalis öffnen,Click: open on Universalis,Clic : ouvrir sur Universalis,クリック：Universalisで開く
 Klick: auswählen,Click: select,Clic : sélectionner,クリック：選択
+"Klick: auswählen
+Rechtsklick: ausziehen","Click: select
+Right-click: take off","Clic : sélectionner
+Clic droit : retirer","クリック：選択
+右クリック：外す"
 Kommode,Glamour Dresser,Commode à mirages,ミラージュドレッサー
 Kommoden-Set,Glamour Dresser set,Ensemble de la commode à mirages,ミラージュドレッサーのセット
 Kopf,Head,Tête,頭
@@ -190,6 +198,7 @@ Double-clic : réinitialiser","左ドラッグ：回転
 Live-Ansicht,Live view,Vue en direct,ライブビュー
 Live-Ansicht wird vorbereitet …,Preparing live view …,Préparation de la vue en direct…,ライブビューを準備中…
 Lv. {0},Lv. {0},Niv. {0},Lv{0}
+lädt …,loading …,chargement …,読み込み中 …
 Löschen,Delete,Supprimer,削除
 Magie,Magic,Distance magique,遠隔魔法DPS
 Marken & Token,Marks & Tokens,Marques et jetons,トークン
@@ -203,11 +212,13 @@ Nach Quelle,By source,Par source,入手方法別
 Nahkampf,Melee,Mêlée,近接DPS
 Name A–Z,Name A–Z,Nom A–Z,名前（昇順）
 Name Z–A,Name Z–A,Nom Z–A,名前（降順）
+Namen kopieren,Copy name,Copier le nom,名前をコピー
 Nebenhand,Off Hand,Arme secondaire,副兵装
 Neues Set,New Set,Nouvel ensemble,新規セット
 Neueste zuerst,Newest first,Plus récents d'abord,新しい順
 Neuigkeiten anzeigen,Show what's new,Afficher les nouveautés,新機能を表示
 Nicht eingeloggt,Not logged in,Non connecté,ログインしていません
+nicht erreichbar,unreachable,injoignable,接続できません
 nicht färbbar,not dyeable,non teintable,染色不可
 Nicht färbbar,Not dyeable,Non teinturable,染色不可
 nicht im Besitz,not owned,non possédé,未所持
@@ -228,6 +239,7 @@ Pausiert,Paused,En pause,一時停止中
 Plate {0} · 1 Teil,Plate {0} · 1 piece,Tenue {0} · 1 pièce,プレート{0}・1点
 Plate {0} · {1} Teile,Plate {0} · {1} pieces,Tenue {0} · {1} pièces,プレート{0}・{1}点
 Pose,Pose,Pose,ポーズ
+Preise erst nach dem Einloggen (Heimatwelt),Prices only once logged in (home world),Prix disponibles une fois connecté (monde d'origine),ログイン後に価格を表示（ホームワールド）
 Prüfung,Trial,Défi,討伐・討滅戦
 PvP,PvP,JcJ,PvP
 Quelle,Source,Source,入手方法
@@ -299,6 +311,9 @@ vom Spiel nicht geleert – Kommoden- bzw. Armoire-Liste im Plate-Editor öffnen
 vom Spiel nicht übernommen – Kommoden- bzw. Armoire-Liste im Plate-Editor öffnen und erneut übertragen,not taken by the game – open the Glamour Dresser or Armoire list in the plate editor and transfer again,non repris par le jeu – ouvrez la liste de la commode à mirages ou du bahut dans l'éditeur de tenue et transférez à nouveau,ゲームに反映されませんでした – プレート編集でミラージュドレッサーまたはアーモワールの一覧を開き、もう一度転送してください
 von,from,de,下限
 Von der Wunschliste nehmen,Remove from the wishlist,Retirer de la liste de souhaits,ほしい物リストから外す
+vor {0} Min.,{0} min ago,il y a {0} min,{0}分前
+vor {0} Std.,{0} h ago,il y a {0} h,{0}時間前
+vor {0} Tagen,{0} days ago,il y a {0} jours,{0}日前
 Waffe,Main Hand,Arme principale,主兵装
 Waffe anzeigen,Show weapon,Afficher l'arme,武器を表示
 Waffe ausblenden,Hide weapon,Masquer l'arme,武器を非表示
@@ -331,12 +346,14 @@ Zurücksetzen,Reset,Réinitialiser,リセット
 {0} abwählen,Deselect {0},Désélectionner {0},{0}の選択を解除
 {0} anziehen: {1},Put on {0}: {1},Équiper ({0}) : {1},{0}を装備: {1}
 {0} Farbkanäle,{0} dye channels,{0} canaux de teinture,染色{0}箇所
+{0} Gil,{0} gil,{0} gils,{0}ギル
 "{0} Sets importiert, {1} übersprungen","{0} sets imported, {1} skipped","{0} ensembles importés, {1} ignorés",{0}件のセットを取り込み、{1}件をスキップ
 {0} Spalten × {1} Zeilen,{0} columns × {1} rows,{0} colonnes × {1} lignes,{0}列 × {1}行
 {0} Teile,{0} pieces,{0} pièces,{0}点
 {0} Treffer,{0} results,{0} résultats,{0}件
 {0} von {1} Teilen übertragen,{0} of {1} pieces transferred,{0} pièce(s) sur {1} transférée(s),{1}点中{0}点を転送しました
 {0} · Auswahl,{0} · Optional reward,{0} · Au choix,{0} · 選択報酬
+"{0}, günstigstes","{0}, cheapest","{0}, le moins cher",{0}・最安値
 {0}: kalibriert,{0}: calibrated,{0} : calibré,{0}: 調整済み
 {0}: noch nie geöffnet,{0}: never opened,{0} : jamais ouvert,{0}: まだ開いていません
 {0}: Standard,{0}: default,{0} : par défaut,{0}: 標準

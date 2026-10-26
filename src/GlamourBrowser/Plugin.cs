@@ -51,6 +51,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly WishlistService wishlist;
     private readonly CustomSetService customSets;
     private readonly TryOnService tryOn;
+    private readonly Market.MarketService market = new();
     private readonly GlamourPlate.GlamourPlateBridge plates;
     private readonly InventoryReader inventoryReader;
     private readonly RetainerReader retainerReader;
@@ -144,7 +145,7 @@ public sealed class Plugin : IDalamudPlugin
         var filterControls = new TileFilterControls(browser, jobs, dyes, theme);
         mainWindow = new MainWindow(
             new LivePane(browser, ownership, live, calibration, jobs, theme, sources, wishlist, customSets, dyes, editor,
-                         new SetEditorPane(editor, browser, dyes, theme, plates), plates, tryOn, config),
+                         new SetEditorPane(editor, browser, dyes, theme, plates), plates, tryOn, market, config),
             new TopBar(browser, config, theme, dyes, filterControls),
             new FilterColumn(browser, ownership, config, sources, theme),
             new TileGrid(browser, cache, pool, ownership, live, config, theme, sources, jobs, wishlist,
@@ -305,6 +306,7 @@ public sealed class Plugin : IDalamudPlugin
             cache.Dispose();
         }).Wait();
         memoryStats.Dispose();
+        market.Dispose();
         tryOn.Dispose();
         appearance.Dispose();
 

@@ -88,6 +88,19 @@ public sealed class TryOn
         OnChanged();
     }
 
+    /// <summary>
+    /// Empties the slot, also of the basis, until something is put on there again. The main hand stays: a character
+    /// always holds its weapon. False when nothing was worn there.
+    /// </summary>
+    public bool TakeOff(EquipSlot slot)
+    {
+        if (slot == EquipSlot.MainHand || PieceIn(slot) == null)
+            return false;
+        clicked.Set(new CustomPiece(slot, 0, 0, 0));
+        OnChanged();
+        return true;
+    }
+
     /// <summary>Dyes channel 1 or 2 of a worn piece; a piece of the basis is taken over first. False for a channel the item lacks.</summary>
     public bool SetStain(EquipSlot slot, int channel, byte stain, int dyeCount)
     {
