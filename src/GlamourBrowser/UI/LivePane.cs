@@ -415,7 +415,7 @@ public sealed unsafe class LivePane
             DrawSetCard(set);
             return;
         }
-        if (state.Selected is not ItemSubject { Item: var item })
+        if (state.Selected is not ItemSubject { Item: var item } subject)
         {
             ImGui.TextDisabled(Loc.T("Kein Item ausgewählt"));
             return;
@@ -452,7 +452,9 @@ public sealed unsafe class LivePane
         DrawLocations(ownership, item);
 
         ImGui.Separator();
-        if (IconButton.Draw("##tryon", 0, FontAwesomeIcon.Tshirt, Loc.T("Anprobe"), theme))
+        if (DrawWishStar(subject))
+            ImGui.SameLine();
+        if (IconButton.Draw("##tryon", 0, FontAwesomeIcon.Tshirt, Loc.T("Im Anprobe-Fenster des Spiels öffnen"), theme))
             Plugin.Framework.RunOnFrameworkThread(() => AgentTryon.TryOn(0, item.Id));
         ImGui.SameLine();
         if (IconButton.Draw("##chatlink", 0, FontAwesomeIcon.CommentDots, Loc.T("Chat-Link: schreibt einen Item-Link in deinen eigenen Chat und kopiert den Namen."), theme))
@@ -469,6 +471,18 @@ public sealed unsafe class LivePane
         ImGui.Separator();
         DrawSources(item);
         DrawLinks(item, atBottom: true);
+    }
+
+    /// <summary>The wishlist star of the card, like the tile's; false (nothing drawn) while the wishlist is not loaded.</summary>
+    private bool DrawWishStar(TileSubject subject)
+    {
+        if (wishlist.Current == null)
+            return false;
+        var listed = wishlist.IsListed(subject);
+        if (IconToggle.Draw("##wish", 0, new Vector2(ImGui.GetFrameHeight()), listed,
+                            listed ? Loc.T("Von der Wunschliste nehmen") : Loc.T("Auf die Wunschliste"), theme, FontAwesomeIcon.Star))
+            wishlist.Toggle(subject);
+        return true;
     }
 
     /// <summary>Name, progress and origin of a set, then its pieces: owned or not, where they are or come from; a click opens a piece's sources.</summary>
@@ -497,9 +511,14 @@ public sealed unsafe class LivePane
         ImGui.TextDisabled($"{progress.Owned}/{progress.Total} · {origin}");
         ImGui.EndGroup();
         DrawSetChest([set], topRight);
-        // Wishlist, editing and deleting are on the tile; the card keeps the transfer into the open plate.
+        // Editing and deleting are on the tile; the card has the wishlist star and the transfer into the open plate.
+        var starred = DrawWishStar(set);
         if (set.Set.Id.Kind == SetKind.Custom && customSets.Current?.Find(set.Set.Id.Value) is { } toTransfer)
+        {
+            if (starred)
+                ImGui.SameLine();
             PlateTransferUi.DrawButton(plates, toTransfer.Pieces);
+        }
         ImGui.Separator();
 
         var iconSize = new Vector2(ImGui.GetFrameHeight());
@@ -622,7 +641,8 @@ public sealed unsafe class LivePane
         ImGui.TextDisabled("Garland");
         ImGui.SameLine();
         if (IconButton.Draw("##teamcraft", 0, FontAwesomeIcon.ExternalLinkAlt, "Teamcraft", theme))
-            Util.OpenLink($"https://ffxivteamcraft.com/db/de/item/{item.Id}");
+            // In the plugin's language; Teamcraft knows the same four.
+            Util.OpenLink($"https://ffxivteamcraft.com/db/{Loc.Language}/item/{item.Id}");
         ImGui.SameLine();
         ImGui.AlignTextToFramePadding();
         ImGui.TextDisabled("Teamcraft");

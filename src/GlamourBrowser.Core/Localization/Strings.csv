@@ -22,7 +22,6 @@ Als Set speichern,Save as set,Enregistrer comme ensemble,セットとして保�
 Als ‚{0}‘ gespeichert,Saved as “{0}”,Enregistré sous « {0} »,「{0}」として保存しました
 "An: nur Ausrüstung, die für die gewählten Jobs gemacht ist (keine, die auch andere Jobs tragen)",On: only gear made for the chosen jobs (none that other jobs can wear too),Activé : uniquement l'équipement conçu pour les jobs choisis (aucun que d'autres jobs peuvent aussi porter),オン: 選んだジョブ専用の装備のみ(他のジョブも装備できるものは除く)
 Anlegen,Create,Créer,作成
-Anprobe,Try On,Essayer,試着
 Armoire,Armoire,Bahut,アーモワール
 Armreife,Bracelets,Bracelets,腕
 Arsenal,Armoury Chest,Arsenal,アーマリーチェスト
@@ -252,6 +251,7 @@ Ort unbekannt,Location unknown,Lieu inconnu,場所不明
 Parallele Ansichten,Parallel views,Vues parallèles,並列ビュー数
 Patch {0},Patch {0},Patch {0},パッチ{0}
 Patches,Patches,Patchs,パッチ
+Pausiert: {0},Paused: {0},En pause : {0},一時停止中：{0}
 Pausiert,Paused,En pause,一時停止中
 Plate {0} · 1 Teil,Plate {0} · 1 piece,Tenue {0} · 1 pièce,プレート{0}・1点
 Plate {0} · {1} Teile,Plate {0} · {1} pieces,Tenue {0} · {1} pièces,プレート{0}・{1}点
@@ -376,7 +376,6 @@ Zurücksetzen,Reset,Réinitialiser,リセット
 "{0}, günstigstes","{0}, cheapest","{0}, le moins cher",{0}・最安値
 {0}: kalibriert,{0}: calibrated,{0} : calibré,{0}: 調整済み
 {0}: noch nie geöffnet,{0}: never opened,{0} : jamais ouvert,{0}: まだ開いていません
-{0}: Standard,{0}: default,{0} : par défaut,{0}: 標準
 Älteste zuerst,Oldest first,Plus anciens d'abord,古い順
 Änderungen verwerfen?,Discard changes?,Abandonner les modifications ?,変更を破棄しますか？
 Öffnen,Open,Ouvrir,開く
@@ -409,3 +408,7 @@ Rückgängig,Undo,Annuler,元に戻す
 Wiederholen,Redo,Rétablir,やり直す
 Zoom der automatischen Kamera,Automatic camera zoom,Zoom de la caméra automatique,自動カメラのズーム
 "Wie nah die automatische Kamera an den Slot heranzoomt (über 100 % näher, darunter weiter weg); eigene Kalibrierungen bleiben, wie sie sind.","How close the automatic camera zooms in on the slot (above 100 % closer, below further away); your own calibrations stay as they are.","À quelle distance la caméra automatique zoome sur l’emplacement (au-dessus de 100 % plus près, en dessous plus loin) ; vos propres calibrages restent inchangés.",自動カメラがそのスロットにどれだけ寄るか（100 %より上で近く、下で遠く）。自分のキャリブレーションはそのままです。
+Gruppenpose,Group pose,Pose de groupe,グループポーズ
+Gebietswechsel,Changing areas,Changement de zone,エリア移動中
+Zwischensequenz,Cutscene,Cinématique,カットシーン
+Im Anprobe-Fenster des Spiels öffnen,Open in the game's Try On window,Ouvrir dans la fenêtre d'essayage du jeu,ゲームの試着ウィンドウで開く

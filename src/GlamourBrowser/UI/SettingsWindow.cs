@@ -201,14 +201,19 @@ public sealed class SettingsWindow : Window
         foreach (var (slot, name) in SlotNames.All)
         {
             var zoom = (int)MathF.Round(config.AutoFramingZooms.GetValueOrDefault(slot, 1f) * 100);
-            if (!ImGui.SliderInt($"{name}##autozoom{slot}", ref zoom, 50, 300, "%d %%", ImGuiSliderFlags.AlwaysClamp))
-                continue;
-            if (zoom == 100)
-                config.AutoFramingZooms.Remove(slot);
-            else
-                config.AutoFramingZooms[slot] = zoom / 100f;
-            config.Save();
-            state.InvalidateTiles();
+            if (ImGui.SliderInt($"{name}##autozoom{slot}", ref zoom, 50, 300, "%d %%", ImGuiSliderFlags.AlwaysClamp))
+            {
+                if (zoom == 100)
+                    config.AutoFramingZooms.Remove(slot);
+                else
+                    config.AutoFramingZooms[slot] = zoom / 100f;
+            }
+            // Saved and rendered anew once the slider is let go: every tile is rendered again.
+            if (ImGui.IsItemDeactivatedAfterEdit())
+            {
+                config.Save();
+                state.InvalidateTiles();
+            }
         }
         ImGui.Spacing();
     }
@@ -227,7 +232,7 @@ public sealed class SettingsWindow : Window
         {
             if (!calibrated.ContainsKey(slot))
             {
-                ImGui.TextDisabled(Loc.F("{0}: Standard", name));
+                ImGui.TextDisabled(Loc.F("{0}: automatisch", name));
                 continue;
             }
 

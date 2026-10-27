@@ -55,8 +55,15 @@ public sealed class SetEditorPane
                 editor.Save();
         }
         ImGui.SameLine();
+        // Unsaved changes ask first: there is no undo for the draft.
         if (ImGui.Button(Loc.T("Verwerfen")))
-            editor.Discard();
+        {
+            if (draft.IsDirty)
+                ImGui.OpenPopup(DiscardDraftPopup);
+            else
+                editor.Discard();
+        }
+        DrawDiscardDraftQuestion();
         ImGui.SameLine();
         PlateTransferUi.DrawButton(plates, draft.Pieces);
         ImGui.Separator();
@@ -118,6 +125,25 @@ public sealed class SetEditorPane
             if (IconButton.Draw("##remove", 0, FontAwesomeIcon.Times, Loc.T("Entfernen"), theme))
                 editor.Remove(slot);
         }
+    }
+
+    private const string DiscardDraftPopup = "##discard-draft";
+
+    /// <summary>"Änderungen verwerfen?" after "Verwerfen" with unsaved changes; a click outside keeps the draft.</summary>
+    private void DrawDiscardDraftQuestion()
+    {
+        if (!ImGui.BeginPopup(DiscardDraftPopup))
+            return;
+        ImGui.TextUnformatted(Loc.T("Änderungen verwerfen?"));
+        if (ImGui.Button(Loc.T("Verwerfen")))
+        {
+            editor.Discard();
+            ImGui.CloseCurrentPopup();
+        }
+        ImGui.SameLine();
+        if (ImGui.Button(Loc.T("Abbrechen")))
+            ImGui.CloseCurrentPopup();
+        ImGui.EndPopup();
     }
 
     /// <summary>"Änderungen verwerfen?" while a new start waits for the unsaved draft; a click outside keeps the draft.</summary>

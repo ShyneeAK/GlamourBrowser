@@ -287,7 +287,8 @@ public sealed class Plugin : IDalamudPlugin
         lock (RenderSync.Lock)
         {
             // Closed window: release everything like a zone change, so nothing renders in the background.
-            var pause = ShouldPause() || !mainWindow.IsOpen;
+            PauseReason = WhyPause();
+            var pause = PauseReason != null || !mainWindow.IsOpen;
             if (pause && !paused)
             {
                 paused = true;
@@ -313,14 +314,21 @@ public sealed class Plugin : IDalamudPlugin
     }
 
     /// <summary>CharaViews are released during zone changes, cutscenes, GPose and while logged out.</summary>
-    private static bool ShouldPause()
-        => ObjectTable.LocalPlayer == null
-           || ClientState.IsGPosing
-           || Condition[ConditionFlag.BetweenAreas]
-           || Condition[ConditionFlag.BetweenAreas51]
-           || Condition[ConditionFlag.OccupiedInCutSceneEvent]
-           || Condition[ConditionFlag.WatchingCutscene]
-           || Condition[ConditionFlag.WatchingCutscene78];
+    /// <summary>Why the rendering pauses (besides a closed window), for the grid to say; null while it may render.</summary>
+    internal static string? PauseReason { get; private set; }
+
+    private static string? WhyPause()
+    {
+        if (ObjectTable.LocalPlayer == null)
+            return Loc.T("Nicht eingeloggt");
+        if (ClientState.IsGPosing)
+            return Loc.T("Gruppenpose");
+        if (Condition[ConditionFlag.BetweenAreas] || Condition[ConditionFlag.BetweenAreas51])
+            return Loc.T("Gebietswechsel");
+        if (Condition[ConditionFlag.OccupiedInCutSceneEvent] || Condition[ConditionFlag.WatchingCutscene] || Condition[ConditionFlag.WatchingCutscene78])
+            return Loc.T("Zwischensequenz");
+        return null;
+    }
 
     public void Dispose()
     {

@@ -69,6 +69,19 @@ public static class FilterChips
         return chips;
     }
 
+    /// <summary>
+    /// "Alle zurücksetzen": every filter with a chip back to its default, in the mode that is open. In the wishlist and
+    /// custom set modes only the search, like their chips: the other filters wait unseen for the items.
+    /// </summary>
+    public static FilterState ResetAll(FilterState state)
+        => BrowseModes.OnlySearch(state.Mode) ? state with { SearchText = "" } : new FilterState { Mode = state.Mode };
+
+    /// <summary>Whether <see cref="ResetAll"/> would change anything besides the mode chip.</summary>
+    public static bool CanResetAll(FilterState state)
+        => BrowseModes.OnlySearch(state.Mode)
+            ? state.SearchText.Trim().Length > 0
+            : state.Jobs.Count > 0 || From(state with { Mode = BrowseMode.Items }, _ => "", _ => []).Count > 0;
+
     /// <summary>The name of a bracelet side, for its checkbox and its chip.</summary>
     public static string WristSideName(WristSide side) => side switch
     {

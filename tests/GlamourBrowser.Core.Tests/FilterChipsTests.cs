@@ -26,6 +26,39 @@ public class FilterChipsTests
     }
 
     [Fact]
+    public void ResetAll_KeepsTheModeAndClearsItsFilters()
+    {
+        var state = new FilterState { Mode = BrowseMode.Sets, SearchText = "robe", Ownership = OwnershipFilter.Missing, Dye = new DyePair(81, 0) };
+
+        var reset = FilterChips.ResetAll(state);
+
+        Assert.Equal(BrowseMode.Sets, reset.Mode);
+        Assert.Equal("", reset.SearchText);
+        Assert.Equal(OwnershipFilter.All, reset.Ownership);
+        Assert.Equal(default, reset.Dye);
+    }
+
+    [Fact]
+    public void ResetAll_OnlyTheSearchInTheWishlistMode()
+    {
+        var jobs = new HashSet<uint> { 19 };
+        var reset = FilterChips.ResetAll(new FilterState { Mode = BrowseMode.Wishlist, SearchText = "robe", Jobs = jobs });
+
+        Assert.Equal(BrowseMode.Wishlist, reset.Mode);
+        Assert.Equal("", reset.SearchText);
+        Assert.Same(jobs, reset.Jobs);
+    }
+
+    [Fact]
+    public void CanResetAll_NotForTheModeChipAlone()
+    {
+        Assert.False(FilterChips.CanResetAll(new FilterState { Mode = BrowseMode.MySets, Jobs = new HashSet<uint> { 19 } }));
+        Assert.True(FilterChips.CanResetAll(new FilterState { Mode = BrowseMode.MySets, SearchText = "a" }));
+        Assert.False(FilterChips.CanResetAll(new FilterState { Mode = BrowseMode.Sets }));
+        Assert.True(FilterChips.CanResetAll(new FilterState { Mode = BrowseMode.Sets, DyeableOnly = true }));
+    }
+
+    [Fact]
     public void Dye_NoChipInTheWishlistMode()
         => Assert.DoesNotContain(Chips(new FilterState { Dye = new DyePair(81, 0), Mode = BrowseMode.Wishlist }), c => c.Label.StartsWith("Farbe"));
 

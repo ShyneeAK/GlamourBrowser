@@ -80,6 +80,7 @@ public sealed class TileGrid
     private readonly Dictionary<((uint ItemId, SetId Set) Id, uint Variant, string Name), TileLabels> labels = new();
     private (float Width, float FontSize, int Ownership, bool SourcesReady) labelsFor;
     private int ownershipVersion;
+    private readonly WheelSteps wheel = new();
     private readonly MySetsFolders folders;
     private readonly MarketService market;
 
@@ -142,7 +143,7 @@ public sealed class TileGrid
 
         if (pool.IsPaused)
         {
-            ImGui.TextDisabled(Loc.T("Pausiert"));
+            ImGui.TextDisabled(Plugin.PauseReason is { } reason ? Loc.F("Pausiert: {0}", reason) : Loc.T("Pausiert"));
             return;
         }
 
@@ -173,6 +174,14 @@ public sealed class TileGrid
                 return;
             }
         }
+        // Nothing found instead of an empty grid, with a way out.
+        if (state.OpenSets == null && state.Filter.Mode is BrowseMode.Items or BrowseMode.Sets && state.Results.Count == 0)
+        {
+            ImGui.TextDisabled(Loc.T("Keine Treffer"));
+            if (FilterChips.CanResetAll(state.Filter) && ImGui.Button(Loc.T("Alle zurücksetzen")))
+                state.Filter = FilterChips.ResetAll(state.Filter);
+            return;
+        }
 
         var avail = ImGui.GetContentRegionAvail();
         var spacing = ImGui.GetStyle().ItemSpacing.X;
@@ -199,6 +208,7 @@ public sealed class TileGrid
         }
 
         var gridTopLeft = ImGui.GetCursorPos();
+        var gridScreen = ImGui.GetCursorScreenPos();
         var page = state.CurrentPage;
         for (var i = 0; i < page.Count; i++)
         {
@@ -212,13 +222,17 @@ public sealed class TileGrid
         var pagerRoom = avail.Y - (config.ShowMemoryStats ? ImGui.GetTextLineHeightWithSpacing() : 0);
         DrawPager(gridTopLeft, layout, pagerRoom);
 
-        if (ImGui.IsWindowHovered() && ImGui.GetIO().MouseWheel is var wheel && wheel != 0)
+        // The wheel pages over the tiles and the pager only (not over the slot bar above); Shift: ten pages at a time.
+        if (ImGui.IsWindowHovered() && ImGui.IsMouseHoveringRect(gridScreen, gridScreen + new Vector2(avail.X, pagerRoom)))
         {
-            if (wheel < 0)
-                state.NextPage();
-            else
-                state.PreviousPage();
+            // Some systems turn Shift+wheel into the horizontal wheel.
+            var io = ImGui.GetIO();
+            var steps = wheel.Add(io.KeyShift && io.MouseWheel == 0 ? io.MouseWheelH : io.MouseWheel);
+            if (steps != 0)
+                state.MoveBy(-steps * (io.KeyShift ? 10 : 1));
         }
+        else
+            wheel.Reset();
     }
 
     /// <summary>Above the pieces of the sets opened from the item card: back to the grid before, and the sets' names.</summary>

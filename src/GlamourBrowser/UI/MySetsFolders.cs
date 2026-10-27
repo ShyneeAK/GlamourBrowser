@@ -184,6 +184,7 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
             ImGui.EndPopup();
         }
 
+        var askDelete = false;
         if (ImGui.BeginPopup(FolderPopup))
         {
             if (contextFolder is { } folder)
@@ -194,10 +195,16 @@ public sealed class MySetsFolders(BrowserState state, CustomSetService customSet
                 if (ImGui.MenuItem(Loc.T("Ordner umbenennen")))
                     StartNaming(folder);
                 if (ImGui.MenuItem(Loc.T("Ordner löschen (die Sets bleiben)")))
-                    customSets.Current?.RemoveFolder(folder.Id);
+                {
+                    deleting = folder;
+                    askDelete = true;
+                }
             }
             ImGui.EndPopup();
         }
+        // Asks first, like the glyph on the tile; opened outside the menu so it lives where the glyph opens it.
+        if (askDelete)
+            ImGui.OpenPopup(DeletePopup);
     }
 
     /// <summary>A folder's tile with an accent frame: its first four sets as a 2×2 collage (a folder glyph while empty), its name and number of sets.</summary>

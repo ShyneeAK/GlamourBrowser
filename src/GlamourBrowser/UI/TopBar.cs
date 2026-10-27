@@ -138,10 +138,13 @@ public sealed class TopBar
                 state.Filter = chips[i].WithoutThis;
         }
 
+        // The mode stays: its own chip leaves it.
+        if (!FilterChips.CanResetAll(state.Filter))
+            return;
         var resetAll = Loc.T("Alle zurücksetzen");
         NextOnLine(ImGui.CalcTextSize(resetAll).X + ImGui.GetStyle().FramePadding.X * 2);
         if (ImGui.SmallButton(resetAll))
-            state.Filter = new FilterState();
+            state.Filter = FilterChips.ResetAll(state.Filter);
     }
 
     private static string SlotName(EquipSlot slot) => SlotNames.All.FirstOrDefault(s => s.Slot == slot).Name ?? slot.ToString();
