@@ -9,10 +9,11 @@ A [Dalamud](https://github.com/goatcorp/Dalamud) plugin for Final Fantasy XIV th
 ## Features
 
 - **Tile grid** of all equippable items, rendered on your character in your current outfit or in underwear, with adjustable columns and rows, several sort orders and pages rendered ahead in the direction you page.
-- **Live try-on**: every item or set you click is put on, so an outfit builds up piece by piece, with undo and redo; right-click a worn piece to take it off. Rings have a slot per hand. Rotate, pan and zoom (the camera stays where you put it), open the visor, draw or hide the weapon, and calibrate a camera position per slot and character for the tiles.
-- **Dye preview**: two tile dyes (channel 1 and 2) render every dyeable tile in them and come along when you click a tile; the item card's dye boxes recolour the worn piece.
-- **Filters** by slot, level, ownership, source (shops, quests, duties and more), jobs (gear only certain jobs can wear, several at once or whole groups such as all crafters) and dyeability.
-- **Item card** with the item's sources and costs, buttons for the map, the duty finder, the recipe and the Mog Station, a chat link, copying the name, and links to Garland Tools, Teamcraft and a web search.
+- **Live try-on** with the round buttons of the game's Try On window: every item or set you click is put on, so an outfit builds up piece by piece (or only the last click, with "Keep tried-on pieces" off), with undo and redo; right-click a worn piece to take it off. Equip or remove everything underneath, close the visor, draw or hide the weapon (hidden on the tiles too). Rings have a slot per hand. Rotate, pan and zoom (the camera stays where you put it), and calibrate a camera position per slot and character for the tiles.
+- **Same model**: a button on each tile shows every item that shares its model, in any colour variant. Tiles show at a glance when you own or wish for the same model in another item.
+- **Dye preview**: two tile dyes (channel 1 and 2) render every dyeable tile in them and come along when you click a tile; each tile's own dye boxes recolour just that tile, and the item card's dye boxes recolour the worn piece.
+- **Filters** by slot, level, ownership, source (shops, quests, duties and more), jobs (gear only certain jobs can wear, several at once or whole groups such as all crafters) and dyeability, kept across restarts.
+- **Item card** with the game's own item tooltip on its icon, the item's sources and costs, buttons for the map, the duty finder, the recipe and the Mog Station, a chat link, copying the name, and links to Garland Tools, Teamcraft and a web search.
 - **Market prices**: hovering the market board icon shows the cheapest listing on your home world and on your data center from [Universalis](https://universalis.app).
 - **Ownership** across inventory, retainers, glamour dresser and armoire, including where an item is stored.
 - **Automatic camera** that frames every slot to fit your character's race and height (gloves, bracelets and rings from the side), with a zoom per slot.

@@ -1,5 +1,15 @@
 # Neuigkeiten
 
+## 0.7.0.0
+- Gleiches Modell: Unten links auf einer Kachel zeigt ein Würfel mit Zahl, wie viele andere Items dasselbe Modell haben, auch in anderen Farbvarianten. Ein Klick zeigt sie alle als Kacheln, „← Zurück“ führt zur Ansicht davor. Der Würfel ist grün, wenn du eines davon besitzt.
+- Fehlt dir ein Item, aber du besitzt das gleiche Modell, ist die Ecke oben rechts halb grau, halb grün. Steht das gleiche Modell auf der Wunschliste, ist der Stern halb gelb.
+- Farbkästen auf den Kacheln: Färbbare Items zeigen unten rechts ihre Farben. Ein Klick färbt nur diese eine Kachel um.
+- Live-Ansicht mit den runden Knöpfen des Anprobe-Fensters: „Alles anlegen / ablegen“ (ersetzt den Kachel-Modus oben), „Anprobierte Teile behalten“, Visier, Waffe ziehen und Waffe anzeigen. Eine ausgeblendete Waffe fehlt jetzt auch auf den Kacheln. Neue Installationen starten mit allem abgelegt.
+- Item-Karte: Über dem Item-Icon erscheint der Tooltip des Spiels. Item- und Set-Karte haben einen Wunschlisten-Stern.
+- Filter, Modus und Slot bleiben nach einem Neustart erhalten. Ein Klick auf „Seite x / y“ springt zu einer Seite; Bild auf/ab, Pos1 und Ende blättern, Umschalt+Mausrad springt 10 Seiten.
+- „Als Set speichern“ fragt nach dem Namen und lässt dich in deiner Ansicht.
+- Behoben: Ein getragener Glamour über mehrere Slots zeigte in der Live-Ansicht keinen Rumpf. Ein Klick auf ein getragenes Teil setzt die Filter nicht mehr zurück. „Verwerfen“ und „Ordner löschen“ fragen nach, „Alle zurücksetzen“ bleibt im Modus, und „Pausiert“ nennt den Grund.
+
 ## 0.6.0.0
 - Ringe: Die Slot-Leiste hat jetzt „Ring rechts“ und „Ring links“ getrennt. Die Kacheln zeigen den Ring an der jeweiligen Hand, und jede Hand hat ihre eigene Kamera.
 - Automatische Kamera: Handschuhe, Armbänder und Ringe werden auf jedem Charakter gleich gezeigt, eine Hand von der Seite. Linke Ringe und Armbänder nur für links als Spiegelbild.

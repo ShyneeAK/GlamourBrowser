@@ -1,5 +1,15 @@
 # Nouveautés
 
+## 0.7.0.0
+- Même modèle : un cube avec un nombre en bas à gauche d’une vignette indique combien d’autres objets partagent son modèle, aussi dans d’autres variantes de couleur. Un clic les affiche tous en vignettes, « ← Retour » revient à la vue précédente. Le cube est vert si tu en possèdes un.
+- S’il te manque un objet mais que tu possèdes le même modèle, son coin en haut à droite est mi-gris, mi-vert. Si le même modèle est dans ta liste de souhaits, l’étoile est à moitié jaune.
+- Cases de teinture sur les vignettes : les objets teintables montrent leurs teintures en bas à droite. Un clic ne teint que cette vignette.
+- Vue en direct avec les boutons ronds de la fenêtre d’essayage du jeu : « Tout équiper / tout retirer » (remplace le mode des vignettes en haut), « Conserver les pièces essayées », visière, dégainer et afficher l’arme. Une arme masquée l’est désormais aussi sur les vignettes. Les nouvelles installations commencent avec tout retiré.
+- Fiche de l’objet : survoler l’icône de l’objet affiche l’infobulle du jeu. Les fiches d’objet et d’ensemble ont une étoile de liste de souhaits.
+- Filtres, mode et emplacement sont conservés après un redémarrage. Un clic sur « Page x / y » mène à une page ; Page préc./suiv., Début et Fin changent de page, Maj+molette saute 10 pages.
+- « Enregistrer comme ensemble » demande le nom et te laisse dans ta vue.
+- Corrigé : une projection portée sur plusieurs emplacements n’affichait pas de torse dans la vue en direct. Cliquer sur une pièce portée ne réinitialise plus les filtres. « Abandonner » et « Supprimer le dossier » demandent confirmation, « Tout réinitialiser » reste dans le mode, et « En pause » en donne la raison.
+
 ## 0.6.0.0
 - Bagues : la barre des emplacements sépare désormais « Bague droite » et « Bague gauche ». Leurs vignettes montrent la bague à cette main, et chaque main a sa propre caméra.
 - Caméra automatique : gants, bracelets et bagues s’affichent de la même façon sur chaque personnage, une main vue de côté. Les bagues gauches et les bracelets du bras gauche seulement en image miroir.

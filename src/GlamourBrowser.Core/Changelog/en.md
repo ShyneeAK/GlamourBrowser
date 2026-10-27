@@ -1,5 +1,15 @@
 # What's new
 
+## 0.7.0.0
+- Same model: a cube with a number at the bottom left of a tile shows how many other items share its model, in other colour variants too. A click shows them all as tiles, "← Back" returns to the view before. The cube is green when you own one of them.
+- If you lack an item but own the same model, its top-right corner is half gray, half green. If the same model is on your wishlist, the star is half yellow.
+- Dye boxes on the tiles: dyeable items show their dyes at the bottom right. A click dyes only that one tile.
+- Live view with the round buttons of the game's Try On window: "Equip / remove all" (replaces the tile mode at the top), "Keep tried-on pieces", visor, draw weapon and show weapon. A hidden weapon is now hidden on the tiles too. New installations start with everything removed.
+- Item card: hovering the item icon shows the game's own tooltip. The item and set cards have a wishlist star.
+- Filters, mode and slot are kept after a restart. A click on "Page x / y" jumps to a page; Page Up/Down, Home and End turn pages, Shift+mouse wheel jumps 10 pages.
+- "Save as set" asks for the name and leaves you in your view.
+- Fixed: a worn glamour over several slots showed no torso in the live view. Clicking a worn piece no longer resets the filters. "Discard" and "Delete folder" ask first, "Reset all" stays in the mode, and "Paused" says why.
+
 ## 0.6.0.0
 - Rings: the slot bar now has "Right Ring" and "Left Ring" apart. Their tiles show the ring on that hand, and each hand has its own camera.
 - Automatic camera: gloves, bracelets and rings look the same on every character, one hand from the side. Left rings and bracelets for the left arm only as the mirror image.
