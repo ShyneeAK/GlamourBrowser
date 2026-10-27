@@ -51,6 +51,9 @@ public sealed class Configuration : IPluginConfiguration
     /// <summary>The text size on top of the UI scale, 0.8–2; icons and the slot bar keep their size.</summary>
     public float FontScale { get; set; } = 1f;
     public bool FilterColumnVisible { get; set; } = true;
+    /// <summary>The browser's view and filters when it was last changed, opened again after a restart; null before the first change.</summary>
+    [JsonProperty(ObjectCreationHandling = ObjectCreationHandling.Replace)]
+    public SavedFilter? Filter { get; set; }
     /// <summary>Replace, not merge, on load: otherwise a closed default section would reopen after a restart.</summary>
     [JsonProperty(ObjectCreationHandling = ObjectCreationHandling.Replace)]
     public HashSet<string> OpenSections { get; set; } = ["level", "ownership"];

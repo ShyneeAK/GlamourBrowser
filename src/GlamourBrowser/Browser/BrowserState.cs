@@ -39,6 +39,7 @@ public sealed class BrowserState
     // The rings once more as left rings, for "Ring links" in the slot bar (worn and framed on the left hand).
     private readonly IReadOnlyDictionary<uint, ItemSubject> leftRings;
     private FilterState filter = new();
+    private DateTime filterSaved = DateTime.MinValue;
     private readonly PageMemory pages = new();
     private readonly PageHistory history = new();
     private readonly TryOnService tryOn;
@@ -66,6 +67,8 @@ public sealed class BrowserState
         this.config = config;
         // A config edited by hand (or saved by an older version) must not break loading.
         (config.Columns, config.Rows) = PageLayout.ClampGrid(config.Columns, config.Rows);
+        // Where the browser was left; the search starts empty.
+        filter = config.Filter?.ToState() ?? new FilterState();
 
         // Tiles take face and body from the look and their outfit from the try-on, which follows a changed outfit by
         // itself (TryOnService): new keys render, nothing needs to be thrown away. Race and gender may filter anew.
@@ -99,6 +102,17 @@ public sealed class BrowserState
             // Another mode closes an open folder of "Meine Sets".
             if (value.Mode != BrowseMode.MySets)
                 OpenFolder = 0;
+            // Kept for the next start; the search is not, so typing does not write the configuration. Written at most once
+            // a second (the level slider changes the filter on every frame of a drag); the plugin writes the rest on unload.
+            if (!SavedFilter.SameKept(filter, value))
+            {
+                config.Filter = SavedFilter.From(value);
+                if (DateTime.UtcNow - filterSaved >= TimeSpan.FromSeconds(1))
+                {
+                    config.Save();
+                    filterSaved = DateTime.UtcNow;
+                }
+            }
             filter = value;
             Refresh();
         }

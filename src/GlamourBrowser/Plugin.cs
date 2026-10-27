@@ -332,6 +332,8 @@ public sealed class Plugin : IDalamudPlugin
 
     public void Dispose()
     {
+        // What was changed since the last write (the browser writes its filter at most once a second).
+        config.Save();
         // Stop drawing first: the UI reads the tile textures that are released below.
         PluginInterface.UiBuilder.Draw -= windowSystem.Draw;
         PluginInterface.UiBuilder.Draw -= itemTooltip.Update;
