@@ -754,6 +754,18 @@ public sealed class TileGrid
         var badge = MathF.Max(10f, size.X * 0.12f);
         var inset = rounding * 0.3f;
         var corner = pos + new Vector2(size.X - inset, inset);
+        // A missing item whose model is owned in another item (another variant, another job's version) gets a larger green
+        // corner under the gray one: a green edge shows around it.
+        var ownedTwins = !owned && subject is ItemSubject { Item: var missing }
+            ? state.SameModelAs(missing.Id).Where(t => t.Id != missing.Id && IsOwned(t.Id)).ToList()
+            : [];
+        if (ownedTwins.Count > 0)
+        {
+            var under = badge * 1.5f;
+            drawList.AddTriangleFilled(corner, corner - new Vector2(under, 0), corner + new Vector2(0, under), TileStyle.OwnedColor);
+            if (hovered && ImGui.IsMouseHoveringRect(corner - new Vector2(under, 0), corner + new Vector2(0, under)))
+                ImGui.SetTooltip(Loc.F("Nicht im Besitz, aber das gleiche Modell:\n{0}", string.Join("\n", ownedTwins.Take(5).Select(t => t.Name))));
+        }
         drawList.AddTriangleFilled(corner, corner - new Vector2(badge, 0), corner + new Vector2(0, badge), frame.BadgeColor);
         if (folders.IsMarked(subject) && state.Filter.Mode == BrowseMode.MySets)
             folders.DrawMark(drawList, pos, size);
