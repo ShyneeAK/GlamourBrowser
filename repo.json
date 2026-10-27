@@ -3,7 +3,7 @@
     "Author": "ShyneeAK",
     "Name": "Shynees Glamour Dresser",
     "InternalName": "ShyneesGlamourDresser",
-    "AssemblyVersion": "0.6.0.0",
+    "AssemblyVersion": "0.7.0.0",
     "Description": "Browse every equippable item as a paged grid of tiles rendered on your own character: try outfits on live, filter by slot, source, jobs and ownership, preview dyes, keep a wishlist and build your own sets.",
     "ApplicableVersion": "any",
     "RepoUrl": "https://github.com/ShyneeAK/GlamourBrowser",
@@ -19,10 +19,10 @@
     "IconUrl": "https://raw.githubusercontent.com/ShyneeAK/GlamourBrowser/main/src/GlamourBrowser/images/icon.png",
     "Punchline": "A glamour grid with every item rendered on your own character.",
     "AcceptsFeedback": true,
-    "DownloadLinkInstall": "https://github.com/ShyneeAK/GlamourBrowser/releases/download/v0.6.0.0/latest.zip",
-    "DownloadLinkUpdate": "https://github.com/ShyneeAK/GlamourBrowser/releases/download/v0.6.0.0/latest.zip",
-    "DownloadLinkTesting": "https://github.com/ShyneeAK/GlamourBrowser/releases/download/v0.6.0.0/latest.zip",
+    "DownloadLinkInstall": "https://github.com/ShyneeAK/GlamourBrowser/releases/download/v0.7.0.0/latest.zip",
+    "DownloadLinkUpdate": "https://github.com/ShyneeAK/GlamourBrowser/releases/download/v0.7.0.0/latest.zip",
+    "DownloadLinkTesting": "https://github.com/ShyneeAK/GlamourBrowser/releases/download/v0.7.0.0/latest.zip",
     "IsTestingExclusive": false,
-    "LastUpdate": 1793034807
+    "LastUpdate": 1793069218
   }
 ]
