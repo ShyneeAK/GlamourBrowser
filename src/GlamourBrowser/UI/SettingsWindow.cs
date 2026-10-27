@@ -168,13 +168,13 @@ public sealed class SettingsWindow : Window
             config.Save();
         }
         if (ImGui.IsItemHovered())
-            ImGui.SetTooltip(Loc.T("Wie viele Kacheln gleichzeitig gerendert werden (Standard 5). Mehr als 3 nur, solange kein Fenster des Spiels "
-                                   + "eine Figur zeigt (Charakter, Anprobe, Färben, Projektionsplatten …); mehr Ansichten kosten FPS beim Rendern."));
+            ImGui.SetTooltip(Loc.T("Wie viele Kacheln gleichzeitig gerendert werden (Standard 2). Mehr Ansichten rendern schneller, kosten aber FPS beim Rendern."));
         // Penumbra treats the figures of the game windows' slots as their own actors, with their own collections.
         using (ImRaii.PushColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled)))
-            ImGui.TextWrapped(Loc.T("Mit Penumbra: Ab 3 Ansichten rendern manche Kacheln auf den Plätzen der Spielfenster (Charakterbildschirm, Anprobe, Färben …). "
-                                    + "Penumbra gibt ihnen eigene Collections. Fehlen einigen Kacheln deine Mods, etwa eine andere Idle-Pose, weise deine Collection "
-                                    + "in Penumbra auch diesen Fenstern zu oder stell hier 2 ein."));
+            ImGui.TextWrapped(Loc.T("Ab 3 Ansichten rendert das Plugin auch auf den Plätzen der Spielfenster (Charakterbildschirm, Anprobe, Färben, "
+                                    + "Projektionsplatten …), solange keins davon offen ist. Öffnest du so ein Fenster während des Renderns, kann seine Figur "
+                                    + "leer bleiben, bis du es neu öffnest. Mit Penumbra bekommen diese Plätze eigene Collections: Fehlen einigen Kacheln deine "
+                                    + "Mods, etwa eine andere Idle-Pose, weise deine Collection in Penumbra auch diesen Fenstern zu oder bleib bei 2."));
     }
 
     /// <summary>The plugin's language: the game client's, or a chosen one. Texts already built change after a reload of the plugin.</summary>

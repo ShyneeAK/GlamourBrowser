@@ -14,16 +14,19 @@ public sealed class Configuration : IPluginConfiguration
 {
     /// <summary>
     /// 2: the page cache default went from 3 to 8 pages; 3: to 10; 4: parallel views back to 3, now a debug setting;
-    /// 5: parallel views 5 (slots of closed game windows) (see Plugin, which raises older files).
+    /// 6: parallel views 2, the most that never touch the game windows' slots (see Plugin, which raises older files).
     /// </summary>
-    public int Version { get; set; } = 5;
+    public int Version { get; set; } = 6;
 
     public int Columns { get; set; } = 3;
     public int Rows { get; set; } = 2;
     /// <summary>The basis of tiles and try-on ("Alles anlegen / ablegen"); a new installation starts with everything off.</summary>
     public TileMode TileMode { get; set; } = TileMode.Underwear;
-    /// <summary>Tiles rendered at the same time, 1–7 (more than 3 only while no game window renders a character); a debug setting.</summary>
-    public int ParallelViews { get; set; } = 5;
+    /// <summary>
+    /// Tiles rendered at the same time, 1–7; a debug setting. 2 stays on slots 6 and 5 beside the live preview's 7; more use
+    /// the game windows' slots while those are closed (<see cref="Core.Rendering.RenderSlots"/>).
+    /// </summary>
+    public int ParallelViews { get; set; } = 2;
     /// <summary>The plugin version whose news the player has seen; the changelog shows what came after it.</summary>
     public string LastSeenVersion { get; set; } = "";
     /// <summary>The plugin's language: "de", "en", "fr" or "ja"; empty follows the game client.</summary>

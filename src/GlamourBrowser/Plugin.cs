@@ -93,12 +93,13 @@ public sealed class Plugin : IDalamudPlugin
             config.Version = 4;
             config.Save();
         }
-        if (config.Version < 5)
+        if (config.Version < 6)
         {
-            // The slots of closed game windows render too: the old default goes up (a chosen value stays).
-            if (config.ParallelViews == 3)
-                config.ParallelViews = 5;
-            config.Version = 5;
+            // The old defaults (3, which beside the live preview rendered on 2 slots; 5 for a short while) become 2, which
+            // never touches the game windows' slots; a chosen value stays.
+            if (config.ParallelViews is 3 or 5)
+                config.ParallelViews = 2;
+            config.Version = 6;
             config.Save();
         }
         // First: texts built from here on (slot names, labels) are in this language.
