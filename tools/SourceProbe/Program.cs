@@ -21,7 +21,7 @@ var findIndex = Array.IndexOf(args, "--find");
 if (findIndex >= 0 && findIndex + 1 < args.Length)
 {
     foreach (var item in items.Where(i => i.EquipSlotCategory.RowId != 0 && i.Name.ExtractText().Contains(args[findIndex + 1], StringComparison.OrdinalIgnoreCase)).Take(20))
-        Console.WriteLine($"{item.RowId}: {item.Name.ExtractText()}");
+        Console.WriteLine($"{item.RowId}: {item.Name.ExtractText()}  ModelMain {item.ModelMain:X16} ModelSub {item.ModelSub:X16}");
     return 0;
 }
 

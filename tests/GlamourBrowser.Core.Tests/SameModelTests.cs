@@ -8,7 +8,7 @@ public class SameModelTests
         => new(id, name ?? $"Item {id}", 0, slot, new HashSet<uint>(), level, 0, RaceGenderRestriction.None, ModelMain: main, ModelSub: sub);
 
     [Fact]
-    public void ItemsWithTheSameModelInTheSameSlotShareALook()
+    public void ItemsWithTheSameModelInTheSameSlotShareIt()
     {
         var groups = SameModel.Groups([Item(1, EquipSlot.Body, 100, level: 90), Item(2, EquipSlot.Body, 100, level: 50), Item(3, EquipSlot.Body, 200)]);
 
@@ -18,7 +18,27 @@ public class SameModelTests
     }
 
     [Fact]
-    public void AnotherSlotOrSecondModelIsAnotherLook()
+    public void AnotherVariantIsTheSameModel_TheSameVariantTogether()
+    {
+        // Mhigischer Rock des Zielens (0x101CA) and der Magie (0x301CA): model 0x1CA, variants 1 and 3.
+        var groups = SameModel.Groups([Item(1, EquipSlot.Legs, 0x301CA, level: 10), Item(2, EquipSlot.Legs, 0x101CA, level: 70), Item(3, EquipSlot.Legs, 0x301CA, level: 5)]);
+
+        Assert.Equal([2u, 3u, 1u], groups[1].Select(i => i.Id));
+    }
+
+    [Fact]
+    public void WeaponsKeepTheirBaseAndDropOnlyTheVariant()
+    {
+        var groups = SameModel.Groups([
+            Item(1, EquipSlot.MainHand, 0x0001_0005_0201), Item(2, EquipSlot.MainHand, 0x0002_0005_0201),
+            Item(3, EquipSlot.MainHand, 0x0001_0006_0201)]);
+
+        Assert.Equal([1u, 2u], groups[1].Select(i => i.Id));
+        Assert.False(groups.ContainsKey(3));
+    }
+
+    [Fact]
+    public void AnotherSlotOrSecondModelIsAnotherModel()
     {
         var groups = SameModel.Groups([
             Item(1, EquipSlot.Body, 100), Item(2, EquipSlot.Legs, 100),
