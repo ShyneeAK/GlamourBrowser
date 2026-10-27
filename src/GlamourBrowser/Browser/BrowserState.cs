@@ -386,17 +386,16 @@ public sealed class BrowserState
     {
         SetSubject set => TileKeys.ForSet(set.Set.Id, config.TileMode, LookHash(CoverOf(set)), RenderWidth, IdleStance.Pose, set.Variant,
                                           set.Set.Id.Kind == SetKind.Custom ? default : TileDye),
-        ItemSubject { Item: var item } => ItemKey(item),
+        ItemSubject { Item: var item } => ItemKey(item, CoverOf(subject)),
         FolderSubject { Cover: { } cover } => KeyFor(cover),
         _ => throw new ArgumentOutOfRangeException(nameof(subject)),
     };
 
     /// <summary>An item tile: the item in the tile dye on its channels, its stance, on the try-on without the slots it covers.</summary>
-    private TileKey ItemKey(GlamourItem item)
+    private TileKey ItemKey(GlamourItem item, ushort cover)
     {
         var (stain0, stain1) = TileDyes.For(item, tileDyes.For(item.Id, TileDye));
         var stance = StanceFor(item);
-        var cover = LiveWeapons.TileCover(item.Covers, item.Slot is EquipSlot.MainHand or EquipSlot.OffHand, WeaponsHidden);
         return new(item.Id, stain0, stain1, config.TileMode, LookHash(cover), RenderWidth,
                    stance.WeaponDrawn ? TileKey.StandardPose : stance.Pose, stance.WeaponDrawn, LeftHand: item.Slot == EquipSlot.RingLeft);
     }
@@ -442,8 +441,15 @@ public sealed class BrowserState
         }
     }
 
-    /// <summary>The slots a tile leaves free of the try-on around it (<see cref="LiveWeapons.TileCover(TileSubject, bool)"/>).</summary>
-    public ushort CoverOf(TileSubject subject) => LiveWeapons.TileCover(subject, WeaponsHidden);
+    // Every slot: a wishlist tile wears nothing of the try-on.
+    private static readonly ushort AllSlots = SlotMask.Of(CustomSetSubjects.Slots);
+
+    /// <summary>
+    /// The slots a tile leaves free of the try-on around it (<see cref="LiveWeapons.TileCover(TileSubject, bool)"/>); in
+    /// the wishlist all of them, so a wish shows on its own, like with everything off.
+    /// </summary>
+    public ushort CoverOf(TileSubject subject)
+        => filter.Mode == BrowseMode.Wishlist && !PiecesOpen ? AllSlots : LiveWeapons.TileCover(subject, WeaponsHidden);
 
     public Stance StanceFor(GlamourItem item)
         => config.TileWeaponsDrawn && item.Slot is EquipSlot.MainHand or EquipSlot.OffHand
