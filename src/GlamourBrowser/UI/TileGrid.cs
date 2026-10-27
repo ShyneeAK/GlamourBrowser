@@ -715,7 +715,8 @@ public sealed class TileGrid
             if (overStar)
                 ImGui.SetTooltip(listed ? Loc.T("Von der Wunschliste nehmen") : Loc.T("Auf die Wunschliste"));
         }
-        if (hovered && twins.Count > 0)
+        // Always shown, unlike the star: it tells which items have others of their look.
+        if (twins.Count > 0)
         {
             var color = overTwins ? colors.Text : (colors.TextMuted & 0x00FFFFFF) | 0xA0000000;
             DrawTileGlyph(drawList, FontAwesomeIcon.Cubes, twinsRect, color);
