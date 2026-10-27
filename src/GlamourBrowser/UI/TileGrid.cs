@@ -670,6 +670,11 @@ public sealed class TileGrid
         var key = state.KeyFor(subject);
         // A set counts as owned when it is complete.
         var owned = subject is SetSubject set ? SetProgress.Of(set, IsOwned).Complete : IsOwned(subject.Wear[0].Id);
+        // The other items of this item's model that are owned: the model button turns green, and a missing item's corner
+        // half green.
+        var ownedTwins = subject is ItemSubject { Item: var modelOf }
+            ? state.SameModelAs(modelOf.Id).Where(t => t.Id != modelOf.Id && IsOwned(t.Id)).ToList()
+            : [];
         var selected = state.Selected?.Id == subject.Id;
         if (cache.TryGet(key, out var texture) && texture != null)
         {
@@ -715,14 +720,16 @@ public sealed class TileGrid
             if (overStar)
                 ImGui.SetTooltip(listed ? Loc.T("Von der Wunschliste nehmen") : Loc.T("Auf die Wunschliste"));
         }
-        // Always shown, unlike the star: it tells which items have others of their look.
+        // Always shown, unlike the star: it tells which items have others of their model; green when one of them is owned.
         if (twins.Count > 0)
         {
-            var color = overTwins ? colors.Text : (colors.TextMuted & 0x00FFFFFF) | 0xA0000000;
+            var baseColor = ownedTwins.Count > 0 ? TileStyle.OwnedColor : overTwins ? colors.Text : colors.TextMuted;
+            var color = overTwins ? baseColor | 0xFF000000 : (baseColor & 0x00FFFFFF) | 0xA0000000;
             DrawTileGlyph(drawList, FontAwesomeIcon.Cubes, twinsRect, color);
             drawList.AddText(new Vector2(twinsRect.Max.X + 2, twinsRect.Min.Y + 1), color, (twins.Count - 1).ToString());
             if (overTwins)
-                ImGui.SetTooltip(Loc.F("Gleiches Modell: {0} weitere Items\nKlick: alle als Kacheln zeigen", twins.Count - 1));
+                ImGui.SetTooltip(Loc.F("Gleiches Modell: {0} weitere Items\nKlick: alle als Kacheln zeigen", twins.Count - 1)
+                                 + (ownedTwins.Count > 0 ? "\n" + Loc.F("{0} davon im Besitz", ownedTwins.Count) : ""));
         }
         if (hovered && ownSet != null)
         {
@@ -754,19 +761,15 @@ public sealed class TileGrid
         var badge = MathF.Max(10f, size.X * 0.12f);
         var inset = rounding * 0.3f;
         var corner = pos + new Vector2(size.X - inset, inset);
-        // A missing item whose model is owned in another item (another variant, another job's version) gets a larger green
-        // corner under the gray one: a green edge shows around it.
-        var ownedTwins = !owned && subject is ItemSubject { Item: var missing }
-            ? state.SameModelAs(missing.Id).Where(t => t.Id != missing.Id && IsOwned(t.Id)).ToList()
-            : [];
-        if (ownedTwins.Count > 0)
+        drawList.AddTriangleFilled(corner, corner - new Vector2(badge, 0), corner + new Vector2(0, badge), frame.BadgeColor);
+        // A missing item whose model is owned in another item (another variant, another job's version): the corner split
+        // along its diagonal, the half at the edge green.
+        if (!owned && ownedTwins.Count > 0)
         {
-            var under = badge * 1.5f;
-            drawList.AddTriangleFilled(corner, corner - new Vector2(under, 0), corner + new Vector2(0, under), TileStyle.OwnedColor);
-            if (hovered && ImGui.IsMouseHoveringRect(corner - new Vector2(under, 0), corner + new Vector2(0, under)))
+            drawList.AddTriangleFilled(corner, corner + new Vector2(-badge / 2, badge / 2), corner + new Vector2(0, badge), TileStyle.OwnedColor);
+            if (hovered && ImGui.IsMouseHoveringRect(corner - new Vector2(badge, 0), corner + new Vector2(0, badge)))
                 ImGui.SetTooltip(Loc.F("Nicht im Besitz, aber das gleiche Modell:\n{0}", string.Join("\n", ownedTwins.Take(5).Select(t => t.Name))));
         }
-        drawList.AddTriangleFilled(corner, corner - new Vector2(badge, 0), corner + new Vector2(0, badge), frame.BadgeColor);
         if (folders.IsMarked(subject) && state.Filter.Mode == BrowseMode.MySets)
             folders.DrawMark(drawList, pos, size);
     }
