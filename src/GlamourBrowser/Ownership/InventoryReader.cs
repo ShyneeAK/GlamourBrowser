@@ -4,23 +4,22 @@ using Dalamud.Game.Inventory.InventoryEventArgTypes;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using GlamourBrowser.Core.Ownership;
-using GlamourBrowser.Core.Localization;
 
 namespace GlamourBrowser.Ownership;
 
 /// <summary>Reads the player's own containers on login and after inventory changes.</summary>
 public sealed class InventoryReader : IDisposable
 {
-    private static readonly (ContainerKind Kind, string Name, InventoryType[] Types)[] Containers =
+    private static readonly (ContainerKind Kind, InventoryType[] Types)[] Containers =
     [
-        (ContainerKind.Inventory, "Inventar", [InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3, InventoryType.Inventory4]),
-        (ContainerKind.Equipped, "Ausgerüstet", [InventoryType.EquippedItems]),
-        (ContainerKind.Armoury, "Arsenal", [
+        (ContainerKind.Inventory, [InventoryType.Inventory1, InventoryType.Inventory2, InventoryType.Inventory3, InventoryType.Inventory4]),
+        (ContainerKind.Equipped, [InventoryType.EquippedItems]),
+        (ContainerKind.Armoury, [
             InventoryType.ArmoryMainHand, InventoryType.ArmoryOffHand, InventoryType.ArmoryHead, InventoryType.ArmoryBody,
             InventoryType.ArmoryHands, InventoryType.ArmoryWaist, InventoryType.ArmoryLegs, InventoryType.ArmoryFeets,
             InventoryType.ArmoryEar, InventoryType.ArmoryNeck, InventoryType.ArmoryWrist, InventoryType.ArmoryRings]),
-        (ContainerKind.Saddlebag, "Satteltasche", [InventoryType.SaddleBag1, InventoryType.SaddleBag2]),
-        (ContainerKind.PremiumSaddlebag, "Satteltasche (Premium)", [InventoryType.PremiumSaddleBag1, InventoryType.PremiumSaddleBag2]),
+        (ContainerKind.Saddlebag, [InventoryType.SaddleBag1, InventoryType.SaddleBag2]),
+        (ContainerKind.PremiumSaddlebag, [InventoryType.PremiumSaddleBag1, InventoryType.PremiumSaddleBag2]),
     ];
 
     private readonly OwnershipService service;
@@ -46,11 +45,11 @@ public sealed class InventoryReader : IDisposable
         dirty = false;
 
         var now = DateTimeOffset.Now;
-        foreach (var (kind, name, types) in Containers)
+        foreach (var (kind, types) in Containers)
         {
             var ids = ContainerScan.ReadItemIds(types);
             if (ids != null)
-                service.Submit(new ContainerSnapshot(new ContainerId(kind, ""), Loc.T(name), now, ids));
+                service.Submit(new ContainerSnapshot(new ContainerId(kind, ""), "", now, ids));
         }
     }
 

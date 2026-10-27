@@ -30,7 +30,7 @@ public sealed class OwnershipStore(ulong contentId, IReadOnlyDictionary<uint, ui
     }
 
     private static bool SameContent(ContainerSnapshot a, ContainerSnapshot b)
-        => a.DisplayName == b.DisplayName && a.ItemIds.Order().SequenceEqual(b.ItemIds.Order());
+        => a.Name == b.Name && a.ItemIds.Order().SequenceEqual(b.ItemIds.Order());
 
     public bool IsOwned(uint itemId) => index.ContainsKey(itemId);
 
@@ -43,7 +43,7 @@ public sealed class OwnershipStore(ulong contentId, IReadOnlyDictionary<uint, ui
             .Select(id => containers[id])
             .OrderBy(c => c.Id.Kind)
             .ThenBy(c => c.DisplayName, StringComparer.Ordinal)
-            .Select(c => new ItemLocation(c.Id, c.DisplayName, c.Seen))
+            .Select(c => new ItemLocation(c.Id, c.Name, c.Seen))
             .ToList();
     }
 

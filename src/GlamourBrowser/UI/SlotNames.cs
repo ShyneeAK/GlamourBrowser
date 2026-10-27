@@ -22,7 +22,8 @@ internal static class SlotNames
         _ => "Ring links",
     });
 
-    public static readonly (EquipSlot Slot, string Name)[] All =
+    /// <summary>Every slot with its name for the slot bar, the chips and the settings, in the loaded language.</summary>
+    public static (EquipSlot Slot, string Name)[] All =>
     [
         (EquipSlot.MainHand, Loc.T("Waffe")),
         (EquipSlot.OffHand, Loc.T("Schild/Nebenhand")),

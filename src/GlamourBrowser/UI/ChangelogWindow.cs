@@ -18,11 +18,17 @@ public sealed class ChangelogWindow : Window
     private readonly Theme.Theme theme;
     private readonly Version current;
     private IReadOnlyList<ChangelogEntry> entries = [];
+    // What is shown, parsed again in another language: the versions after the one seen last, or all of them.
+    private bool showAll;
+    private Version? lastSeen;
+    private int entriesFor;
     private IDisposable? themeScope;
     private IDisposable? fontScope;
 
+    private static string Title => Loc.T("Shynees Glamour Dresser – Neuigkeiten") + "###ShyneesGlamourDresserChangelog";
+
     public ChangelogWindow(Configuration config, Theme.Theme theme, Version current)
-        : base(Loc.T("Shynees Glamour Dresser – Neuigkeiten") + "##ShyneesGlamourDresserChangelog")
+        : base(Title)
     {
         this.config = config;
         this.theme = theme;
@@ -37,12 +43,13 @@ public sealed class ChangelogWindow : Window
     /// </summary>
     public void ShowAfterUpdate(bool freshInstall)
     {
-        Version.TryParse(config.LastSeenVersion, out var lastSeen);
-        if (lastSeen == current)
+        Version.TryParse(config.LastSeenVersion, out var seen);
+        if (seen == current)
             return;
         if (!freshInstall)
         {
-            entries = Changelog.Since(All(), lastSeen, current);
+            (showAll, lastSeen) = (false, seen);
+            Load();
             IsOpen = entries.Count > 0;
         }
         config.LastSeenVersion = current.ToString();
@@ -51,14 +58,25 @@ public sealed class ChangelogWindow : Window
 
     public void ShowAll()
     {
-        entries = All();
+        showAll = true;
+        Load();
         IsOpen = true;
+    }
+
+    private void Load()
+    {
+        entries = showAll ? All() : Changelog.Since(All(), lastSeen, current);
+        entriesFor = Loc.Version;
     }
 
     private static IReadOnlyList<ChangelogEntry> All() => Changelog.Parse(Changelog.Embedded(Loc.Language));
 
     public override void PreDraw()
     {
+        // The title and the news follow a language change; with ### only the id after it names the window, so it keeps its place and size.
+        WindowName = Title;
+        if (entriesFor != Loc.Version)
+            Load();
         themeScope = theme.Push();
         fontScope = UiScale.PushText();
     }

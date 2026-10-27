@@ -3,7 +3,6 @@ using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using GlamourBrowser.Core.Ownership;
-using GlamourBrowser.Core.Localization;
 
 namespace GlamourBrowser.Ownership;
 
@@ -38,7 +37,7 @@ public sealed unsafe class RetainerReader : IDisposable
             return;
 
         var id = new ContainerId(ContainerKind.Retainer, retainer->RetainerId.ToString());
-        service.Submit(new ContainerSnapshot(id, Loc.F("Gehilfe {0}", retainer->NameString), DateTimeOffset.Now, ids));
+        service.Submit(new ContainerSnapshot(id, retainer->NameString, DateTimeOffset.Now, ids));
     }
 
     public void Dispose()

@@ -19,7 +19,7 @@ public static class OwnershipFile
             var dto = JsonSerializer.Deserialize<FileDto>(File.ReadAllText(path), Options)
                       ?? throw new JsonException("empty document");
             foreach (var c in dto.Containers)
-                store.ReplaceContainer(new ContainerSnapshot(new ContainerId(c.Kind, c.Key), c.DisplayName, c.Seen, c.ItemIds));
+                store.ReplaceContainer(new ContainerSnapshot(new ContainerId(c.Kind, c.Key), c.Name ?? LegacyName(c.Kind, c.DisplayName), c.Seen, c.ItemIds));
             return store;
         }
         catch (Exception e) when (e is JsonException or NotSupportedException)
@@ -33,7 +33,7 @@ public static class OwnershipFile
     public static void Save(OwnershipStore store, string path)
     {
         var dto = new FileDto(store.ContentId, store.Containers
-            .Select(c => new ContainerDto(c.Id.Kind, c.Id.Key, c.DisplayName, c.Seen, c.ItemIds.ToList()))
+            .Select(c => new ContainerDto(c.Id.Kind, c.Id.Key, c.Name, c.DisplayName, c.Seen, c.ItemIds.ToList()))
             .ToList());
 
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
@@ -42,7 +42,15 @@ public static class OwnershipFile
         File.Move(tmp, path, overwrite: true);
     }
 
+    /// <summary>
+    /// Older files kept the shown name, in the language of the read ("Gehilfe Mira", "Kommode"): a retainer keeps the word
+    /// after the last space, its own name (retainer names have no space), the other containers need none.
+    /// </summary>
+    private static string LegacyName(ContainerKind kind, string? displayName)
+        => kind == ContainerKind.Retainer && displayName != null ? displayName[(displayName.LastIndexOf(' ') + 1)..] : "";
+
     private sealed record FileDto(ulong ContentId, List<ContainerDto> Containers);
 
-    private sealed record ContainerDto(ContainerKind Kind, string Key, string DisplayName, DateTimeOffset Seen, List<uint> ItemIds);
+    /// <param name="DisplayName">Read only from older files, see <see cref="LegacyName"/>; still written for older plugin versions.</param>
+    private sealed record ContainerDto(ContainerKind Kind, string Key, string? Name, string? DisplayName, DateTimeOffset Seen, List<uint> ItemIds);
 }

@@ -180,15 +180,8 @@ public sealed class Plugin : IDalamudPlugin
         windowSystem.AddWindow(settingsWindow);
         windowSystem.AddWindow(changelogWindow);
 
-        CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
-        {
-            HelpMessage = Loc.T("Öffnet Shynees Glamour Dresser (kurz: /sgd)."),
-        });
-        CommandManager.AddHandler(ShortCommandName, new CommandInfo(OnCommand)
-        {
-            HelpMessage = Loc.T("Öffnet Shynees Glamour Dresser."),
-            ShowInHelp = false,
-        });
+        RegisterCommands();
+        Loc.Loaded += RegisterCommands;
 
         // Only now: the framework handler uses the windows and everything above (a tick during construction would find them null).
         Framework.Update += OnFrameworkUpdate;
@@ -208,6 +201,22 @@ public sealed class Plugin : IDalamudPlugin
             Dalamud.Game.ClientLanguage.Japanese => "ja",
             _ => "en",
         };
+
+    /// <summary>Registers the commands, again after a language change: their help texts are taken at registration.</summary>
+    private void RegisterCommands()
+    {
+        CommandManager.RemoveHandler(CommandName);
+        CommandManager.RemoveHandler(ShortCommandName);
+        CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
+        {
+            HelpMessage = Loc.T("Öffnet Shynees Glamour Dresser (kurz: /sgd)."),
+        });
+        CommandManager.AddHandler(ShortCommandName, new CommandInfo(OnCommand)
+        {
+            HelpMessage = Loc.T("Öffnet Shynees Glamour Dresser."),
+            ShowInHelp = false,
+        });
+    }
 
     private void OnCommand(string command, string args)
     {
@@ -361,6 +370,7 @@ public sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.OpenMainUi -= mainWindow.Toggle;
         PluginInterface.UiBuilder.OpenConfigUi -= settingsWindow.Toggle;
         windowSystem.RemoveAllWindows();
+        Loc.Loaded -= RegisterCommands;
         CommandManager.RemoveHandler(CommandName);
         CommandManager.RemoveHandler(ShortCommandName);
         UI.UiScale.Dispose();

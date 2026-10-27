@@ -10,26 +10,48 @@ using GlamourBrowser.Core.Localization;
 namespace GlamourBrowser.Sources;
 
 /// <summary>
-/// Builds the source index in the background at startup. The finished, immutable index is handed over
-/// on the framework thread, then <see cref="Ready"/> fires.
+/// Builds the source index in the background at startup, and again after a language change (its texts, such as
+/// "Boss 1", are built in). The finished, immutable index is handed over on the framework thread, then
+/// <see cref="Ready"/> fires; until then the previous index stays.
 /// </summary>
 public sealed class SourceService : IDisposable
 {
-    private readonly CancellationTokenSource cancel = new();
-    private readonly Task build;
+    private readonly IReadOnlySet<uint> catalogIds;
+    private CancellationTokenSource cancel = new();
+    private Task build;
 
     public SourceService(IReadOnlySet<uint> catalogIds)
     {
-        build = Task.Run(() => Build(catalogIds, cancel.Token));
+        this.catalogIds = catalogIds;
+        var token = cancel.Token;
+        build = Task.Run(() => Build(token));
+        Loc.Loaded += Rebuild;
     }
 
     public SourceIndex Index { get; private set; } = SourceIndex.Empty;
 
     public bool IsReady { get; private set; }
 
+    /// <summary>Counts the hand-overs: texts taken from an older index are stale once it moved.</summary>
+    public int Version { get; private set; }
+
     public event Action? Ready;
 
-    private void Build(IReadOnlySet<uint> catalogIds, CancellationToken token)
+    /// <summary>Stops a running build (it would mix both languages) and starts a new one once it has stopped.</summary>
+    private void Rebuild()
+    {
+        var previous = cancel;
+        previous.Cancel();
+        cancel = new CancellationTokenSource();
+        var token = cancel.Token;
+        build = build.ContinueWith(_ =>
+        {
+            previous.Dispose();
+            Build(token);
+        }, TaskScheduler.Default);
+    }
+
+    private void Build(CancellationToken token)
     {
         SourceIndex index;
         var watch = Stopwatch.StartNew();
@@ -52,11 +74,12 @@ public sealed class SourceService : IDisposable
 
         Plugin.Framework.RunOnFrameworkThread(() =>
         {
-            // The plugin may have been unloaded before the framework got to the hand-over.
+            // The plugin may have been unloaded, or the language changed, before the framework got to the hand-over.
             if (token.IsCancellationRequested)
                 return;
             Index = index;
             IsReady = true;
+            Version++;
             Ready?.Invoke();
         });
     }
@@ -64,6 +87,7 @@ public sealed class SourceService : IDisposable
     /// <summary>Stops a running build and waits for it, so no source code runs once the plugin is unloaded.</summary>
     public void Dispose()
     {
+        Loc.Loaded -= Rebuild;
         cancel.Cancel();
         Ready = null;
         build.Wait();

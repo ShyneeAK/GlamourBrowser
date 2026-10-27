@@ -31,13 +31,13 @@ public sealed class SettingsWindow : Window
     // "" follows the game client; the names stay in their own language, so each can be found whatever is shown.
     private static readonly string[] LanguageCodes = ["", "de", "en", "fr", "ja"];
     private static readonly string[] LanguageNames = ["", "Deutsch", "English", "Français", "日本語"];
-    private bool languageChanged;
+    private static string[] AccentNames => [Loc.T("Blau"), Loc.T("Violett"), Loc.T("Türkis"), Loc.T("Rosé"), Loc.T("Bernstein")];
 
-    private static readonly string[] AccentNames = [Loc.T("Blau"), Loc.T("Violett"), Loc.T("Türkis"), Loc.T("Rosé"), Loc.T("Bernstein")];
+    private static string Title => Loc.T("Shynees Glamour Dresser – Einstellungen") + "###ShyneesGlamourDresserSettings";
 
     public SettingsWindow(Configuration config, BrowserState state, RenderPool pool, CalibrationService calibration, Theme.Theme theme,
                           Action showChangelog)
-        : base(Loc.T("Shynees Glamour Dresser – Einstellungen") + "##ShyneesGlamourDresserSettings")
+        : base(Title)
     {
         this.config = config;
         this.state = state;
@@ -50,6 +50,8 @@ public sealed class SettingsWindow : Window
 
     public override void PreDraw()
     {
+        // The title follows a language change; with ### only the id after it names the window, so it keeps its place and size.
+        WindowName = Title;
         themeScope = theme.Push();
         // A new scale takes effect here, while none of the plugin's fonts is pushed: Dalamud refuses to dispose
         // a font handle that is still pushed.
@@ -177,7 +179,7 @@ public sealed class SettingsWindow : Window
                                     + "Mods, etwa eine andere Idle-Pose, weise deine Collection in Penumbra auch diesen Fenstern zu oder bleib bei 2."));
     }
 
-    /// <summary>The plugin's language: the game client's, or a chosen one. Texts already built change after a reload of the plugin.</summary>
+    /// <summary>The plugin's language: the game client's, or a chosen one. It takes effect at once; game data (item, job and NPC names) stays in the client's language.</summary>
     private void DrawLanguage()
     {
         var index = Array.IndexOf(LanguageCodes, config.Language);
@@ -189,10 +191,7 @@ public sealed class SettingsWindow : Window
             config.Language = LanguageCodes[index];
             config.Save();
             Loc.Load(Plugin.LanguageOf(config.Language));
-            languageChanged = true;
         }
-        if (languageChanged)
-            ImGui.TextColored(new Vector4(1f, 0.8f, 0.3f, 1f), Loc.T("Ganz übernommen wird die Sprache nach einem Neustart des Plugins."));
     }
 
     /// <summary>

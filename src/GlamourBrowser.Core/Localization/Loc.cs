@@ -16,6 +16,12 @@ public static class Loc
     /// <summary>The loaded language's column ("de", "en", "fr" or "ja").</summary>
     public static string Language { get; private set; } = "de";
 
+    /// <summary>Counts the loads: a text built and kept before it moved (a cache, an index) is in the old language.</summary>
+    public static int Version { get; private set; }
+
+    /// <summary>Raised after every load, on the loading thread.</summary>
+    public static event Action? Loaded;
+
     /// <summary>The culture for numbers and dates in the loaded language.</summary>
     public static CultureInfo Culture { get; private set; } = CultureInfo.GetCultureInfo("de-DE");
 
@@ -36,6 +42,8 @@ public static class Loc
     {
         (Language, table) = Read(language, csv);
         Culture = CultureInfo.GetCultureInfo(Language switch { "en" => "en-US", "fr" => "fr-FR", "ja" => "ja-JP", _ => "de-DE" });
+        Version++;
+        Loaded?.Invoke();
     }
 
     /// <summary>

@@ -78,7 +78,7 @@ public sealed class TileGrid
     private CustomSet? deleteSet;
     // A custom set keeps its id while it changes: its content hash and name are part of the key.
     private readonly Dictionary<((uint ItemId, SetId Set) Id, uint Variant, string Name), TileLabels> labels = new();
-    private (float Width, float FontSize, int Ownership, bool SourcesReady) labelsFor;
+    private (float Width, float FontSize, int Ownership, int Sources, int Language) labelsFor;
     private int ownershipVersion;
     private readonly WheelSteps wheel = new();
     private readonly DyeCatalog dyes;
@@ -208,8 +208,8 @@ public sealed class TileGrid
             return;
         }
 
-        // Tile texts depend on the width, the font, ownership and the source index: rebuilt when one of them changes.
-        var labelsKey = (layout.TileWidth, ImGui.GetFontSize(), ownershipVersion, sources.IsReady);
+        // Tile texts depend on the width, the font, ownership, the source index and the language: rebuilt when one of them changes.
+        var labelsKey = (layout.TileWidth, ImGui.GetFontSize(), ownershipVersion, sources.Version, Loc.Version);
         if (labelsKey != labelsFor || labels.Count > MaxLabels)
         {
             labels.Clear();

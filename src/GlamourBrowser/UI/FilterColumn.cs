@@ -166,9 +166,9 @@ public sealed class FilterColumn
     {
         var result = new List<string>();
         if (!known.Contains(new ContainerId(ContainerKind.Dresser, "")))
-            result.Add(Loc.T("Kommode"));
+            result.Add(ContainerNames.DisplayName(ContainerKind.Dresser, ""));
         if (!known.Contains(new ContainerId(ContainerKind.Armoire, "")))
-            result.Add(Loc.T("Armoire"));
+            result.Add(ContainerNames.DisplayName(ContainerKind.Armoire, ""));
 
         var retainers = RetainerManager.Instance();
         if (retainers != null && retainers->IsReady)
@@ -176,7 +176,7 @@ public sealed class FilterColumn
             foreach (var r in retainers->Retainers)
             {
                 if (r.RetainerId != 0 && !known.Contains(new ContainerId(ContainerKind.Retainer, r.RetainerId.ToString())))
-                    result.Add(Loc.F("Gehilfe {0}", r.NameString));
+                    result.Add(ContainerNames.DisplayName(ContainerKind.Retainer, r.NameString));
             }
         }
         return result;
