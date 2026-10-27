@@ -18,7 +18,7 @@ A [Dalamud](https://github.com/goatcorp/Dalamud) plugin for Final Fantasy XIV th
 - **Ownership** across inventory, retainers, glamour dresser and armoire, including where an item is stored.
 - **Automatic camera** that frames every slot to fit your character's race and height (gloves, bracelets and rings from the side), with a zoom per slot.
 - **Gear sets** detected from the game data, shown as one tile; the chest in the item card shows a set's pieces as tiles.
-- **Wishlist** for items and sets, with the missing pieces grouped by where to get them.
+- **Wishlist** for items and sets, each wish shown on its own, with the missing pieces grouped by where to get them.
 - **My sets**: build your own outfits with dyes, like in the glamour dresser, and sort them into folders. Start from scratch, from your current outfit or from a glamour plate, import all glamour plates at once, and transfer a set into the open glamour plate editor.
 
 ## Installation

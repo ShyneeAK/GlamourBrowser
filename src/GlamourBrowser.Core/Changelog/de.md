@@ -1,5 +1,9 @@
 # Neuigkeiten
 
+## 0.7.1.0
+- Wunschliste: Die Kacheln zeigen nur den Wunsch selbst, ohne dein Outfit und ohne die Anprobe.
+- Mehr Render-Ansichten: In den Einstellungen (Debug) lassen sich bis zu 7 Kacheln gleichzeitig rendern. Ab 3 nutzt das Plugin auch die Plätze der Spielfenster (Charakterbildschirm, Anprobe, Färben …), solange keins davon offen ist. Der Hinweis unter dem Regler erklärt, was dabei mit Penumbra und mit gerade geöffneten Fenstern passieren kann. Standard bleibt 2, wie bisher.
+
 ## 0.7.0.0
 - Gleiches Modell: Unten links auf einer Kachel zeigt ein Würfel mit Zahl, wie viele andere Items dasselbe Modell haben, auch in anderen Farbvarianten. Ein Klick zeigt sie alle als Kacheln, „← Zurück“ führt zur Ansicht davor. Der Würfel ist grün, wenn du eines davon besitzt.
 - Fehlt dir ein Item, aber du besitzt das gleiche Modell, ist die Ecke oben rechts halb grau, halb grün. Steht das gleiche Modell auf der Wunschliste, ist der Stern halb gelb.

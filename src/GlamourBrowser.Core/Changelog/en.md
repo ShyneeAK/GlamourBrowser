@@ -1,5 +1,9 @@
 # What's new
 
+## 0.7.1.0
+- Wishlist: the tiles show only the wish itself, without your outfit and without the try-on.
+- More render views: in the settings (Debug) up to 7 tiles can render at the same time. From 3 on, the plugin also uses the slots of the game windows (character screen, try-on, dyes …) while none of them is open. The note below the slider explains what can happen with Penumbra and with windows opened meanwhile. The default stays 2, as before.
+
 ## 0.7.0.0
 - Same model: a cube with a number at the bottom left of a tile shows how many other items share its model, in other colour variants too. A click shows them all as tiles, "← Back" returns to the view before. The cube is green when you own one of them.
 - If you lack an item but own the same model, its top-right corner is half gray, half green. If the same model is on your wishlist, the star is half yellow.

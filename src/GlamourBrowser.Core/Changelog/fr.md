@@ -1,5 +1,9 @@
 # Nouveautés
 
+## 0.7.1.0
+- Liste de souhaits : les vignettes montrent seulement le souhait, sans ta tenue et sans l’essayage.
+- Plus de vues de rendu : dans les paramètres (Debug), jusqu’à 7 vignettes peuvent être rendues en même temps. À partir de 3, le plugin utilise aussi les emplacements des fenêtres du jeu (écran du personnage, essayage, teinture …) tant qu’aucune n’est ouverte. La remarque sous le curseur explique ce qui peut se passer avec Penumbra et avec les fenêtres ouvertes entre-temps. La valeur par défaut reste 2, comme avant.
+
 ## 0.7.0.0
 - Même modèle : un cube avec un nombre en bas à gauche d’une vignette indique combien d’autres objets partagent son modèle, aussi dans d’autres variantes de couleur. Un clic les affiche tous en vignettes, « ← Retour » revient à la vue précédente. Le cube est vert si tu en possèdes un.
 - S’il te manque un objet mais que tu possèdes le même modèle, son coin en haut à droite est mi-gris, mi-vert. Si le même modèle est dans ta liste de souhaits, l’étoile est à moitié jaune.
