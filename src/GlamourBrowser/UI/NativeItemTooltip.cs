@@ -10,9 +10,9 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 namespace GlamourBrowser.UI;
 
 /// <summary>
-/// The game's own item tooltip (ItemDetail) for an item the mouse rests on in our window: hung on _ScreenText every frame
-/// while the item is hovered, and gone a frame after the mouse leaves. The game draws it under the ImGui windows, so it is
-/// moved beside the main window: left of it where it fits, else right. Other plugins' lines (market prices) come along.
+/// The game's own item tooltip (ItemDetail) for an item the mouse rests on in our window: hung on _ScreenText while the
+/// item is hovered, and gone a frame after the mouse leaves. The game draws it under the ImGui windows, so it is moved
+/// beside the main window: left of it where it fits, else right. Other plugins' lines (market prices) come along.
 /// </summary>
 public sealed unsafe class NativeItemTooltip : IDisposable
 {
@@ -25,12 +25,17 @@ public sealed unsafe class NativeItemTooltip : IDisposable
     private Vector2 hoveredAt;
     private Vector2 windowMin;
     private Vector2 windowMax;
-    private bool shown;
+    // The item whose tooltip is open; 0 for none.
+    private uint shown;
 
     public NativeItemTooltip()
     {
-        Plugin.AddonLifecycle.RegisterListener(AddonEvent.PreDraw, TooltipAddon, OnTooltipDraw);
+        foreach (var placed in Placed)
+            Plugin.AddonLifecycle.RegisterListener(placed, TooltipAddon, Place);
     }
+
+    // The game places the tooltip in its update; moved after that and once more before it is drawn.
+    private static readonly AddonEvent[] Placed = [AddonEvent.PostUpdate, AddonEvent.PostRequestedUpdate, AddonEvent.PreDraw];
 
     /// <summary>The main window's screen rectangle this frame, which the tooltip keeps clear of.</summary>
     public void Avoid(Vector2 min, Vector2 max) => (windowMin, windowMax) = (min, max);
@@ -50,14 +55,19 @@ public sealed unsafe class NativeItemTooltip : IDisposable
 
     public void Dispose()
     {
-        Plugin.AddonLifecycle.UnregisterListener(AddonEvent.PreDraw, TooltipAddon, OnTooltipDraw);
+        foreach (var placed in Placed)
+            Plugin.AddonLifecycle.UnregisterListener(placed, TooltipAddon, Place);
         Hide();
     }
 
     private static AtkUnitBase* Host() => RaptureAtkUnitManager.Instance()->GetAddonByName(HostAddon);
 
+    // Only when it is not open for the item: every call places it anew where the game wants it, over our position.
     private void Show(uint itemId)
     {
+        var open = RaptureAtkUnitManager.Instance()->GetAddonByName(TooltipAddon);
+        if (shown == itemId && open != null && open->IsVisible)
+            return;
         var host = Host();
         if (host == null || host->RootNode == null)
             return;
@@ -66,24 +76,24 @@ public sealed unsafe class NativeItemTooltip : IDisposable
         args->ItemArgs.Kind = DetailKind.ItemId;
         args->ItemArgs.ItemId = (int)itemId;
         AtkStage.Instance()->TooltipManager.ShowTooltip(AtkTooltipType.Item, host->Id, host->RootNode, args);
-        shown = true;
+        shown = itemId;
     }
 
     private void Hide()
     {
-        if (!shown)
+        if (shown == 0)
             return;
-        shown = false;
+        shown = 0;
         var host = Host();
         if (host != null)
             AtkStage.Instance()->TooltipManager.HideTooltip(host->Id);
     }
 
-    // Every frame the game draws the tooltip: beside the main window, its top at the icon, kept on the screen.
-    private void OnTooltipDraw(AddonEvent type, AddonArgs args)
+    // Beside the main window, its top at the icon, kept on the screen.
+    private void Place(AddonEvent type, AddonArgs args)
     {
         var tooltip = (AtkUnitBase*)args.Addon.Address;
-        if (!shown || tooltip == null || tooltip->RootNode == null)
+        if (shown == 0 || tooltip == null || tooltip->RootNode == null)
             return;
         var width = tooltip->GetScaledWidth(true);
         var height = tooltip->GetScaledHeight(true);
