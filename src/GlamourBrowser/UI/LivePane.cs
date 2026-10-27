@@ -51,6 +51,10 @@ public sealed unsafe class LivePane
     private readonly NativeItemTooltip itemTooltip;
     // When the try-on was last saved as a set, for a short confirmation next to the button.
     private DateTime? savedAt;
+    private string savedName = "";
+    private const string SaveSetPopup = "##saveset";
+    // The name typed in the popup of "Als Set speichern".
+    private string setName = "";
     private readonly HashSet<(uint Item, SourceCategory Category)> expanded = new();
     // Pieces of the selected set whose sources are open.
     private readonly HashSet<uint> openPieces = new();
@@ -194,21 +198,52 @@ public sealed unsafe class LivePane
         var hasKnownPiece = tryOn.TryOn.Pieces.Any(p => state.ItemOf(p.ItemId) != null);
         using (ImRaii.Disabled(store == null || !hasKnownPiece))
         {
-            if (ImGui.Button(Loc.T("Als Set speichern")) && store != null)
+            if (ImGui.Button(Loc.T("Als Set speichern")))
             {
-                // Into the folder of "Meine Sets" that is open.
-                store.Add(CustomSetStore.DefaultName, tryOn.TryOn.Pieces, DateTimeOffset.Now,
-                          state.Filter.Mode == BrowseMode.MySets ? state.OpenFolder : 0);
-                savedAt = DateTime.UtcNow;
+                setName = "";
+                ImGui.OpenPopup(SaveSetPopup);
             }
         }
+        DrawSaveSetPopup(store);
         if (savedAt is { } at && DateTime.UtcNow - at < TimeSpan.FromSeconds(3))
         {
             ImGui.SameLine();
-            ImGui.TextDisabled(Loc.F("Als ‚{0}‘ gespeichert", CustomSetStore.DefaultName));
+            ImGui.TextDisabled(Loc.F("Als ‚{0}‘ gespeichert", savedName));
         }
 
         DrawWornPieces();
+    }
+
+    /// <summary>
+    /// The name for the try-on as a new set: saved on Enter or "Speichern" into the open folder of "Meine Sets", and the
+    /// view stays where it is (a quick save; editing is on the set's tile). Empty, it is called "Neues Set".
+    /// </summary>
+    private void DrawSaveSetPopup(CustomSetStore? store)
+    {
+        if (!ImGui.BeginPopup(SaveSetPopup))
+            return;
+        if (ImGui.IsWindowAppearing())
+            ImGui.SetKeyboardFocusHere();
+        ImGui.SetNextItemWidth(260 * UiScale.Global);
+        // The limit is in UTF-8 bytes, as in the set editor: room for umlauts, the store cuts the name to its length.
+        var entered = ImGui.InputTextWithHint("##setname", CustomSetStore.DefaultName, ref setName, CustomSetStore.MaxNameLength * 4 + 1,
+                                              ImGuiInputTextFlags.EnterReturnsTrue);
+        var save = ImGui.Button(Loc.T("Speichern")) || entered;
+        ImGui.SameLine();
+        if (ImGui.Button(Loc.T("Abbrechen")))
+            ImGui.CloseCurrentPopup();
+        // Logged out in the meantime, the popup just closes.
+        if (save)
+        {
+            if (store != null)
+            {
+                var name = setName.Trim().Length > 0 ? setName : CustomSetStore.DefaultName;
+                savedName = store.Add(name, tryOn.TryOn.Pieces, DateTimeOffset.Now, state.Filter.Mode == BrowseMode.MySets ? state.OpenFolder : 0).Name;
+                savedAt = DateTime.UtcNow;
+            }
+            ImGui.CloseCurrentPopup();
+        }
+        ImGui.EndPopup();
     }
 
     /// <summary>
