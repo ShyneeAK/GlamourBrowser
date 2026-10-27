@@ -1,5 +1,8 @@
 # Neuigkeiten
 
+## 0.7.2.0
+- Meine Sets: Die Kacheln zeigen nur die Teile, die im Set gespeichert sind. Auch eine Waffe aus deinem Outfit kommt nicht mehr dazu.
+
 ## 0.7.1.0
 - Wunschliste: Die Kacheln zeigen nur den Wunsch selbst, ohne dein Outfit und ohne die Anprobe.
 - Mehr Render-Ansichten: In den Einstellungen (Debug) lassen sich bis zu 7 Kacheln gleichzeitig rendern. Ab 3 nutzt das Plugin auch die Plätze der Spielfenster (Charakterbildschirm, Anprobe, Färben …), solange keins davon offen ist. Der Hinweis unter dem Regler erklärt, was dabei mit Penumbra und mit gerade geöffneten Fenstern passieren kann. Standard bleibt 2, wie bisher.

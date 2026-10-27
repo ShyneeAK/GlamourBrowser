@@ -1,5 +1,8 @@
 # What's new
 
+## 0.7.2.0
+- My Sets: the tiles show only the pieces saved in the set. A weapon from your outfit no longer joins them either.
+
 ## 0.7.1.0
 - Wishlist: the tiles show only the wish itself, without your outfit and without the try-on.
 - More render views: in the settings (Debug) up to 7 tiles can render at the same time. From 3 on, the plugin also uses the slots of the game windows (character screen, try-on, dyes …) while none of them is open. The note below the slider explains what can happen with Penumbra and with windows opened meanwhile. The default stays 2, as before.

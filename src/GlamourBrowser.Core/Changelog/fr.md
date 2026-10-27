@@ -1,5 +1,8 @@
 # Nouveautés
 
+## 0.7.2.0
+- Mes ensembles : les vignettes montrent seulement les pièces enregistrées dans l’ensemble. Une arme de ta tenue ne s’y ajoute plus non plus.
+
 ## 0.7.1.0
 - Liste de souhaits : les vignettes montrent seulement le souhait, sans ta tenue et sans l’essayage.
 - Plus de vues de rendu : dans les paramètres (Debug), jusqu’à 7 vignettes peuvent être rendues en même temps. À partir de 3, le plugin utilise aussi les emplacements des fenêtres du jeu (écran du personnage, essayage, teinture …) tant qu’aucune n’est ouverte. La remarque sous le curseur explique ce qui peut se passer avec Penumbra et avec les fenêtres ouvertes entre-temps. La valeur par défaut reste 2, comme avant.
