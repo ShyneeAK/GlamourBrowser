@@ -81,14 +81,19 @@ public sealed class TileGrid
     private (float Width, float FontSize, int Ownership, bool SourcesReady) labelsFor;
     private int ownershipVersion;
     private readonly WheelSteps wheel = new();
+    private readonly DyeCatalog dyes;
+    private const string TileDyePopup = "##tiledye";
+    // The item tile and dye channel (0 or 1) whose box opened the dye popup.
+    private (GlamourItem Item, int Channel)? dyeing;
     private readonly MySetsFolders folders;
     private readonly MarketService market;
 
     public TileGrid(BrowserState state, TileCache<IDalamudTextureWrap> cache, RenderPool pool, OwnershipService ownership,
                     LivePreview live, Configuration config, Theme.Theme theme, SourceService sources, JobCatalog jobs,
                     WishlistService wishlist, WishlistPlanView planView, CustomSetService customSets, CustomSetEditor editor, GlamourPlateBridge plates,
-                    MemoryStats memory, TryOnService tryOn, TileFilterControls filterControls, MarketService market)
+                    MemoryStats memory, TryOnService tryOn, TileFilterControls filterControls, MarketService market, DyeCatalog dyes)
     {
+        this.dyes = dyes;
         this.market = market;
         this.tryOn = tryOn;
         this.filterControls = filterControls;
@@ -221,6 +226,7 @@ public sealed class TileGrid
             DrawTile(page[i], new Vector2(layout.TileWidth, layout.TileHeight));
         }
         DrawContextMenu();
+        DrawTileDyePopup();
         DrawDeleteConfirm();
         // The page controls sit in the middle of the room left under the tiles (above the memory line).
         var pagerRoom = avail.Y - (config.ShowMemoryStats ? ImGui.GetTextLineHeightWithSpacing() : 0);
@@ -638,10 +644,24 @@ public sealed class TileGrid
         var twins = subject is ItemSubject { Item: var twinOf } && state.OpenModel == null ? state.SameModelAs(twinOf.Id) : [];
         var twinsRect = GlyphRect(pos + new Vector2(6, size.Y - StripHeight(size.Y) - starSize.Y - 8), starSize);
         var overTwins = hovered && twins.Count > 0 && ImGui.IsMouseHoveringRect(twinsRect.Min, twinsRect.Max);
+        // A dyeable item has a box per dye channel bottom right, at the height of that button: its dye, a click dyes only
+        // this tile.
+        var dyeItem = subject is ItemSubject { Item: { DyeCount: > 0 } dyeable } ? dyeable : null;
+        var boxCount = dyeItem == null ? 0 : Math.Min(dyeItem.DyeCount, 2);
+        var boxes = Enumerable.Range(0, boxCount)
+            .Select(i => GlyphRect(pos + new Vector2(size.X - 6 - (boxCount - i) * starSize.X - (boxCount - 1 - i) * 8, twinsRect.Min.Y + 3), starSize))
+            .ToArray();
+        var overBox = hovered ? Array.FindIndex(boxes, b => ImGui.IsMouseHoveringRect(b.Min, b.Max)) : -1;
+        var pressedBox = Array.FindIndex(boxes, b => Inside(pressed, b));
         if (clicked && pressedOnStar)
             wishlist.Toggle(subject);
         else if (clicked && twins.Count > 0 && Inside(pressed, twinsRect) && subject is ItemSubject { Item: var opened })
             state.ShowSameModel(opened);
+        else if (clicked && pressedBox >= 0 && dyeItem != null)
+        {
+            dyeing = (dyeItem, pressedBox);
+            ImGui.OpenPopup(TileDyePopup);
+        }
         else if (clicked && ownSet != null && Inside(pressed, editRect))
             editor.StartEdit(ownSet);
         else if (clicked && ownSet != null && Inside(pressed, deleteRect))
@@ -655,13 +675,13 @@ public sealed class TileGrid
         }
         // While a custom set is edited, a tile goes into it instead of being selected.
         else if (clicked && editor.IsOpen)
-            editor.Put(subject, state.TileDye, RingHand(subject));
+            editor.Put(subject, state.DyeFor(subject), RingHand(subject));
         // Otherwise it is selected and put on in the try-on, dyed like its tile.
         else if (clicked)
         {
             state.Selected = subject;
             live.Select(subject);
-            tryOn.Put(subject, state.TileDye, RingHand(subject));
+            tryOn.Put(subject, state.DyeFor(subject), RingHand(subject));
         }
 
         var drawList = ImGui.GetWindowDrawList();
@@ -731,6 +751,8 @@ public sealed class TileGrid
                 ImGui.SetTooltip(Loc.F("Gleiches Modell: {0} weitere Items\nKlick: alle als Kacheln zeigen", twins.Count - 1)
                                  + (ownedTwins.Count > 0 ? "\n" + Loc.F("{0} davon im Besitz", ownedTwins.Count) : ""));
         }
+        if (dyeItem != null)
+            DrawDyeBoxes(drawList, dyeItem, state.DyeFor(subject), boxes, overBox);
         if (hovered && ownSet != null)
         {
             DrawTileGlyph(drawList, FontAwesomeIcon.Pen, editRect, overEdit ? colors.Text : (colors.TextMuted & 0x00FFFFFF) | 0xA0000000);
@@ -788,6 +810,39 @@ public sealed class TileGrid
     /// The right-click menu of a tile: a ring on the right or the left hand, an own set into a folder. A set's pieces are
     /// behind the chest in the item card.
     /// </summary>
+    /// <summary>
+    /// The dye boxes of an item tile: the colour it shows on each channel, an accent frame where the tile has its own dye
+    /// instead of the tile dye.
+    /// </summary>
+    private void DrawDyeBoxes(ImDrawListPtr drawList, GlamourItem item, DyePair dye, (Vector2 Min, Vector2 Max)[] boxes, int over)
+    {
+        var colors = theme.Colors;
+        var own = state.HasOwnDye(item);
+        for (var i = 0; i < boxes.Length; i++)
+        {
+            var (min, max) = boxes[i];
+            var stain = i == 0 ? dye.First : dye.Second;
+            drawList.AddRectFilled(min, max, 0xA0000000, 3f);
+            if (stain != 0 && dyes.Find(stain) is { } color)
+                drawList.AddRectFilled(min + Vector2.One, max - Vector2.One, color.Color, 3f);
+            drawList.AddRect(min, max, i == over ? colors.Text : own ? colors.Accent : colors.Border, 3f, ImDrawFlags.None, own || i == over ? 2f : 1f);
+            if (i == over)
+                ImGui.SetTooltip(Loc.F(i == 0 ? "Farbe 1: {0}" : "Farbe 2: {0}", dyes.NameOf(stain)) + "\n" + Loc.T("Klick: nur diese Kachel umfärben"));
+        }
+    }
+
+    /// <summary>The dyes for the channel of the tile whose box was clicked; a pick dyes that tile only.</summary>
+    private void DrawTileDyePopup()
+    {
+        if (dyeing is not { } target || !ImGui.BeginPopup(TileDyePopup))
+            return;
+        var dye = state.DyeFor(new ItemSubject(target.Item));
+        var stain = target.Channel == 0 ? dye.First : dye.Second;
+        if (DyePicker.Palette(ref stain, dyes, theme))
+            state.SetDye(target.Item, target.Channel == 0 ? dye with { First = stain } : dye with { Second = stain });
+        ImGui.EndPopup();
+    }
+
     private void DrawContextMenu()
     {
         if (!ImGui.BeginPopup(ContextPopup))
@@ -824,9 +879,9 @@ public sealed class TileGrid
     private void PutOn(TileSubject subject, EquipSlot? ring = null)
     {
         if (editor.IsOpen)
-            editor.Put(subject, state.TileDye, ring);
+            editor.Put(subject, state.DyeFor(subject), ring);
         else
-            tryOn.Put(subject, state.TileDye, ring);
+            tryOn.Put(subject, state.DyeFor(subject), ring);
     }
 
     /// <summary>The height of a tile's dark name strip (name, line, trait icons as far as the tile's height allows); 0 without one.</summary>

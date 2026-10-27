@@ -101,6 +101,9 @@ public sealed class BrowserState
             }
             // Back on a slot (or mode) the page it was left on; Refresh clamps it to the new results.
             PageIndex = pages.Switch(filter, PageIndex, value);
+            // A new tile dye dyes every tile, the single ones too.
+            if (value.Dye != filter.Dye)
+                tileDyes.Clear();
             // Another mode closes an open folder of "Meine Sets".
             if (value.Mode != BrowseMode.MySets)
                 OpenFolder = 0;
@@ -304,6 +307,25 @@ public sealed class BrowserState
     /// <summary>The tile dye where it applies: not in the wishlist and custom set modes, which only search.</summary>
     public DyePair TileDye => BrowseModes.OnlySearch(filter.Mode) ? default : filter.Dye;
 
+    // Dyes chosen on single item tiles; a new tile dye replaces them.
+    private readonly TileDyeOverrides tileDyes = new();
+
+    /// <summary>The dye a tile shows and puts on: an item tile's own (its dye boxes), else the tile dye.</summary>
+    public DyePair DyeFor(TileSubject subject) => subject is ItemSubject { Item: var item } ? tileDyes.For(item.Id, TileDye) : TileDye;
+
+    /// <summary>Whether the item tile has a dye of its own, not the tile dye.</summary>
+    public bool HasOwnDye(GlamourItem item) => tileDyes.Has(item.Id);
+
+    /// <summary>Dyes one item tile (and only it); the tile dye again drops its own.</summary>
+    public void SetDye(GlamourItem item, DyePair dye)
+    {
+        lock (RenderSync.Lock)
+        {
+            tileDyes.Set(item.Id, dye, TileDye);
+            RequestTiles();
+        }
+    }
+
     /// <summary>The look part of a tile key: face and body, and the try-on without the slots the tile covers (see <see cref="TryOn.LookFor"/>).</summary>
     private ulong LookHash(ushort exceptSlots) => appearance.CustomizeHash * 31 + tryOn.TryOn.KeyHash(exceptSlots);
 
@@ -372,7 +394,7 @@ public sealed class BrowserState
     /// <summary>An item tile: the item in the tile dye on its channels, its stance, on the try-on without the slots it covers.</summary>
     private TileKey ItemKey(GlamourItem item)
     {
-        var (stain0, stain1) = TileDyes.For(item, TileDye);
+        var (stain0, stain1) = TileDyes.For(item, tileDyes.For(item.Id, TileDye));
         var stance = StanceFor(item);
         return new(item.Id, stain0, stain1, config.TileMode, LookHash(item.Covers), RenderWidth,
                    stance.WeaponDrawn ? TileKey.StandardPose : stance.Pose, stance.WeaponDrawn, LeftHand: item.Slot == EquipSlot.RingLeft);

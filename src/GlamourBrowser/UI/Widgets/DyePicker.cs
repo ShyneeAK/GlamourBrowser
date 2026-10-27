@@ -43,7 +43,15 @@ public static class DyePicker
             ImGui.OpenPopup(popup);
         if (!ImGui.BeginPopup(popup))
             return false;
+        var changed = Palette(ref stain, dyes, theme);
+        ImGui.EndPopup();
+        return changed;
+    }
 
+    /// <summary>The content of a dye popup: "Keine Farbe" and every dye by shade; a pick closes the popup.</summary>
+    public static bool Palette(ref byte stain, DyeCatalog dyes, Theme.Theme theme)
+    {
+        var colors = theme.Colors;
         var changed = false;
         if (ImGui.Selectable(Loc.T("Keine Farbe"), stain == 0))
         {
@@ -75,7 +83,6 @@ public static class DyePicker
                     ImGui.SetTooltip(dye.Name);
             }
         }
-        ImGui.EndPopup();
         return changed;
     }
 }

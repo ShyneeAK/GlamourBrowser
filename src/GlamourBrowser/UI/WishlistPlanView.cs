@@ -142,7 +142,7 @@ public sealed class WishlistPlanView
             {
                 state.Selected = subject;
                 live.Select(subject);
-                tryOn.Put(subject, state.TileDye);
+                tryOn.Put(subject, state.DyeFor(subject));
             }
         }
 
