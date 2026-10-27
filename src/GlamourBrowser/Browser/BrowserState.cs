@@ -441,15 +441,16 @@ public sealed class BrowserState
         }
     }
 
-    // Every slot: a wishlist tile wears nothing of the try-on.
+    // Every slot: a wishlist or "Meine Sets" tile wears nothing of the try-on.
     private static readonly ushort AllSlots = SlotMask.Of(CustomSetSubjects.Slots);
 
     /// <summary>
     /// The slots a tile leaves free of the try-on around it (<see cref="LiveWeapons.TileCover(TileSubject, bool)"/>); in
-    /// the wishlist all of them, so a wish shows on its own, like with everything off.
+    /// the wishlist and in "Meine Sets" all of them, so a wish or an own set shows only what it holds (no weapon of the
+    /// outfit either), like with everything off.
     /// </summary>
     public ushort CoverOf(TileSubject subject)
-        => filter.Mode == BrowseMode.Wishlist && !PiecesOpen ? AllSlots : LiveWeapons.TileCover(subject, WeaponsHidden);
+        => filter.Mode is BrowseMode.Wishlist or BrowseMode.MySets && !PiecesOpen ? AllSlots : LiveWeapons.TileCover(subject, WeaponsHidden);
 
     public Stance StanceFor(GlamourItem item)
         => config.TileWeaponsDrawn && item.Slot is EquipSlot.MainHand or EquipSlot.OffHand
