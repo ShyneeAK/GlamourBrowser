@@ -23,6 +23,9 @@ public static class TryonIcons
     /// <summary>"Alles anlegen / ablegen".</summary>
     public static readonly UiIcon Outfit = Part(144, 112, 24);
 
+    /// <summary>"Anprobierte Teile behalten" (the profile with the pin).</summary>
+    public static readonly UiIcon Keep = Part(72, 136, 24);
+
     /// <summary>"Weggesteckte Waffen und Werkzeuge anzeigen".</summary>
     public static readonly UiIcon ShowWeapon = Part(24, 136, 24);
 

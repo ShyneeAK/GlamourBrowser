@@ -442,3 +442,13 @@ Klick: nur diese Kachel umfärben,Click: dye only this tile,Clic : teindre seule
 {0}"
 Alles ablegen (Unterwäsche),Remove all (underwear),Tout retirer (sous-vêtements),すべて外す（下着）
 Alles anlegen (aktuelles Outfit),Equip all (current outfit),Tout équiper (tenue actuelle),すべて装備（現在の装い）
+"Anprobierte Teile behalten: an
+Jeder Klick kommt zu den Teilen davor dazu","Keep tried-on pieces: on
+Every click adds to the pieces before","Conserver les pièces essayées : activé
+Chaque clic s'ajoute aux pièces précédentes","試着したアイテムを保持：オン
+クリックするたびに前のアイテムに追加されます"
+"Anprobierte Teile behalten: aus
+Nur das zuletzt angeklickte Teil wird anprobiert","Keep tried-on pieces: off
+Only the last clicked piece is tried on","Conserver les pièces essayées : désactivé
+Seule la dernière pièce cliquée est essayée","試着したアイテムを保持：オフ
+最後にクリックしたアイテムだけを試着します"

@@ -296,12 +296,12 @@ public sealed class BrowserState
     /// <summary>The tile mode is the try-on's basis: switching it starts the try-on afresh (which renders the tiles anew).</summary>
     public void SetTileMode(TileMode mode)
     {
-        // Picking the mode it already is (a combo reports that as a change too) must not throw the try-on away.
         if (config.TileMode == mode)
             return;
         config.TileMode = mode;
         config.Save();
-        tryOn.Reset();
+        // Like the game's "Alles anlegen / ablegen": the clicked pieces stay, over the new basis.
+        tryOn.Rebase();
     }
 
     /// <summary>The tile dye where it applies: not in the wishlist and custom set modes, which only search.</summary>

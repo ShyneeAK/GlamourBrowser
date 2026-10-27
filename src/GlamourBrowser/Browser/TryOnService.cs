@@ -22,7 +22,7 @@ public sealed class TryOnService : IDisposable
     {
         this.appearance = appearance;
         this.config = config;
-        TryOn = new TryOn(Basis(), blocksOf);
+        TryOn = new TryOn(Basis(), blocksOf) { Keep = config.TryOnKeep };
         appearance.Changed += OnAppearanceChanged;
         Plugin.ClientState.Login += Reset;
         Plugin.ClientState.Logout += OnLogout;
@@ -35,6 +35,22 @@ public sealed class TryOnService : IDisposable
         => config.TileMode == TileMode.CurrentOutfit
             ? appearance.Outfit.Entries.Select(e => new CustomPiece(e.Slot, e.ItemId, e.Stain0, e.Stain1)).ToList()
             : [];
+
+    /// <summary>The basis of the current tile mode under the clicked pieces, which stay (everything on or off).</summary>
+    public void Rebase()
+    {
+        lock (RenderSync.Lock)
+            TryOn.SetBasis(Basis());
+    }
+
+    /// <summary>"Anprobierte Teile behalten" on or off (off leaves only the last click on); kept in the configuration.</summary>
+    public void SetKeep(bool keep)
+    {
+        lock (RenderSync.Lock)
+            TryOn.SetKeep(keep);
+        config.TryOnKeep = keep;
+        config.Save();
+    }
 
     /// <summary>Back to the basis of the current tile mode.</summary>
     public void Reset()

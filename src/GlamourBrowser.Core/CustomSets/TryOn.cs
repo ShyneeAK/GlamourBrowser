@@ -46,6 +46,25 @@ public sealed class TryOn
     /// </summary>
     public IReadOnlyList<CustomPiece> LookFor(ushort cover) => Cached(cover).Look;
 
+    /// <summary>
+    /// "Anprobe-Teile behalten", like the game's try-on: every click adds to the pieces clicked before. Without it a click
+    /// replaces them, so only the last clicked item (or set) is worn over the basis.
+    /// </summary>
+    public bool Keep { get; set; } = true;
+
+    // The slots the last click put on (with the ones an own design empties), which stay when Keep is turned off.
+    private IReadOnlyList<EquipSlot> lastClicked = [];
+
+    /// <summary>Turns <see cref="Keep"/> on or off; off leaves only the last click on (a change that can be undone).</summary>
+    public void SetKeep(bool keep)
+    {
+        if (Keep == keep)
+            return;
+        Keep = keep;
+        if (!keep)
+            Change(() => Restore(clicked.Pieces.Where(p => lastClicked.Contains(p.Slot)).ToList()));
+    }
+
     /// <summary>Something was clicked (or dyed) since the last reset.</summary>
     public bool HasChanges => clicked.Pieces.Count > 0;
 
@@ -76,8 +95,11 @@ public sealed class TryOn
         var worn = !isRing ? null : ring is EquipSlot.RingRight or EquipSlot.RingLeft ? ring : SlotOf(item.Id);
         Change(() =>
         {
+            if (!Keep)
+                Restore([]);
             var slot = clicked.Put(item, worn is EquipSlot.RingRight or EquipSlot.RingLeft ? worn : null);
             Dye(slot, item, dye);
+            lastClicked = [slot];
         });
     }
 
@@ -87,17 +109,21 @@ public sealed class TryOn
     /// </summary>
     public void PutAll(SetSubject set, DyePair dye) => Change(() =>
     {
+        if (!Keep)
+            Restore([]);
         clicked.PutAll(set);
         if (set.Set.Id.Kind == SetKind.Custom)
         {
             var worn = SlotMask.Of(set.Wear.Select(p => p.Slot));
             foreach (var slot in CustomSetSubjects.Slots.Where(s => SlotMask.Contains(CustomSetSubjects.LookSlots, s) && !SlotMask.Contains(worn, s)))
                 clicked.Set(new CustomPiece(slot, 0, 0, 0));
+            lastClicked = CustomSetSubjects.Slots.Where(s => SlotMask.Contains((ushort)(worn | CustomSetSubjects.LookSlots), s)).ToList();
         }
         else
         {
             foreach (var piece in set.Wear)
                 Dye(piece.Slot, piece, dye);
+            lastClicked = set.Wear.Select(p => p.Slot).ToList();
         }
     });
 
@@ -140,6 +166,7 @@ public sealed class TryOn
     public void Reset(IReadOnlyList<CustomPiece> basis)
     {
         Basis = basis.ToList();
+        lastClicked = [];
         Change(() => Restore([]));
     }
 

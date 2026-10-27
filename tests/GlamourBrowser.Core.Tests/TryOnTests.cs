@@ -39,6 +39,52 @@ public class TryOnTests
         Assert.True(tryOn.HasChanges);
     }
 
+    [Fact]
+    public void WithoutKeep_AClickReplacesTheClickBefore()
+    {
+        var tryOn = new TryOn(Basis) { Keep = false };
+        tryOn.Put(Item(20, EquipSlot.Body), default);
+        tryOn.Put(Item(30, EquipSlot.Head), default);
+
+        Assert.Equal([Piece(EquipSlot.Head, 30), Piece(EquipSlot.Body, 2), Piece(EquipSlot.RingRight, 10), Piece(EquipSlot.RingLeft, 11)], tryOn.Pieces);
+    }
+
+    [Fact]
+    public void WithKeep_ClicksAddUp()
+    {
+        var tryOn = new TryOn(Basis);
+        tryOn.Put(Item(20, EquipSlot.Body), default);
+        tryOn.Put(Item(30, EquipSlot.Head), default);
+
+        Assert.Equal([Piece(EquipSlot.Head, 30), Piece(EquipSlot.Body, 20), Piece(EquipSlot.RingRight, 10), Piece(EquipSlot.RingLeft, 11)], tryOn.Pieces);
+    }
+
+    [Fact]
+    public void KeepOff_LeavesOnlyTheLastClick_AsAnUndoableChange()
+    {
+        var tryOn = new TryOn(Basis);
+        tryOn.Put(Item(20, EquipSlot.Body), default);
+        tryOn.Put(Item(30, EquipSlot.Head), default);
+
+        tryOn.SetKeep(false);
+
+        Assert.False(tryOn.Keep);
+        Assert.Equal([Piece(EquipSlot.Head, 30), Piece(EquipSlot.Body, 2), Piece(EquipSlot.RingRight, 10), Piece(EquipSlot.RingLeft, 11)], tryOn.Pieces);
+        Assert.True(tryOn.Undo());
+        Assert.Equal(Piece(EquipSlot.Body, 20), tryOn.PieceIn(EquipSlot.Body));
+    }
+
+    [Fact]
+    public void ANewBasisKeepsTheClicks()
+    {
+        var tryOn = new TryOn(Basis);
+        tryOn.Put(Item(20, EquipSlot.Body), default);
+
+        tryOn.SetBasis([]);
+
+        Assert.Equal([Piece(EquipSlot.Body, 20)], tryOn.Pieces);
+    }
+
     [Theory]
     [InlineData(0, 0, 0)]
     [InlineData(1, 5, 0)]

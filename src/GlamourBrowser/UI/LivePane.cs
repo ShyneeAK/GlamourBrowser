@@ -371,6 +371,12 @@ public sealed unsafe class LivePane
                 outfit ? Loc.T("Alles ablegen (Unterwäsche)") : Loc.T("Alles anlegen (aktuelles Outfit)"), theme, FontAwesomeIcon.User))
             state.SetTileMode(outfit ? TileMode.Underwear : TileMode.CurrentOutfit);
         ImGui.SetCursorScreenPos(buttonPos += step);
+        var keep = tryOn.TryOn.Keep;
+        if (RoundButton.Draw("##keep", TryonIcons.Keep, edge, keep,
+                keep ? Loc.T("Anprobierte Teile behalten: an\nJeder Klick kommt zu den Teilen davor dazu")
+                     : Loc.T("Anprobierte Teile behalten: aus\nNur das zuletzt angeklickte Teil wird anprobiert"), theme, FontAwesomeIcon.Thumbtack))
+            tryOn.SetKeep(!keep);
+        ImGui.SetCursorScreenPos(buttonPos += step);
         if (RoundButton.Draw("##visor", TryonIcons.Visor, edge, live.VisorClosed,
                 live.VisorClosed ? Loc.T("Visier öffnen") : Loc.T("Visier schließen (nur Helme mit Visier)"), theme, FontAwesomeIcon.HardHat))
             live.VisorClosed = !live.VisorClosed;
