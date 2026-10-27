@@ -649,7 +649,7 @@ public sealed class TileGrid
         var dyeItem = subject is ItemSubject { Item: { DyeCount: > 0 } dyeable } ? dyeable : null;
         var boxCount = dyeItem == null ? 0 : Math.Min(dyeItem.DyeCount, 2);
         var boxes = Enumerable.Range(0, boxCount)
-            .Select(i => GlyphRect(pos + new Vector2(size.X - 6 - (boxCount - i) * starSize.X - (boxCount - 1 - i) * 8, twinsRect.Min.Y + 3), starSize))
+            .Select(i => GlyphRect(new Vector2(pos.X + size.X - 6 - (boxCount - i) * starSize.X - (boxCount - 1 - i) * 8, twinsRect.Min.Y + 3), starSize))
             .ToArray();
         var overBox = hovered ? Array.FindIndex(boxes, b => ImGui.IsMouseHoveringRect(b.Min, b.Max)) : -1;
         var pressedBox = Array.FindIndex(boxes, b => Inside(pressed, b));
