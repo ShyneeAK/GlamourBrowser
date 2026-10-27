@@ -53,10 +53,7 @@ public sealed class TopBar
         // Sort does not apply to the wishlist and the custom sets (newest first).
         var onlySearch = BrowseModes.OnlySearch(state.Filter.Mode);
 
-        var mode = (int)config.TileMode;
-        if (LabeledCombo("##mode", Loc.T("Kachel-Modus"), 130 * scale, ref mode, [Loc.T("Aktuelles Outfit"), Loc.T("Unterwäsche")]))
-            state.SetTileMode((TileMode)mode);
-
+        // The tile mode (current outfit or underwear) is the "Alles anlegen" button of the live view, as in the game's try-on.
         var sort = Array.IndexOf(SortOrders, config.Sort);
         using (ImRaii.Disabled(onlySearch))
         {

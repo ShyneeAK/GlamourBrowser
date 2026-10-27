@@ -13,6 +13,7 @@ using GlamourBrowser.Browser;
 using GlamourBrowser.Core.CustomSets;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Localization;
+using GlamourBrowser.Core.Rendering;
 using GlamourBrowser.Core.Sets;
 using GlamourBrowser.Core.Sources;
 using Dalamud.Utility;
@@ -358,12 +359,20 @@ public sealed unsafe class LivePane
 
         DrawHelpIcon(drawList, origin + new Vector2(area.X, 0));
 
-        // In the view's top-left corner, like the game's character window: the visor works on the helmet whatever is
-        // selected, the weapon toggles everywhere but on sets (which always show the weapon sheathed).
+        // In the view's top-left corner, with the game's own round buttons of its try-on window (a gold ring while on):
+        // everything on or off (the tile mode: current outfit or underwear), the visor on the helmet whatever is selected,
+        // the weapon toggles everywhere but on sets (which always show the weapon sheathed).
+        var edge = ImGui.GetFrameHeight() * 1.3f;
         var buttonPos = pos + new Vector2(8, 8);
-        var step = new Vector2(0, ImGui.GetFrameHeight() + ImGui.GetStyle().ItemSpacing.Y);
+        var step = new Vector2(0, edge + ImGui.GetStyle().ItemSpacing.Y);
         ImGui.SetCursorScreenPos(buttonPos);
-        if (IconButton.Draw("##visor", 0, FontAwesomeIcon.HardHat, live.VisorClosed ? Loc.T("Visier öffnen") : Loc.T("Visier schließen (nur Helme mit Visier)"), theme))
+        var outfit = config.TileMode == TileMode.CurrentOutfit;
+        if (RoundButton.Draw("##outfit", TryonIcons.Outfit, edge, outfit,
+                outfit ? Loc.T("Alles ablegen (Unterwäsche)") : Loc.T("Alles anlegen (aktuelles Outfit)"), theme, FontAwesomeIcon.User))
+            state.SetTileMode(outfit ? TileMode.Underwear : TileMode.CurrentOutfit);
+        ImGui.SetCursorScreenPos(buttonPos += step);
+        if (RoundButton.Draw("##visor", TryonIcons.Visor, edge, live.VisorClosed,
+                live.VisorClosed ? Loc.T("Visier öffnen") : Loc.T("Visier schließen (nur Helme mit Visier)"), theme, FontAwesomeIcon.HardHat))
             live.VisorClosed = !live.VisorClosed;
         if (state.Selected is not SetSubject)
         {
@@ -372,20 +381,21 @@ public sealed unsafe class LivePane
             using (ImRaii.Disabled(noWeapon))
             {
                 ImGui.SetCursorScreenPos(buttonPos += step);
-                if (IconButton.Draw("##draw", 0, FontAwesomeIcon.FistRaised, live.WeaponDrawn ? Loc.T("Waffe wegstecken") : Loc.T("Waffe ziehen"), theme))
+                if (RoundButton.Draw("##draw", TryonIcons.DrawWeapon, edge, live.WeaponDrawn,
+                        live.WeaponDrawn ? Loc.T("Waffe wegstecken") : Loc.T("Waffe ziehen"), theme, FontAwesomeIcon.FistRaised))
                     live.WeaponDrawn = !live.WeaponDrawn;
                 NoWeaponHint(noWeapon);
                 ImGui.SetCursorScreenPos(buttonPos + step);
-                if (IconButton.Draw("##weaponvisible", 0, live.WeaponVisible ? FontAwesomeIcon.EyeSlash : FontAwesomeIcon.Eye,
-                        live.WeaponVisible ? Loc.T("Waffe ausblenden") : Loc.T("Waffe anzeigen"), theme))
+                if (RoundButton.Draw("##weaponvisible", TryonIcons.ShowWeapon, edge, live.WeaponVisible,
+                        live.WeaponVisible ? Loc.T("Waffe ausblenden") : Loc.T("Waffe anzeigen"), theme, FontAwesomeIcon.Eye))
                     live.WeaponVisible = !live.WeaponVisible;
                 NoWeaponHint(noWeapon);
             }
         }
 
         // Bottom-right: how fast dragging and the wheel move the view, at hand where it is used.
-        ImGui.SetCursorScreenPos(pos + size - new Vector2(ImGui.GetFrameHeight() + 8, ImGui.GetFrameHeight() + 8));
-        if (IconButton.Draw("##livesettings", 0, FontAwesomeIcon.Cog, Loc.T("Empfindlichkeit der Live-Ansicht"), theme))
+        ImGui.SetCursorScreenPos(pos + size - new Vector2(edge + 8, edge + 8));
+        if (RoundButton.Draw("##livesettings", TryonIcons.Settings, edge, false, Loc.T("Empfindlichkeit der Live-Ansicht"), theme, FontAwesomeIcon.Cog))
             ImGui.OpenPopup("##livesensitivity");
         DrawSensitivityPopup();
         ImGui.SetCursorScreenPos(origin + new Vector2(0, area.Y + ImGui.GetStyle().ItemSpacing.Y));
