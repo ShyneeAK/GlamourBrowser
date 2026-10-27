@@ -14,7 +14,8 @@ using GlamourBrowser.Core.Localization;
 namespace GlamourBrowser.Rendering;
 
 /// <summary>
-/// Renders queued tiles with up to three CharaViews (slots 7, 6, 5) and puts the results into the cache.
+/// Renders queued tiles with several CharaViews (slots 7, 6, 5, and while no game window wants them 4–0, see
+/// <see cref="RenderSlots"/>) and puts the results into the cache.
 /// Everything runs on the framework thread via <see cref="Tick"/>.
 /// </summary>
 public sealed unsafe class RenderPool : IDisposable
@@ -81,8 +82,13 @@ public sealed unsafe class RenderPool : IDisposable
         public int SheatheFrames { get; set; } = -1;
         public int SheatheRetries { get; set; }
         public string? DrawOutcome { get; set; }
-        /// <summary>What the view wears besides the tile's items: the look of this key (its try-on part) without these slots (a <see cref="SlotMask"/>).</summary>
-        public (ulong Hash, ushort Except)? DressedAs { get; set; }
+        /// <summary>The slots the tile leaves free of the try-on (<see cref="LiveWeapons.TileCover(TileSubject, bool)"/>), taken with <see cref="Look"/>.</summary>
+        public ushort Cover { get; set; }
+        /// <summary>
+        /// What the view wears besides the tile's items: the look of this key (its try-on part) without these slots (a
+        /// <see cref="SlotMask"/>), and the slots of the tile's own items.
+        /// </summary>
+        public (ulong Hash, ushort Except, ushort Worn)? DressedAs { get; set; }
         public bool Busy => Key != null;
     }
 
@@ -168,11 +174,10 @@ public sealed unsafe class RenderPool : IDisposable
             return;
         }
 
-        // Freed once the game gave their slots back.
-        suspended.RemoveAll(view => view.TryReleaseAfterConflict());
-
         // Slots 0–4 only while no game window wants them; a view the game took over is never touched again.
         var sharedFree = !SlotGuard.WindowsActive();
+        // Freed once the game gave their slots back (its windows closed: their characters are gone or never were ours).
+        suspended.RemoveAll(view => (sharedFree || !RenderSlots.IsShared(view.Index)) && view.TryReleaseAfterConflict());
         var lost = workers.Where(w => w.View.TakenOver || !sharedFree && RenderSlots.IsShared(w.View.Index)).ToList();
         if (lost.Count > 0)
         {
@@ -214,9 +219,15 @@ public sealed unsafe class RenderPool : IDisposable
                 }
                 var view = new CharaViewHandle(slot);
                 view.Create(character, appearance.Race, appearance.Sex);
+                // The game could not put a character into the slot (all client objects in use): skipped this time.
+                if (!view.IsCreated)
+                {
+                    blocked++;
+                    continue;
+                }
                 workers.Add(new Worker(view));
             }
-            Status = workers.Count == 0 && blocked > 0 ? Loc.T("Kein Render-Platz frei (Plätze 5–7 belegt).") : null;
+            Status = workers.Count == 0 && blocked > 0 ? Loc.T("Kein Render-Platz frei.") : null;
         }
         else
         {
@@ -237,13 +248,16 @@ public sealed unsafe class RenderPool : IDisposable
         // Re-dress when the slots change too, otherwise the previous tile's items (e.g. a hat) stay on the
         // character. Sets with the same slots as the previous tile only swap their pieces. A robe covers legs and
         // feet as well: the look around it leaves them out, so nothing put on afterwards takes the robe off again.
-        var except = coverOf(subject);
-        // The try-on is the look around the tile's items; the key holds its hash.
-        var redressed = worker.DressedAs != (key.AppearanceHash, except);
+        // The cover taken with the look: the mode may have changed while a weapon was sheathed.
+        var except = worker.Cover;
+        // The try-on is the look around the tile's items; the key holds its hash. The tile's own slots count too: in the
+        // wishlist the cover is every slot, and a hat of the tile before would stay on under the boots of this one.
+        var dressed = (key.AppearanceHash, except, subject.Slots);
+        var redressed = worker.DressedAs != dressed;
         if (redressed)
         {
             view.ApplyOutfit(worker.Look, except);
-            worker.DressedAs = (key.AppearanceHash, except);
+            worker.DressedAs = dressed;
         }
         // Items carry their dyes in the key; custom sets their own per slot, detected sets the key's tile dye.
         foreach (var piece in subject.Wear)
@@ -299,7 +313,8 @@ public sealed unsafe class RenderPool : IDisposable
                 worker.Subject = subject;
                 // Taken now, not when dressing: sheathing first can take a while, and a click meanwhile changes the try-on
                 // (the key would then hold another look than the tile shows, and could be shown again later).
-                worker.Look = look(coverOf(subject));
+                worker.Cover = coverOf(subject);
+                worker.Look = look(worker.Cover);
                 worker.ShowWeapons = LiveWeapons.TileShows(subject, worker.Look);
                 worker.SheatheFrames = -1;
                 worker.SheatheRetries = 0;
@@ -547,13 +562,26 @@ public sealed unsafe class RenderPool : IDisposable
 
     private void Release(Worker worker) => Drop(worker);
 
-    /// <summary>Gives the worker's view up: released, or set aside while the game holds its slot.</summary>
+    /// <summary>
+    /// Gives the worker's view up: released, or set aside while the game may hold its slot. The game may put its own
+    /// character at the very address ours had, so <see cref="CharaViewHandle.TakenOver"/> can miss a takeover: a view on a
+    /// slot a game window may use is never released while such a window is open (release deletes the slot's character).
+    /// </summary>
     private void Drop(Worker worker)
     {
-        if (worker.View.TakenOver)
-            suspended.Add(worker.View);
+        var view = worker.View;
+        if (view.TakenOver || SlotGuard.ConflictActive() || RenderSlots.IsShared(view.Index) && SlotGuard.WindowsActive())
+            suspended.Add(view);
         else
-            worker.View.Dispose();
+            view.Dispose();
+        // A copy still under way: its texture is never cached, so it is freed once it is there.
+        if (worker.CopyTask is { } copy)
+            copy.ContinueWith(t =>
+            {
+                if (t.IsCompletedSuccessfully)
+                    t.Result.Dispose();
+            });
+        worker.CopyTask = null;
         workers.Remove(worker);
     }
 

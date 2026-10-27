@@ -9,7 +9,7 @@ public static class RenderSlots
 {
     public const uint LiveSlot = 7;
 
-    /// <summary>The most views that render at once: every slot but the live preview's.</summary>
+    /// <summary>The most views that render at once: seven of the eight slots (the live preview's 7 while it is open, else 0).</summary>
     public const int MaxViews = 7;
 
     private static readonly uint[] Own = [7, 6, 5];

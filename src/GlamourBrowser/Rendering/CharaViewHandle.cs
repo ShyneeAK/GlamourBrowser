@@ -81,6 +81,16 @@ public sealed unsafe class CharaViewHandle : IDisposable
 
         view->Initialize(null, Index, 0);
         ownObject = ObjectIn(Index);
+        // No character in the slot: the game had no client object left. Freed again without release (nothing of ours
+        // is in the slot), so a takeover can never go unseen for want of an object to compare with.
+        if (ownObject == 0)
+        {
+            Plugin.Log.Warning($"CharaView on slot {Index} got no character; not used");
+            view->Dtor(0);
+            IMemorySpace.Free(view);
+            view = null;
+            return;
+        }
         view->ModelData.CopyFromCharacter(source);
         // CopyFromCharacter takes over the player's "hide weapon/headgear" settings; tiles must show both.
         view->ModelData.WeaponHidden = false;

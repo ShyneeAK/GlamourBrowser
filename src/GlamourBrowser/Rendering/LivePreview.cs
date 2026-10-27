@@ -149,6 +149,12 @@ public sealed unsafe class LivePreview : IDisposable
                 return;
             view = new CharaViewHandle(Slot);
             view.Create(character, appearance.Race, appearance.Sex);
+            // No character for the slot (no client object left): tried again next frame.
+            if (!view.IsCreated)
+            {
+                view = null;
+                return;
+            }
             if (!visorTaken)
             {
                 VisorClosed = character->DrawData.IsVisorToggled;
