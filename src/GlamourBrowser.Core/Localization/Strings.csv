@@ -340,7 +340,6 @@ Waffen gezogen,Weapons drawn,Armes dégainées,抜刀状態
 "Waffen-Kacheln mit gezogener Waffe: jede Kachel spielt das Ziehen ab, das Rendern dauert deutlich länger.","Weapon tiles with the weapon drawn: every tile plays the draw animation, so rendering takes considerably longer.","Tuiles d'armes avec l'arme dégainée : chaque tuile joue l'animation pour dégainer, le rendu prend nettement plus de temps.",武器のタイルを抜刀状態で表示します。タイルごとに抜刀モーションを再生するため、描画にかなり時間がかかります。
 weitere ({0}) …,more ({0}) …,plus ({0})…,さらに表示（{0}）…
 Wie der Client ({0}),Same as the client ({0}),Comme le client ({0}),クライアントと同じ ({0})
-Wie viele Kacheln gleichzeitig gerendert werden (Standard 3).,How many tiles are rendered at the same time (default 3).,Nombre de tuiles rendues simultanément (3 par défaut).,同時に描画するタイルの数です(標準: 3)。
 "Wie viele Seiten in Blätterrichtung schon im Voraus gerendert werden, die nächste zuerst; rückwärts die vorherigen, auf der letzten Seite die davor.
 Blättern zeigt die Bilder dann sofort. Mehr Seiten brauchen mehr Grafikspeicher und Renderzeit.","How many pages in the paging direction are rendered in advance, the next one first; paging back the previous ones, on the last page the ones before it.
 Paging then shows the images at once. More pages need more video memory and render time.","Nombre de pages rendues à l'avance dans le sens de navigation, la suivante en premier ; en revenant en arrière les précédentes, sur la dernière page celles d'avant.
@@ -452,3 +451,4 @@ Nur das zuletzt angeklickte Teil wird anprobiert","Keep tried-on pieces: off
 Only the last clicked piece is tried on","Conserver les pièces essayées : désactivé
 Seule la dernière pièce cliquée est essayée","試着したアイテムを保持：オフ
 最後にクリックしたアイテムだけを試着します"
+"Wie viele Kacheln gleichzeitig gerendert werden (Standard 5). Mehr als 3 nur, solange kein Fenster des Spiels eine Figur zeigt (Charakter, Anprobe, Färben, Projektionsplatten …); mehr Ansichten kosten FPS beim Rendern.","How many tiles render at the same time (default 5). More than 3 only while no game window shows a character (character, try-on, dyes, glamour plates …); more views cost FPS while rendering.","Nombre de vignettes rendues en même temps (5 par défaut). Plus de 3 seulement tant qu’aucune fenêtre du jeu n’affiche de personnage (personnage, essayage, teinture, tenues de mirage …) ; plus de vues coûtent des FPS pendant le rendu.",同時にレンダリングするタイルの数（標準5）。3を超えるのはゲームのウィンドウがキャラクターを表示していない間だけです（キャラクター、試着、染色、ミラージュプレートなど）。ビューが多いほどレンダリング中のFPSが下がります。

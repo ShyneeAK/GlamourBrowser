@@ -168,14 +168,20 @@ public sealed unsafe class RenderPool : IDisposable
             return;
         }
 
-        if (suspended.Count > 0)
+        // Freed once the game gave their slots back.
+        suspended.RemoveAll(view => view.TryReleaseAfterConflict());
+
+        // Slots 0–4 only while no game window wants them; a view the game took over is never touched again.
+        var sharedFree = !SlotGuard.WindowsActive();
+        var lost = workers.Where(w => w.View.TakenOver || !sharedFree && RenderSlots.IsShared(w.View.Index)).ToList();
+        if (lost.Count > 0)
         {
-            foreach (var view in suspended)
-                view.ReleaseAfterConflict();
-            suspended.Clear();
+            foreach (var worker in lost)
+                Drop(worker);
+            Disrupted?.Invoke();
         }
 
-        ManageWorkers();
+        ManageWorkers(sharedFree);
         foreach (var worker in workers)
         {
             worker.View.Tick();
@@ -183,9 +189,9 @@ public sealed unsafe class RenderPool : IDisposable
         }
     }
 
-    private void ManageWorkers()
+    private void ManageWorkers(bool sharedFree)
     {
-        var wanted = RenderSlots.Select(MaxViews, liveReserved);
+        var wanted = RenderSlots.Select(MaxViews, liveReserved, sharedFree);
 
         // Hand slot 7 to the live preview once its worker finished the current tile.
         foreach (var worker in workers.Where(w => !wanted.Contains(w.View.Index) && !w.Busy).ToList())
@@ -539,18 +545,23 @@ public sealed unsafe class RenderPool : IDisposable
         worker.Phase = Phase.Apply;
     }
 
-    private void Release(Worker worker)
+    private void Release(Worker worker) => Drop(worker);
+
+    /// <summary>Gives the worker's view up: released, or set aside while the game holds its slot.</summary>
+    private void Drop(Worker worker)
     {
-        worker.View.Dispose();
+        if (worker.View.TakenOver)
+            suspended.Add(worker.View);
+        else
+            worker.View.Dispose();
         workers.Remove(worker);
     }
 
     private void ReleaseAll()
     {
         var hadWork = workers.Any(w => w.Busy);
-        foreach (var worker in workers)
-            worker.View.Dispose();
-        workers.Clear();
+        foreach (var worker in workers.ToList())
+            Drop(worker);
         if (hadWork)
             Disrupted?.Invoke();
     }
@@ -558,8 +569,9 @@ public sealed unsafe class RenderPool : IDisposable
     public void Dispose()
     {
         ReleaseAll();
+        // Still held by the game: left to it (a small leak instead of touching its character).
         foreach (var view in suspended)
-            view.ReleaseAfterConflict();
+            view.TryReleaseAfterConflict();
         suspended.Clear();
     }
 }

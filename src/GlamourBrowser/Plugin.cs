@@ -93,6 +93,14 @@ public sealed class Plugin : IDalamudPlugin
             config.Version = 4;
             config.Save();
         }
+        if (config.Version < 5)
+        {
+            // The slots of closed game windows render too: the old default goes up (a chosen value stays).
+            if (config.ParallelViews == 3)
+                config.ParallelViews = 5;
+            config.Version = 5;
+            config.Save();
+        }
         // First: texts built from here on (slot names, labels) are in this language.
         Loc.Load(LanguageOf(config.Language));
         calibration = new CalibrationService(config);

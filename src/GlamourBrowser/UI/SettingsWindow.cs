@@ -160,14 +160,15 @@ public sealed class SettingsWindow : Window
             ImGui.SetTooltip(Loc.T("Zeigt unter den Kacheln, wie viel Grafikspeicher der Kachel-Cache belegt, dazu VRAM und RAM des Spiels."));
 
         var views = config.ParallelViews;
-        if (ImGui.SliderInt(Loc.T("Parallele Ansichten"), ref views, 1, 3, "%d", ImGuiSliderFlags.AlwaysClamp))
+        if (ImGui.SliderInt(Loc.T("Parallele Ansichten"), ref views, 1, RenderSlots.MaxViews, "%d", ImGuiSliderFlags.AlwaysClamp))
         {
             config.ParallelViews = views;
             pool.MaxViews = views;
             config.Save();
         }
         if (ImGui.IsItemHovered())
-            ImGui.SetTooltip(Loc.T("Wie viele Kacheln gleichzeitig gerendert werden (Standard 3)."));
+            ImGui.SetTooltip(Loc.T("Wie viele Kacheln gleichzeitig gerendert werden (Standard 5). Mehr als 3 nur, solange kein Fenster des Spiels "
+                                   + "eine Figur zeigt (Charakter, Anprobe, Färben, Projektionsplatten …); mehr Ansichten kosten FPS beim Rendern."));
     }
 
     /// <summary>The plugin's language: the game client's, or a chosen one. Texts already built change after a reload of the plugin.</summary>

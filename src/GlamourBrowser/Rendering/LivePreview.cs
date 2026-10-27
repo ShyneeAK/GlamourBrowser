@@ -135,11 +135,9 @@ public sealed unsafe class LivePreview : IDisposable
             return;
         }
 
-        if (suspended != null)
-        {
-            suspended.ReleaseAfterConflict();
+        // Freed once the game gave the slot back.
+        if (suspended != null && suspended.TryReleaseAfterConflict())
             suspended = null;
-        }
 
         // Nothing selected: the look with the full-body camera, never an empty view.
         var subject = Selected;
@@ -325,7 +323,8 @@ public sealed unsafe class LivePreview : IDisposable
     public void Dispose()
     {
         ReleaseView();
-        suspended?.ReleaseAfterConflict();
+        // Still held by the game: left to it (a small leak instead of touching its character).
+        suspended?.TryReleaseAfterConflict();
         suspended = null;
     }
 }

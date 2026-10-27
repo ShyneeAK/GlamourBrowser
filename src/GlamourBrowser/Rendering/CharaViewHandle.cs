@@ -57,8 +57,18 @@ public sealed unsafe class CharaViewHandle : IDisposable
     public bool IsIdle => view != null && view->State == StateReady && !view->CharacterDataCopied && !view->CharacterLoaded;
 
     /// <summary>A slot is free when no client object lives at 240 + index.</summary>
-    public static bool IsSlotFree(uint index)
-        => ClientObjectManager.Instance()->GetObjectByIndex((ushort)(ClientObjectBase + index)) == null;
+    public static bool IsSlotFree(uint index) => ObjectIn(index) == 0;
+
+    private static nint ObjectIn(uint index) => (nint)ClientObjectManager.Instance()->GetObjectByIndex((ushort)(ClientObjectBase + index));
+
+    // The character Initialize put into the slot: when another one lies there, the game took the slot over.
+    private nint ownObject;
+
+    /// <summary>
+    /// The game put its own character into the slot (a game window opened on it) and deleted ours: the view must not be
+    /// touched any more, only freed once the game is done (<see cref="TryReleaseAfterConflict"/>).
+    /// </summary>
+    public bool TakenOver => view != null && ownObject != 0 && ObjectIn(Index) != ownObject;
 
     public void Create(Character* source, byte race, byte sex)
     {
@@ -70,6 +80,7 @@ public sealed unsafe class CharaViewHandle : IDisposable
             throw new InvalidOperationException("Could not allocate CharaView");
 
         view->Initialize(null, Index, 0);
+        ownObject = ObjectIn(Index);
         view->ModelData.CopyFromCharacter(source);
         // CopyFromCharacter takes over the player's "hide weapon/headgear" settings; tiles must show both.
         view->ModelData.WeaponHidden = false;
@@ -443,26 +454,30 @@ public sealed unsafe class CharaViewHandle : IDisposable
     }
 
     /// <summary>
-    /// Cleans up a view that was set aside while the game's party portraits were active. If our object is
-    /// still in the slot, the game never took it and a normal release is right. If the slot is empty, the
-    /// game used it and already deleted the object; then only our CharaView memory is freed (its camera
-    /// objects leak, Release would touch the slot again).
+    /// Cleans up a view that was set aside because the game may own its slot (party portraits, a game window). If our
+    /// object is still in the slot, the game never took it and a normal release is right. If the slot is empty, the game
+    /// used it and already deleted the object; then only our CharaView memory is freed (its camera objects leak, Release
+    /// would touch the slot again). While the game's own character is still there, nothing happens: false, try later.
     /// </summary>
-    public void ReleaseAfterConflict()
+    public bool TryReleaseAfterConflict()
     {
         if (view == null)
-            return;
+            return true;
 
-        if (!IsSlotFree(Index))
+        var current = ObjectIn(Index);
+        if (current != 0 && current == ownObject)
         {
             Dispose();
-            return;
+            return true;
         }
+        if (current != 0)
+            return false;
 
         Plugin.Log.Warning($"CharaView on slot {Index} was taken over by the game; freeing without release");
         view->Dtor(0);
         IMemorySpace.Free(view);
         view = null;
+        return true;
     }
 
     public void Dispose()
