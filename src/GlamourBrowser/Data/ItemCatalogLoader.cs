@@ -40,7 +40,9 @@ public static class ItemCatalogLoader
                 item.DyeCount,
                 RestrictionOf(item.EquipRestriction.RowId, data, restrictions),
                 Tradabilities.From(item.IsUntradable, item.ItemSearchCategory.RowId),
-                ItemSlots.BlocksOf(item.EquipSlotCategory.Value)));
+                ItemSlots.BlocksOf(item.EquipSlotCategory.Value),
+                item.ModelMain,
+                item.ModelSub));
         }
 
         Plugin.Log.Information($"Item catalog: {result.Count} items, {variants.Count} \"+N\" variants merged into their base item");

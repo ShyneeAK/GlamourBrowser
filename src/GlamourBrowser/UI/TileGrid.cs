@@ -151,7 +151,9 @@ public sealed class TileGrid
             ImGui.TextColored(new Vector4(1f, 0.8f, 0.3f, 1f), status);
 
         if (state.OpenSets is { } openSets)
-            DrawSetPiecesHeader(openSets);
+            DrawPiecesHeader(SlotIcons.Sets, FontAwesomeIcon.LayerGroup, string.Join(" · ", openSets.Select(s => s.Name)));
+        else if (state.OpenModel is { } model)
+            DrawPiecesHeader(0, FontAwesomeIcon.Cubes, Loc.F("Gleiches Modell wie „{0}“", model.Name));
         else if (state.Filter.Mode == BrowseMode.MySets && customSets.Current == null)
         {
             ImGui.TextDisabled(customSets.LoadFailed ? Loc.T("Eigene Sets konnten nicht geladen werden") : Loc.T("Nicht eingeloggt"));
@@ -175,7 +177,7 @@ public sealed class TileGrid
             }
         }
         // Nothing found instead of an empty grid, with a way out.
-        if (state.OpenSets == null && state.Filter.Mode is BrowseMode.Items or BrowseMode.Sets && state.Results.Count == 0)
+        if (!state.PiecesOpen && state.Filter.Mode is BrowseMode.Items or BrowseMode.Sets && state.Results.Count == 0)
         {
             ImGui.TextDisabled(Loc.T("Keine Treffer"));
             if (FilterChips.CanResetAll(state.Filter) && ImGui.Button(Loc.T("Alle zurücksetzen")))
@@ -236,18 +238,21 @@ public sealed class TileGrid
         HandlePageKeys();
     }
 
-    /// <summary>Above the pieces of the sets opened from the item card: back to the grid before, and the sets' names.</summary>
-    private void DrawSetPiecesHeader(IReadOnlyList<SetSubject> sets)
+    /// <summary>
+    /// Above the pieces of the sets opened from the item card, or the items of one look opened from a tile: back to the grid
+    /// before, and what is shown.
+    /// </summary>
+    private void DrawPiecesHeader(UiIcon icon, FontAwesomeIcon fallback, string title)
     {
         if (ImGui.Button("← " + Loc.T("Zurück")))
             state.CloseSetPieces();
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(Loc.T("Zurück zur vorherigen Ansicht"));
         ImGui.SameLine();
-        GameIcon.Draw(SlotIcons.Sets, new Vector2(ImGui.GetFrameHeight()), FontAwesomeIcon.LayerGroup, theme.Colors.TextMuted);
+        GameIcon.Draw(icon, new Vector2(ImGui.GetFrameHeight()), fallback, theme.Colors.TextMuted);
         ImGui.SameLine();
         ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted(string.Join(" · ", sets.Select(s => s.Name)));
+        ImGui.TextUnformatted(title);
     }
 
     /// <summary>The custom set mode's "+ Neues Set" with its start points, and its hints; false when no grid follows.</summary>
@@ -626,8 +631,15 @@ public sealed class TileGrid
         var deleteRect = GlyphRect(starPos + new Vector2(0, (starSize.Y + 8) * 2), starSize);
         var overEdit = hovered && ownSet != null && ImGui.IsMouseHoveringRect(editRect.Min, editRect.Max);
         var overDelete = hovered && ownSet != null && ImGui.IsMouseHoveringRect(deleteRect.Min, deleteRect.Max);
+        // An item that others look like has a button bottom left, above the name strip: all of them as tiles (not while
+        // they are shown already).
+        var twins = subject is ItemSubject { Item: var twinOf } && state.OpenModel == null ? state.SameModelAs(twinOf.Id) : [];
+        var twinsRect = GlyphRect(pos + new Vector2(6, size.Y - StripHeight(size.Y) - starSize.Y - 8), starSize);
+        var overTwins = hovered && twins.Count > 0 && ImGui.IsMouseHoveringRect(twinsRect.Min, twinsRect.Max);
         if (clicked && pressedOnStar)
             wishlist.Toggle(subject);
+        else if (clicked && twins.Count > 0 && Inside(pressed, twinsRect) && subject is ItemSubject { Item: var opened })
+            state.ShowSameModel(opened);
         else if (clicked && ownSet != null && Inside(pressed, editRect))
             editor.StartEdit(ownSet);
         else if (clicked && ownSet != null && Inside(pressed, deleteRect))
@@ -700,6 +712,14 @@ public sealed class TileGrid
             DrawWishStar(drawList, starPos, listed ? colors.Warning : overStar ? colors.Text : (colors.TextMuted & 0x00FFFFFF) | 0xA0000000);
             if (overStar)
                 ImGui.SetTooltip(listed ? Loc.T("Von der Wunschliste nehmen") : Loc.T("Auf die Wunschliste"));
+        }
+        if (hovered && twins.Count > 0)
+        {
+            var color = overTwins ? colors.Text : (colors.TextMuted & 0x00FFFFFF) | 0xA0000000;
+            DrawTileGlyph(drawList, FontAwesomeIcon.Cubes, twinsRect, color);
+            drawList.AddText(new Vector2(twinsRect.Max.X + 2, twinsRect.Min.Y + 1), color, (twins.Count - 1).ToString());
+            if (overTwins)
+                ImGui.SetTooltip(Loc.F("Gleiches Modell: {0} weitere Items\nKlick: alle als Kacheln zeigen", twins.Count - 1));
         }
         if (hovered && ownSet != null)
         {

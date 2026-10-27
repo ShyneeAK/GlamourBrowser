@@ -59,6 +59,7 @@ public sealed class BrowserState
         this.wishlist = wishlist;
         this.catalog = catalog;
         itemSubjects = catalog.ToDictionary(i => i.Id, i => new ItemSubject(i));
+        sameModel = SameModel.Groups(catalog);
         leftRings = catalog.Where(i => i.Slot == EquipSlot.RingRight).ToDictionary(i => i.Id, i => new ItemSubject(i with { Slot = EquipSlot.RingLeft }));
         this.ownership = ownership;
         this.appearance = appearance;
@@ -90,11 +91,11 @@ public sealed class BrowserState
         get => filter;
         set
         {
-            // Another filter closes the pieces of an opened set, back on the page they were opened from; the tile dye
-            // dyes them anew.
-            if (OpenSets != null && value with { Dye = filter.Dye } != filter)
+            // Another filter closes the pieces of an opened set (or the items of one look), back on the page they were opened
+            // from; the tile dye dyes them anew.
+            if (PiecesOpen && value with { Dye = filter.Dye } != filter)
             {
-                OpenSets = null;
+                (OpenSets, OpenModel) = (null, null);
                 PageIndex = pageBeforeSets;
             }
             // Back on a slot (or mode) the page it was left on; Refresh clamps it to the new results.
@@ -164,17 +165,37 @@ public sealed class BrowserState
     /// filter finds; null while closed.
     /// </summary>
     public IReadOnlyList<SetSubject>? OpenSets { get; private set; }
+
+    /// <summary>
+    /// The item whose look the grid shows: every item with the same models (see <see cref="SameModelAs"/>), opened from a
+    /// tile, instead of what the filter finds; null while closed.
+    /// </summary>
+    public GlamourItem? OpenModel { get; private set; }
+
+    /// <summary>The grid shows the pieces of sets or the items of one look instead of what the filter finds.</summary>
+    public bool PiecesOpen => OpenSets != null || OpenModel != null;
+
     // The page the pieces were opened from, to go back to it.
     private int pageBeforeSets;
+    // Every item that shares its look with others, with all items of that look.
+    private readonly IReadOnlyDictionary<uint, IReadOnlyList<GlamourItem>> sameModel;
+
+    /// <summary>The items that look like this one (itself included), lowest level first; empty when no other item does.</summary>
+    public IReadOnlyList<GlamourItem> SameModelAs(uint itemId) => sameModel.GetValueOrDefault(itemId) ?? [];
 
     /// <summary>Shows the pieces of the sets as tiles, on their first page; the filter stays for going back.</summary>
-    public void ShowSetPieces(IReadOnlyList<SetSubject> sets)
+    public void ShowSetPieces(IReadOnlyList<SetSubject> sets) => Open(sets, null);
+
+    /// <summary>Shows every item that looks like this one as tiles, on their first page; the filter stays for going back.</summary>
+    public void ShowSameModel(GlamourItem item) => Open(null, item);
+
+    private void Open(IReadOnlyList<SetSubject>? sets, GlamourItem? model)
     {
         lock (RenderSync.Lock)
         {
-            if (OpenSets == null)
+            if (!PiecesOpen)
                 pageBeforeSets = PageIndex;
-            OpenSets = sets;
+            (OpenSets, OpenModel) = (sets, model);
             PageIndex = 0;
             Refresh();
         }
@@ -185,9 +206,9 @@ public sealed class BrowserState
     {
         lock (RenderSync.Lock)
         {
-            if (OpenSets == null)
+            if (!PiecesOpen)
                 return;
-            OpenSets = null;
+            (OpenSets, OpenModel) = (null, null);
             PageIndex = pageBeforeSets;
             Refresh();
         }
@@ -399,6 +420,9 @@ public sealed class BrowserState
             if (OpenSets is { } open)
                 Results = open.SelectMany(set => set.Pieces).DistinctBy(piece => piece.Id)
                               .Select(piece => ItemSubjectFor(piece.Id)).OfType<TileSubject>().ToList();
+            // A left ring opened stays on the left hand.
+            else if (OpenModel is { } model)
+                Results = SameModelAs(model.Id).Select(item => ItemSubjectFor(item.Id, model.Slot)).OfType<TileSubject>().ToList();
             else if (filter.Mode == BrowseMode.MySets)
             {
                 var folders = customSets.Current?.Folders ?? [];
@@ -465,7 +489,7 @@ public sealed class BrowserState
         {
             CurrentPage = ItemFilter.Page(Results, PageIndex, PageSize);
             // The plan by source shows no tiles: nothing to render, the cached ones stay for switching back.
-            if (!appearance.IsValid || filter.Mode == BrowseMode.Wishlist && config.WishlistBySource && OpenSets == null)
+            if (!appearance.IsValid || filter.Mode == BrowseMode.Wishlist && config.WishlistBySource && !PiecesOpen)
             {
                 queue.Clear();
                 return;

@@ -422,3 +422,9 @@ Molette : changer de page, avec Maj 10 pages
 Page préc./suiv., Début, Fin : changer de page","クリック：ページを入力
 マウスホイール：ページ送り（Shiftで10ページ）
 Page Up/Down・Home・End：ページ送り"
+Gleiches Modell wie „{0}“,Same model as “{0}”,Même modèle que « {0} »,「{0}」と同じモデル
+"Gleiches Modell: {0} weitere Items
+Klick: alle als Kacheln zeigen","Same model: {0} more items
+Click: show them all as tiles","Même modèle : {0} autres objets
+Clic : les afficher tous en vignettes","同じモデル：ほかに{0}個のアイテム
+クリック：すべてタイルで表示"
