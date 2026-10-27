@@ -9,8 +9,9 @@ public static class Looks
     /// The basis with the pieces of <paramref name="over"/> in their slots; in slot order, empty items left out. Like in
     /// the game, a piece that blocks other slots (<paramref name="blocksOf"/>: a robe over legs and feet, a two-handed
     /// weapon over the off hand) hides the basis pieces there, and a basis piece that blocks a slot taken from above comes
-    /// off. <paramref name="cover"/> (a <see cref="SlotMask"/>) is left free for pieces put on afterwards (a tile's
-    /// items): pieces in it, and pieces that block one of its slots, are left out.
+    /// off. A basis piece that stays hides the basis pieces in the slots it blocks too: a robe glamoured onto the worn top
+    /// leaves the legs and feet worn under it. <paramref name="cover"/> (a <see cref="SlotMask"/>) is left free for pieces
+    /// put on afterwards (a tile's items): pieces in it, and pieces that block one of its slots, are left out.
     /// </summary>
     public static IReadOnlyList<CustomPiece> Overlay(IReadOnlyList<CustomPiece> basis, IReadOnlyList<CustomPiece> over,
                                                      Func<uint, ushort>? blocksOf = null, ushort cover = 0)
@@ -21,7 +22,9 @@ public static class Looks
         var taken = cover;
         foreach (var piece in top)
             taken |= (ushort)(SlotMask.Of(piece.Slot) | Blocks(piece));
-        var kept = basis.Where(p => !SlotMask.Contains(taken, p.Slot) && (Blocks(p) & taken) == 0);
+        var kept = basis.Where(p => !SlotMask.Contains(taken, p.Slot) && (Blocks(p) & taken) == 0).ToList();
+        var hidden = kept.Aggregate((ushort)0, (mask, p) => (ushort)(mask | Blocks(p)));
+        kept.RemoveAll(p => SlotMask.Contains(hidden, p.Slot));
         return top.Concat(kept).Where(p => p.ItemId != 0).OrderBy(p => p.Slot).ToList();
     }
 

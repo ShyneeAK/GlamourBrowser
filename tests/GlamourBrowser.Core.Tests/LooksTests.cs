@@ -44,6 +44,18 @@ public class LooksTests
     }
 
     [Fact]
+    public void Overlay_ABasisPieceHidesTheBasisPiecesInTheSlotsItBlocks()
+    {
+        // A robe glamoured onto the worn top: the game keeps the legs and feet worn under it.
+        IReadOnlyList<CustomPiece> worn = [Piece(EquipSlot.Head, 1), Piece(EquipSlot.Body, 9), Piece(EquipSlot.Legs, 3), Piece(EquipSlot.Feet, 4)];
+        ushort BlocksOf(uint item) => item == 9 ? OverLegsAndFeet : (ushort)0;
+
+        Assert.Equal([Piece(EquipSlot.Head, 1), Piece(EquipSlot.Body, 9)], Looks.Overlay(worn, [], BlocksOf));
+        // A legs tile takes the robe off, and the feet under it show again.
+        Assert.Equal([Piece(EquipSlot.Head, 1), Piece(EquipSlot.Feet, 4)], Looks.Overlay(worn, [], BlocksOf, SlotMask.Of(EquipSlot.Legs)));
+    }
+
+    [Fact]
     public void Overlay_CoverLeavesItsSlotsAndTheirBlockersOut()
     {
         var look = Looks.Overlay([Piece(EquipSlot.Head, 1), Piece(EquipSlot.Body, 2), Piece(EquipSlot.Feet, 4)], [Piece(EquipSlot.Body, 9)],
