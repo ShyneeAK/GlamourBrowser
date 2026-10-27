@@ -94,6 +94,12 @@ public sealed class SettingsWindow : Window
         if (ImGui.Combo(Loc.T("Pose"), ref pose, [Loc.T("Standard"), Loc.T("Meine Idle-Pose")], 2))
             state.SetUseIdlePose(pose == 1);
 
+        var hint = config.HintPiecesOutsideFilters;
+        if (ImGui.Checkbox(Loc.T("Hinweis bei Teilen außerhalb der Filter"), ref hint))
+        {
+            config.HintPiecesOutsideFilters = hint;
+            config.Save();
+        }
 
         DrawLanguage();
         if (ImGui.Button(Loc.T("Neuigkeiten anzeigen")))

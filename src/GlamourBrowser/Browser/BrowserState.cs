@@ -206,8 +206,8 @@ public sealed class BrowserState
     public void ShowLastPage() => GoToPage(PageCount - 1);
 
     /// <summary>
-    /// The item's slot in the item mode, on the page with its tile, to browse on from there. The other filters stay
-    /// unless they hide the item; then only its slot is filtered. False when it has no tile even so.
+    /// The item's slot in the item mode, on the page with its tile, to browse on from there. The other filters stay;
+    /// when they hide the item, the slot's first page and false.
     /// </summary>
     public bool ShowInGrid(GlamourItem item)
     {
@@ -215,15 +215,8 @@ public sealed class BrowserState
         {
             Filter = filter with { Mode = BrowseMode.Items, Slots = new HashSet<EquipSlot> { item.Slot } };
             var index = IndexOf(item.Id);
-            if (index < 0)
-            {
-                Filter = new FilterState { Slots = new HashSet<EquipSlot> { item.Slot } };
-                index = IndexOf(item.Id);
-            }
-            if (index < 0)
-                return false;
-            GoToPage(index / PageSize);
-            return true;
+            GoToPage(Math.Max(0, index) / PageSize);
+            return index >= 0;
         }
 
         int IndexOf(uint id)

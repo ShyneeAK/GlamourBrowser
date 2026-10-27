@@ -112,6 +112,7 @@ Handwerk,Crafting,Artisanat,製作
 Heavensward,Heavensward,Heavensward,蒼天のイシュガルド
 Heiler,Healer,Soigneur,ヒーラー
 Hände,Hands,Mains,手
+Hinweis bei Teilen außerhalb der Filter,Hint for pieces outside the filters,Avertir pour les pièces hors des filtres,フィルター外の装備の通知
 Händler,Vendor,Marchand,商人
 Händler (Gil),Vendor (Gil),Marchand (gils),商人（ギル）
 Händler-NPCs,Vendor NPCs,PNJ marchands,商人NPC
@@ -230,6 +231,7 @@ Neuer Ordner,New folder,Nouveau dossier,新しいフォルダー
 Neues Set,New Set,Nouvel ensemble,新規セット
 Neueste zuerst,Newest first,Plus récents d'abord,新しい順
 Neuigkeiten anzeigen,Show what's new,Afficher les nouveautés,新機能を表示
+Nicht mehr anzeigen,Don't show again,Ne plus afficher,今後表示しない
 Nicht eingeloggt,Not logged in,Non connecté,ログインしていません
 nicht erreichbar,unreachable,injoignable,接続できません
 nicht färbbar,not dyeable,non teintable,染色不可
@@ -367,6 +369,7 @@ Zurücksetzen,Reset,Réinitialiser,リセット
 "{0} Sets importiert, {1} übersprungen","{0} sets imported, {1} skipped","{0} ensembles importés, {1} ignorés",{0}件のセットを取り込み、{1}件をスキップ
 {0} Spalten × {1} Zeilen,{0} columns × {1} rows,{0} colonnes × {1} lignes,{0}列 × {1}行
 {0} Teile,{0} pieces,{0} pièces,{0}点
+{0} ist mit den aktuellen Filtern nicht zu finden.,{0} can't be found with the current filters.,{0} est introuvable avec les filtres actuels.,{0}は現在のフィルターでは見つかりません。
 {0} Treffer,{0} results,{0} résultats,{0}件
 {0} von {1} Teilen übertragen,{0} of {1} pieces transferred,{0} pièce(s) sur {1} transférée(s),{1}点中{0}点を転送しました
 {0} · Auswahl,{0} · Optional reward,{0} · Au choix,{0} · 選択報酬

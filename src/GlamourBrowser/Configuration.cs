@@ -40,6 +40,8 @@ public sealed class Configuration : IPluginConfiguration
     /// <summary>Weapon tiles with the weapon drawn (slower: every tile plays the draw); off = on the back.</summary>
     public bool TileWeaponsDrawn { get; set; }
     public bool DimMissingTiles { get; set; } = true;
+    /// <summary>The hint when a worn piece clicked in the live pane is not among the filtered tiles ("Nicht mehr anzeigen" turns it off).</summary>
+    public bool HintPiecesOutsideFilters { get; set; } = true;
     /// <summary>The wishlist mode leaves out done wishes ("Erledigte ausblenden").</summary>
     public bool HideDoneWishes { get; set; }
     /// <summary>The wishlist mode shows the missing pieces grouped by source instead of tiles.</summary>

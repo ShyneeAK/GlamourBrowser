@@ -55,6 +55,9 @@ public sealed unsafe class LivePane
     private readonly HashSet<uint> openPieces = new();
     private const int SourcesPerCategory = 3;
     private const float CardFrameScale = 1.4f;
+    private const string OutsideFiltersPopup = "##outside-filters";
+    // The worn piece the filters hide, named by the hint popup.
+    private string outsideFilters = "";
 
     public LivePane(BrowserState state, OwnershipService ownership, LivePreview live, CalibrationService calibration, JobCatalog jobs, Theme.Theme theme,
                     SourceService sources, WishlistService wishlist, CustomSetService customSets, DyeCatalog dyes, CustomSetEditor editor,
@@ -233,11 +236,34 @@ public sealed unsafe class LivePane
             {
                 state.Selected = subject;
                 live.Select(subject);
-                state.ShowInGrid(subject.Item);
+                if (!state.ShowInGrid(subject.Item) && config.HintPiecesOutsideFilters)
+                {
+                    outsideFilters = subject.Name;
+                    ImGui.OpenPopup(OutsideFiltersPopup);
+                }
             }
             if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
                 tryOn.TryOn.TakeOff(piece.Slot);
         }
+        DrawOutsideFiltersHint();
+    }
+
+    /// <summary>The filters stay when a worn piece is clicked; when they hide it, this says why its tile is missing.</summary>
+    private void DrawOutsideFiltersHint()
+    {
+        if (!ImGui.BeginPopup(OutsideFiltersPopup))
+            return;
+        ImGui.TextUnformatted(Loc.F("{0} ist mit den aktuellen Filtern nicht zu finden.", outsideFilters));
+        var hide = !config.HintPiecesOutsideFilters;
+        if (ImGui.Checkbox(Loc.T("Nicht mehr anzeigen"), ref hide))
+        {
+            config.HintPiecesOutsideFilters = !hide;
+            config.Save();
+        }
+        ImGui.Spacing();
+        if (ImGui.Button("OK"))
+            ImGui.CloseCurrentPopup();
+        ImGui.EndPopup();
     }
 
     private void DrawLive(Vector2 area)
