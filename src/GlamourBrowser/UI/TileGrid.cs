@@ -733,12 +733,23 @@ public sealed class TileGrid
 
         // Amber when listed, faint on a hovered tile to show where to click; a render failure's marker moves right of it.
         var listed = wishlist.IsListed(subject);
-        var showStar = listed || hovered && canWish;
+        // An item not on the wishlist whose model is, in another item: the star half amber, always shown.
+        var wishedTwins = !listed && subject is ItemSubject { Item: var wishOf }
+            ? state.SameModelAs(wishOf.Id).Where(t => t.Id != wishOf.Id && state.ItemSubjectFor(t.Id) is { } twin && wishlist.IsListed(twin)).ToList()
+            : [];
+        var showStar = listed || wishedTwins.Count > 0 || hovered && canWish;
         if (showStar)
         {
-            DrawWishStar(drawList, starPos, listed ? colors.Warning : overStar ? colors.Text : (colors.TextMuted & 0x00FFFFFF) | 0xA0000000);
+            var plain = overStar ? colors.Text : (colors.TextMuted & 0x00FFFFFF) | 0xA0000000;
+            if (wishedTwins.Count > 0)
+                DrawHalfWishStar(drawList, starPos, colors.Warning, plain);
+            else
+                DrawWishStar(drawList, starPos, listed ? colors.Warning : plain);
             if (overStar)
-                ImGui.SetTooltip(listed ? Loc.T("Von der Wunschliste nehmen") : Loc.T("Auf die Wunschliste"));
+                ImGui.SetTooltip((listed ? Loc.T("Von der Wunschliste nehmen") : Loc.T("Auf die Wunschliste"))
+                                 + (wishedTwins.Count > 0
+                                     ? "\n" + Loc.F("Gleiches Modell auf der Wunschliste:\n{0}", string.Join("\n", wishedTwins.Take(5).Select(t => t.Name)))
+                                     : ""));
         }
         // Always shown, unlike the star: it tells which items have others of their model; green when one of them is owned.
         if (twins.Count > 0)
@@ -948,6 +959,16 @@ public sealed class TileGrid
             drawList.AddText(at + Vector2.One, 0xC0000000, glyph);
             drawList.AddText(at, color, glyph);
         }
+    }
+
+    /// <summary>The star's left half in <paramref name="half"/>, the right half in <paramref name="rest"/>, like the split ownership corner.</summary>
+    private static void DrawHalfWishStar(ImDrawListPtr drawList, Vector2 at, uint half, uint rest)
+    {
+        DrawWishStar(drawList, at, rest);
+        var size = WishStarSize();
+        drawList.PushClipRect(at, at + new Vector2(size.X / 2, size.Y + 2), true);
+        DrawWishStar(drawList, at, half);
+        drawList.PopClipRect();
     }
 
     internal static Vector2 WishStarSize()
