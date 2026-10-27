@@ -8,7 +8,10 @@ using GlamourBrowser.Core.Ui;
 
 namespace GlamourBrowser.UI;
 
-/// <summary>What is new: opens by itself after an update with the versions not seen yet, or from the settings with all of them.</summary>
+/// <summary>
+/// What is new: opens with the main window the first time it is opened after an update, with the versions not seen yet,
+/// or from the settings with all of them.
+/// </summary>
 public sealed class ChangelogWindow : Window
 {
     private readonly Configuration config;

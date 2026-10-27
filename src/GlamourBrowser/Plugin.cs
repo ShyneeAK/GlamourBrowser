@@ -77,6 +77,7 @@ public sealed class Plugin : IDalamudPlugin
     public Plugin()
     {
         var saved = PluginInterface.GetPluginConfig() as Configuration;
+        var freshInstall = saved == null;
         config = saved ?? new Configuration();
         if (config.Version < 3)
         {
@@ -172,11 +173,12 @@ public sealed class Plugin : IDalamudPlugin
             theme,
             config,
             settingsWindow.Toggle,
-            itemTooltip);
+            itemTooltip,
+            // The news after an update open with the main window, the first time it is opened after the update.
+            () => changelogWindow.ShowAfterUpdate(freshInstall));
         windowSystem.AddWindow(mainWindow);
         windowSystem.AddWindow(settingsWindow);
         windowSystem.AddWindow(changelogWindow);
-        changelogWindow.ShowAfterUpdate(freshInstall: saved == null);
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {

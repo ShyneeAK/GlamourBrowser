@@ -23,11 +23,13 @@ public sealed class MainWindow : Window
     private readonly Theme.Theme theme;
     private readonly Configuration config;
     private readonly NativeItemTooltip itemTooltip;
+    // Called each time the window opens (the news after an update show then, not when the plugin loads).
+    private readonly Action opened;
     private IDisposable? themeScope;
     private IDisposable? fontScope;
 
     public MainWindow(LivePane livePane, TopBar topBar, FilterColumn filterColumn, TileGrid grid, Theme.Theme theme, Configuration config,
-                      Action openSettings, NativeItemTooltip itemTooltip)
+                      Action openSettings, NativeItemTooltip itemTooltip, Action opened)
         : base("Shynees Glamour Dresser##ShyneesGlamourDresser")
     {
         this.livePane = livePane;
@@ -37,6 +39,7 @@ public sealed class MainWindow : Window
         this.theme = theme;
         this.config = config;
         this.itemTooltip = itemTooltip;
+        this.opened = opened;
         SizeConstraints = new WindowSizeConstraints { MinimumSize = new Vector2(1100, 650) };
         TitleBarButtons.Add(new TitleBarButton
         {
@@ -46,6 +49,8 @@ public sealed class MainWindow : Window
             ShowTooltip = () => ImGui.SetTooltip(Loc.T("Einstellungen")),
         });
     }
+
+    public override void OnOpen() => opened();
 
     public override void PreDraw()
     {
