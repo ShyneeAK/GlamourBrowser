@@ -233,6 +233,7 @@ public sealed class TileGrid
         }
         else
             wheel.Reset();
+        HandlePageKeys();
     }
 
     /// <summary>Above the pieces of the sets opened from the item card: back to the grid before, and the sets' names.</summary>
@@ -381,6 +382,46 @@ public sealed class TileGrid
     /// fewer tiles).
     /// </summary>
     /// <param name="room">Height from the grid's top to the bottom of the room for the page controls.</param>
+    private const string PagePopup = "##gotopage";
+    // The page number being typed (1 for the first), taken on Enter.
+    private int typedPage;
+
+    private void DrawPagePopup()
+    {
+        if (!ImGui.BeginPopup(PagePopup))
+            return;
+        if (ImGui.IsWindowAppearing())
+            ImGui.SetKeyboardFocusHere();
+        ImGui.SetNextItemWidth(110 * UiScale.Global);
+        if (ImGui.InputInt(Loc.F("von {0}", state.PageCount), ref typedPage, 1, 10, flags: ImGuiInputTextFlags.EnterReturnsTrue))
+        {
+            state.ShowPage(typedPage - 1);
+            ImGui.CloseCurrentPopup();
+        }
+        ImGui.EndPopup();
+    }
+
+    /// <summary>
+    /// Page keys while the main window has the focus and nothing is typed: Page Up/Down, Home and End, and the arrow keys
+    /// unless ImGui navigates with them.
+    /// </summary>
+    private void HandlePageKeys()
+    {
+        var io = ImGui.GetIO();
+        if (!ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) || io.WantTextInput || ImGui.IsAnyItemActive()
+            || ImGui.IsPopupOpen("", ImGuiPopupFlags.AnyPopupId | ImGuiPopupFlags.AnyPopupLevel))
+            return;
+        var arrows = (io.ConfigFlags & ImGuiConfigFlags.NavEnableKeyboard) == 0;
+        if (ImGui.IsKeyPressed(ImGuiKey.PageDown) || arrows && ImGui.IsKeyPressed(ImGuiKey.RightArrow))
+            state.NextPage();
+        else if (ImGui.IsKeyPressed(ImGuiKey.PageUp) || arrows && ImGui.IsKeyPressed(ImGuiKey.LeftArrow))
+            state.PreviousPage();
+        else if (ImGui.IsKeyPressed(ImGuiKey.Home, false))
+            state.ShowFirstPage();
+        else if (ImGui.IsKeyPressed(ImGuiKey.End, false))
+            state.ShowLastPage();
+    }
+
     private void DrawPager(Vector2 gridTopLeft, PageLayoutResult layout, float room)
     {
         var style = ImGui.GetStyle();
@@ -405,7 +446,15 @@ public sealed class TileGrid
             state.PreviousPage();
         ImGui.SameLine();
         ImGui.AlignTextToFramePadding();
-        ImGui.TextUnformatted(pageText);
+        // A click on the page number lets one be typed.
+        if (ImGui.Selectable($"{pageText}##page", false, ImGuiSelectableFlags.None, ImGui.CalcTextSize(pageText)))
+        {
+            typedPage = state.PageIndex + 1;
+            ImGui.OpenPopup(PagePopup);
+        }
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip(Loc.T("Klick: Seite eingeben\nMausrad: blättern, mit Umschalt 10 Seiten\nBild auf/ab, Pos1, Ende: blättern"));
+        DrawPagePopup();
         ImGui.SameLine();
         if (ImGui.ArrowButton("##next", ImGuiDir.Right))
             state.NextPage();

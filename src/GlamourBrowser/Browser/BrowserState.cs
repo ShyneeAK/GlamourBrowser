@@ -208,6 +208,9 @@ public sealed class BrowserState
     /// <summary>Pages forward (or back, negative) by <paramref name="pages"/>, stopping at the first and the last page.</summary>
     public void MoveBy(int pages) => GoToPage(PageIndex + pages);
 
+    /// <summary>The page with this index (0 for the first), clamped to the pages there are.</summary>
+    public void ShowPage(int index) => GoToPage(index);
+
     /// <summary>
     /// The item's slot in the item mode, on the page with its tile, to browse on from there. The other filters stay;
     /// when they hide the item, the slot's first page and false.

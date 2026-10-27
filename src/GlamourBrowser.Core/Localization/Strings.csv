@@ -412,3 +412,13 @@ Gruppenpose,Group pose,Pose de groupe,グループポーズ
 Gebietswechsel,Changing areas,Changement de zone,エリア移動中
 Zwischensequenz,Cutscene,Cinématique,カットシーン
 Im Anprobe-Fenster des Spiels öffnen,Open in the game's Try On window,Ouvrir dans la fenêtre d'essayage du jeu,ゲームの試着ウィンドウで開く
+von {0},of {0},sur {0},/ {0}
+"Klick: Seite eingeben
+Mausrad: blättern, mit Umschalt 10 Seiten
+Bild auf/ab, Pos1, Ende: blättern","Click: type a page
+Mouse wheel: page, with Shift 10 pages
+Page Up/Down, Home, End: page","Clic : saisir une page
+Molette : changer de page, avec Maj 10 pages
+Page préc./suiv., Début, Fin : changer de page","クリック：ページを入力
+マウスホイール：ページ送り（Shiftで10ページ）
+Page Up/Down・Home・End：ページ送り"
