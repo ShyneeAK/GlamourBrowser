@@ -248,9 +248,14 @@ public sealed unsafe class LivePane
         DrawOutsideFiltersHint();
     }
 
-    /// <summary>The filters stay when a worn piece is clicked; when they hide it, this says why its tile is missing.</summary>
+    /// <summary>
+    /// The filters stay when a worn piece is clicked; when they hide it, this says why its tile is missing. In the middle
+    /// of the screen, where the eyes are, not at the mouse.
+    /// </summary>
     private void DrawOutsideFiltersHint()
     {
+        var viewport = ImGui.GetMainViewport();
+        ImGui.SetNextWindowPos(viewport.Pos + viewport.Size / 2, ImGuiCond.Appearing, new Vector2(0.5f));
         if (!ImGui.BeginPopup(OutsideFiltersPopup))
             return;
         ImGui.TextUnformatted(Loc.F("{0} ist mit den aktuellen Filtern nicht zu finden.", outsideFilters));
