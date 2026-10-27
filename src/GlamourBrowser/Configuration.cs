@@ -20,7 +20,8 @@ public sealed class Configuration : IPluginConfiguration
 
     public int Columns { get; set; } = 3;
     public int Rows { get; set; } = 2;
-    public TileMode TileMode { get; set; } = TileMode.CurrentOutfit;
+    /// <summary>The basis of tiles and try-on ("Alles anlegen / ablegen"); a new installation starts with everything off.</summary>
+    public TileMode TileMode { get; set; } = TileMode.Underwear;
     /// <summary>Tiles rendered at the same time, 1–3; a debug setting.</summary>
     public int ParallelViews { get; set; } = 3;
     /// <summary>The plugin version whose news the player has seen; the changelog shows what came after it.</summary>
