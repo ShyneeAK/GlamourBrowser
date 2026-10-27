@@ -176,8 +176,10 @@ public sealed class TileGrid
                 return;
             }
         }
-        // Nothing found instead of an empty grid, with a way out.
-        if (!state.PiecesOpen && state.Filter.Mode is BrowseMode.Items or BrowseMode.Sets && state.Results.Count == 0)
+        // Nothing found instead of an empty grid, with a way out; not while the ownership filter waits for the ownership
+        // data (at login), where a click would throw away the restored filter.
+        var waitsForOwnership = state.Filter.Ownership != OwnershipFilter.All && ownership.Current == null;
+        if (!state.PiecesOpen && state.Filter.Mode is BrowseMode.Items or BrowseMode.Sets && state.Results.Count == 0 && !waitsForOwnership)
         {
             ImGui.TextDisabled(Loc.T("Keine Treffer"));
             if (FilterChips.CanResetAll(state.Filter) && ImGui.Button(Loc.T("Alle zurücksetzen")))
@@ -398,7 +400,8 @@ public sealed class TileGrid
         if (ImGui.IsWindowAppearing())
             ImGui.SetKeyboardFocusHere();
         ImGui.SetNextItemWidth(110 * UiScale.Global);
-        if (ImGui.InputInt(Loc.F("von {0}", state.PageCount), ref typedPage, 1, 10, flags: ImGuiInputTextFlags.EnterReturnsTrue))
+        // No +/- buttons (they would count as Enter); the id stays when the page count changes while typing.
+        if (ImGui.InputInt($"{Loc.F("von {0}", state.PageCount)}###gotopage", ref typedPage, 0, 0, flags: ImGuiInputTextFlags.EnterReturnsTrue))
         {
             state.ShowPage(typedPage - 1);
             ImGui.CloseCurrentPopup();
@@ -407,8 +410,8 @@ public sealed class TileGrid
     }
 
     /// <summary>
-    /// Page keys while the main window has the focus and nothing is typed: Page Up/Down, Home and End, and the arrow keys
-    /// unless ImGui navigates with them.
+    /// Page keys while the main window has the focus and nothing is typed: Page Up/Down, Home and End. Not the arrow keys:
+    /// the game gets the keys as well (ImGui does not take them without a text field), and it turns the camera with those.
     /// </summary>
     private void HandlePageKeys()
     {
@@ -416,10 +419,9 @@ public sealed class TileGrid
         if (!ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) || io.WantTextInput || ImGui.IsAnyItemActive()
             || ImGui.IsPopupOpen("", ImGuiPopupFlags.AnyPopupId | ImGuiPopupFlags.AnyPopupLevel))
             return;
-        var arrows = (io.ConfigFlags & ImGuiConfigFlags.NavEnableKeyboard) == 0;
-        if (ImGui.IsKeyPressed(ImGuiKey.PageDown) || arrows && ImGui.IsKeyPressed(ImGuiKey.RightArrow))
+        if (ImGui.IsKeyPressed(ImGuiKey.PageDown))
             state.NextPage();
-        else if (ImGui.IsKeyPressed(ImGuiKey.PageUp) || arrows && ImGui.IsKeyPressed(ImGuiKey.LeftArrow))
+        else if (ImGui.IsKeyPressed(ImGuiKey.PageUp))
             state.PreviousPage();
         else if (ImGui.IsKeyPressed(ImGuiKey.Home, false))
             state.ShowFirstPage();

@@ -286,6 +286,8 @@ public sealed class Plugin : IDalamudPlugin
     {
         lock (RenderSync.Lock)
         {
+            // The last change of a quick series of filter changes (the browser writes at most once a second).
+            browser.SaveFilterIfDue();
             // Closed window: release everything like a zone change, so nothing renders in the background.
             PauseReason = WhyPause();
             var pause = PauseReason != null || !mainWindow.IsOpen;
@@ -332,8 +334,15 @@ public sealed class Plugin : IDalamudPlugin
 
     public void Dispose()
     {
-        // What was changed since the last write (the browser writes its filter at most once a second).
-        config.Save();
+        // What was changed since the last write; a failed write must not stop the unload.
+        try
+        {
+            config.Save();
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Could not save the configuration on unload");
+        }
         // Stop drawing first: the UI reads the tile textures that are released below.
         PluginInterface.UiBuilder.Draw -= windowSystem.Draw;
         PluginInterface.UiBuilder.Draw -= itemTooltip.Update;

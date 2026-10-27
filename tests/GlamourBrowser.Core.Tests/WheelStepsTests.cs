@@ -23,6 +23,15 @@ public class WheelStepsTests
     }
 
     [Fact]
+    public void FramesWithoutInputKeepTheSum()
+    {
+        var wheel = new WheelSteps();
+        Assert.Equal(0, wheel.Add(-0.6f));
+        Assert.Equal(0, wheel.Add(0f));
+        Assert.Equal(-1, wheel.Add(-0.6f));
+    }
+
+    [Fact]
     public void ATurnTheOtherWayStartsAfresh()
     {
         var wheel = new WheelSteps();

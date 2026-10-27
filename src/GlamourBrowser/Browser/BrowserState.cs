@@ -40,6 +40,7 @@ public sealed class BrowserState
     private readonly IReadOnlyDictionary<uint, ItemSubject> leftRings;
     private FilterState filter = new();
     private DateTime filterSaved = DateTime.MinValue;
+    private bool filterUnsaved;
     private readonly PageMemory pages = new();
     private readonly PageHistory history = new();
     private readonly TryOnService tryOn;
@@ -104,15 +105,12 @@ public sealed class BrowserState
             if (value.Mode != BrowseMode.MySets)
                 OpenFolder = 0;
             // Kept for the next start; the search is not, so typing does not write the configuration. Written at most once
-            // a second (the level slider changes the filter on every frame of a drag); the plugin writes the rest on unload.
+            // a second (the level slider changes the filter on every frame of a drag), the last change by SaveFilterIfDue.
             if (!SavedFilter.SameKept(filter, value))
             {
                 config.Filter = SavedFilter.From(value);
-                if (DateTime.UtcNow - filterSaved >= TimeSpan.FromSeconds(1))
-                {
-                    config.Save();
-                    filterSaved = DateTime.UtcNow;
-                }
+                filterUnsaved = true;
+                SaveFilterIfDue();
             }
             filter = value;
             Refresh();
@@ -239,6 +237,16 @@ public sealed class BrowserState
     public void ShowFirstPage() => GoToPage(0);
 
     public void ShowLastPage() => GoToPage(PageCount - 1);
+
+    /// <summary>Writes a changed filter once the last write is a second old; called on every framework tick too.</summary>
+    public void SaveFilterIfDue()
+    {
+        if (!filterUnsaved || DateTime.UtcNow - filterSaved < TimeSpan.FromSeconds(1))
+            return;
+        config.Save();
+        filterSaved = DateTime.UtcNow;
+        filterUnsaved = false;
+    }
 
     /// <summary>Pages forward (or back, negative) by <paramref name="pages"/>, stopping at the first and the last page.</summary>
     public void MoveBy(int pages) => GoToPage(PageIndex + pages);
