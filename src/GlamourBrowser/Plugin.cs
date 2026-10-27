@@ -44,6 +44,7 @@ public sealed class Plugin : IDalamudPlugin
     private const string ShortCommandName = "/sgd";
 
     private readonly WindowSystem windowSystem = new("ShyneesGlamourDresser");
+    private readonly UI.NativeItemTooltip itemTooltip;
     private readonly MainWindow mainWindow;
     private readonly SettingsWindow settingsWindow;
     private readonly ChangelogWindow changelogWindow;
@@ -150,9 +151,10 @@ public sealed class Plugin : IDalamudPlugin
         plates = new GlamourPlate.GlamourPlateBridge(variants, ownership, dyes, id => browser.ItemOf(id)?.Name ?? Loc.F("Item {0}", id),
             id => browser.ItemOf(id)?.DyeCount ?? 0);
         var filterControls = new TileFilterControls(browser, jobs, dyes, theme);
+        itemTooltip = new UI.NativeItemTooltip();
         mainWindow = new MainWindow(
             new LivePane(browser, ownership, live, calibration, jobs, theme, sources, wishlist, customSets, dyes, editor,
-                         new SetEditorPane(editor, browser, dyes, theme, plates), plates, tryOn, market, config),
+                         new SetEditorPane(editor, browser, dyes, theme, plates), plates, tryOn, market, config, itemTooltip),
             new TopBar(browser, config, theme, dyes, filterControls),
             new FilterColumn(browser, ownership, config, sources, theme, wristSides),
             new TileGrid(browser, cache, pool, ownership, live, config, theme, sources, jobs, wishlist,
@@ -160,7 +162,8 @@ public sealed class Plugin : IDalamudPlugin
                          memoryStats, tryOn, filterControls, market),
             theme,
             config,
-            settingsWindow.Toggle);
+            settingsWindow.Toggle,
+            itemTooltip);
         windowSystem.AddWindow(mainWindow);
         windowSystem.AddWindow(settingsWindow);
         windowSystem.AddWindow(changelogWindow);
@@ -179,6 +182,8 @@ public sealed class Plugin : IDalamudPlugin
         // Only now: the framework handler uses the windows and everything above (a tick during construction would find them null).
         Framework.Update += OnFrameworkUpdate;
         PluginInterface.UiBuilder.Draw += windowSystem.Draw;
+        // After the windows: they ask for the tooltip while drawing.
+        PluginInterface.UiBuilder.Draw += itemTooltip.Update;
         PluginInterface.UiBuilder.OpenMainUi += mainWindow.Toggle;
         PluginInterface.UiBuilder.OpenConfigUi += settingsWindow.Toggle;
     }
@@ -321,6 +326,8 @@ public sealed class Plugin : IDalamudPlugin
     {
         // Stop drawing first: the UI reads the tile textures that are released below.
         PluginInterface.UiBuilder.Draw -= windowSystem.Draw;
+        PluginInterface.UiBuilder.Draw -= itemTooltip.Update;
+        itemTooltip.Dispose();
         PluginInterface.UiBuilder.OpenMainUi -= mainWindow.Toggle;
         PluginInterface.UiBuilder.OpenConfigUi -= settingsWindow.Toggle;
         windowSystem.RemoveAllWindows();

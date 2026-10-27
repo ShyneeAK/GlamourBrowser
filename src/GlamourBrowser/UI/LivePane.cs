@@ -48,6 +48,7 @@ public sealed unsafe class LivePane
     private readonly TryOnService tryOn;
     private readonly MarketService market;
     private readonly Configuration config;
+    private readonly NativeItemTooltip itemTooltip;
     // When the try-on was last saved as a set, for a short confirmation next to the button.
     private DateTime? savedAt;
     private readonly HashSet<(uint Item, SourceCategory Category)> expanded = new();
@@ -61,8 +62,10 @@ public sealed unsafe class LivePane
 
     public LivePane(BrowserState state, OwnershipService ownership, LivePreview live, CalibrationService calibration, JobCatalog jobs, Theme.Theme theme,
                     SourceService sources, WishlistService wishlist, CustomSetService customSets, DyeCatalog dyes, CustomSetEditor editor,
-                    SetEditorPane editorPane, GlamourPlateBridge plates, TryOnService tryOn, MarketService market, Configuration config)
+                    SetEditorPane editorPane, GlamourPlateBridge plates, TryOnService tryOn, MarketService market, Configuration config,
+                    NativeItemTooltip itemTooltip)
     {
+        this.itemTooltip = itemTooltip;
         this.market = market;
         this.config = config;
         this.tryOn = tryOn;
@@ -425,6 +428,9 @@ public sealed unsafe class LivePane
         var rightWidth = MathF.Max(DyeBoxesWidth(item), sets.Count > 0 ? DyeEdge : 0);
         var wrapAt = ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X - rightWidth - ImGui.GetStyle().ItemSpacing.X;
         GameIcon.Draw(item.IconId, new Vector2(40 * UiScale.Global), FontAwesomeIcon.Tshirt, colors.TextMuted);
+        // The game's own tooltip, as in the armoire or the dresser.
+        if (ImGui.IsItemHovered())
+            itemTooltip.Hover(item.Id, ImGui.GetItemRectMin());
         ImGui.SameLine();
         ImGui.BeginGroup();
         ImGui.PushTextWrapPos(wrapAt);

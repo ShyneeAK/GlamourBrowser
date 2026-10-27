@@ -22,11 +22,12 @@ public sealed class MainWindow : Window
     private readonly TileGrid grid;
     private readonly Theme.Theme theme;
     private readonly Configuration config;
+    private readonly NativeItemTooltip itemTooltip;
     private IDisposable? themeScope;
     private IDisposable? fontScope;
 
     public MainWindow(LivePane livePane, TopBar topBar, FilterColumn filterColumn, TileGrid grid, Theme.Theme theme, Configuration config,
-                      Action openSettings)
+                      Action openSettings, NativeItemTooltip itemTooltip)
         : base("Shynees Glamour Dresser##ShyneesGlamourDresser")
     {
         this.livePane = livePane;
@@ -35,6 +36,7 @@ public sealed class MainWindow : Window
         this.grid = grid;
         this.theme = theme;
         this.config = config;
+        this.itemTooltip = itemTooltip;
         SizeConstraints = new WindowSizeConstraints { MinimumSize = new Vector2(1100, 650) };
         TitleBarButtons.Add(new TitleBarButton
         {
@@ -64,6 +66,7 @@ public sealed class MainWindow : Window
     {
         lock (RenderSync.Lock)
         {
+            itemTooltip.Avoid(ImGui.GetWindowPos(), ImGui.GetWindowPos() + ImGui.GetWindowSize());
             var scale = UiScale.Global;
             var spacing = ImGui.GetStyle().ItemSpacing.X;
             var total = ImGui.GetContentRegionAvail().X;
