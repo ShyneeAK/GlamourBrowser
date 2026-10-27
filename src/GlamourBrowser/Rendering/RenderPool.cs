@@ -94,6 +94,8 @@ public sealed unsafe class RenderPool : IDisposable
     // The try-on without the slots a tile covers and without what blocks them (TryOn.LookFor).
     private readonly Func<ushort, IReadOnlyList<CustomPiece>> look;
     private readonly Func<uint, GlamourItem?> itemOf;
+    // The slots a tile leaves free of the try-on: its own, and the weapons while the live view hides them.
+    private readonly Func<TileSubject, ushort> coverOf;
     private readonly List<Worker> workers = new();
     private readonly List<CharaViewHandle> suspended = new();
     private readonly Dictionary<TileKey, string> failures = new();
@@ -104,8 +106,9 @@ public sealed unsafe class RenderPool : IDisposable
 
     public RenderPool(TileQueue queue, TileCache<IDalamudTextureWrap> cache, Func<TileKey, TileSubject?> lookup,
                       AppearanceTracker appearance, Func<TileSubject?, CameraPreset?> cameraFor, Func<ushort, IReadOnlyList<CustomPiece>> look,
-                      Func<uint, GlamourItem?> itemOf)
+                      Func<uint, GlamourItem?> itemOf, Func<TileSubject, ushort> coverOf)
     {
+        this.coverOf = coverOf;
         this.itemOf = itemOf;
         this.look = look;
         this.queue = queue;
@@ -228,7 +231,7 @@ public sealed unsafe class RenderPool : IDisposable
         // Re-dress when the slots change too, otherwise the previous tile's items (e.g. a hat) stay on the
         // character. Sets with the same slots as the previous tile only swap their pieces. A robe covers legs and
         // feet as well: the look around it leaves them out, so nothing put on afterwards takes the robe off again.
-        var except = subject.Slots;
+        var except = coverOf(subject);
         // The try-on is the look around the tile's items; the key holds its hash.
         var redressed = worker.DressedAs != (key.AppearanceHash, except);
         if (redressed)
@@ -290,7 +293,7 @@ public sealed unsafe class RenderPool : IDisposable
                 worker.Subject = subject;
                 // Taken now, not when dressing: sheathing first can take a while, and a click meanwhile changes the try-on
                 // (the key would then hold another look than the tile shows, and could be shown again later).
-                worker.Look = look(subject.Slots);
+                worker.Look = look(coverOf(subject));
                 worker.ShowWeapons = LiveWeapons.TileShows(subject, worker.Look);
                 worker.SheatheFrames = -1;
                 worker.SheatheRetries = 0;

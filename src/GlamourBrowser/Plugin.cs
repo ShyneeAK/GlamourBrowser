@@ -112,7 +112,7 @@ public sealed class Plugin : IDalamudPlugin
         tryOn = new TryOnService(appearance, config, BlocksOf);
         // The browser state is created below; the pool asks it only once it ticks.
         pool = new RenderPool(queue, cache, key => browser?.SubjectFor(key), appearance, CameraFor, tryOn.TryOn.LookFor,
-                              id => browser?.ItemOf(id)) { MaxViews = config.ParallelViews };
+                              id => browser?.ItemOf(id), subject => browser?.CoverOf(subject) ?? subject.Slots) { MaxViews = config.ParallelViews };
         live = new LivePreview(pool, appearance, config, CameraFor, framing);
         // Variants too: their sources are merged into the base item.
         sources = new SourceService(catalog.Select(i => i.Id).Concat(variants.Keys).ToHashSet());

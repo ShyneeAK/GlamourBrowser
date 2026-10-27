@@ -388,7 +388,11 @@ public sealed unsafe class LivePane
                 ImGui.SetCursorScreenPos(buttonPos + step);
                 if (RoundButton.Draw("##weaponvisible", TryonIcons.ShowWeapon, edge, live.WeaponVisible,
                         live.WeaponVisible ? Loc.T("Waffe ausblenden") : Loc.T("Waffe anzeigen"), theme, FontAwesomeIcon.Eye))
+                {
                     live.WeaponVisible = !live.WeaponVisible;
+                    // The tiles follow: hidden there too, but on tiles of weapons.
+                    state.SetWeaponsHidden(!live.WeaponVisible);
+                }
                 NoWeaponHint(noWeapon);
             }
         }

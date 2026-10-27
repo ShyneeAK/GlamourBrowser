@@ -384,7 +384,7 @@ public sealed class BrowserState
 
     public TileKey KeyFor(TileSubject subject) => subject switch
     {
-        SetSubject set => TileKeys.ForSet(set.Set.Id, config.TileMode, LookHash(set.Slots), RenderWidth, IdleStance.Pose, set.Variant,
+        SetSubject set => TileKeys.ForSet(set.Set.Id, config.TileMode, LookHash(CoverOf(set)), RenderWidth, IdleStance.Pose, set.Variant,
                                           set.Set.Id.Kind == SetKind.Custom ? default : TileDye),
         ItemSubject { Item: var item } => ItemKey(item),
         FolderSubject { Cover: { } cover } => KeyFor(cover),
@@ -396,7 +396,8 @@ public sealed class BrowserState
     {
         var (stain0, stain1) = TileDyes.For(item, tileDyes.For(item.Id, TileDye));
         var stance = StanceFor(item);
-        return new(item.Id, stain0, stain1, config.TileMode, LookHash(item.Covers), RenderWidth,
+        var cover = LiveWeapons.TileCover(item.Covers, item.Slot is EquipSlot.MainHand or EquipSlot.OffHand, WeaponsHidden);
+        return new(item.Id, stain0, stain1, config.TileMode, LookHash(cover), RenderWidth,
                    stance.WeaponDrawn ? TileKey.StandardPose : stance.Pose, stance.WeaponDrawn, LeftHand: item.Slot == EquipSlot.RingLeft);
     }
 
@@ -427,6 +428,23 @@ public sealed class BrowserState
     public static readonly Stance WeaponDrawnStance = new(true, 0);
 
     /// <summary>How the character stands on the item's tile: weapons drawn (when enabled), otherwise the idle pose.</summary>
+    /// <summary>The live view hides the weapon: tiles that do not show a weapon themselves leave the try-on's out.</summary>
+    public bool WeaponsHidden { get; private set; }
+
+    public void SetWeaponsHidden(bool hidden)
+    {
+        lock (RenderSync.Lock)
+        {
+            if (WeaponsHidden == hidden)
+                return;
+            WeaponsHidden = hidden;
+            RequestTiles();
+        }
+    }
+
+    /// <summary>The slots a tile leaves free of the try-on around it (<see cref="LiveWeapons.TileCover(TileSubject, bool)"/>).</summary>
+    public ushort CoverOf(TileSubject subject) => LiveWeapons.TileCover(subject, WeaponsHidden);
+
     public Stance StanceFor(GlamourItem item)
         => config.TileWeaponsDrawn && item.Slot is EquipSlot.MainHand or EquipSlot.OffHand
             ? WeaponDrawnStance
