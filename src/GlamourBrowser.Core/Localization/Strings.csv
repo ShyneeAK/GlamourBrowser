@@ -467,3 +467,9 @@ Outfit auf Kacheln,Outfit on tiles,Tenue sur les vignettes,タイルに装備を
 Die Kacheln tragen das Outfit der Live-Ansicht; aus zeigen sie nur das Item bzw. Set selbst,"The tiles wear the outfit of the live view; off, they show only the item or set itself","Les vignettes portent la tenue de la vue en direct ; désactivé, elles n’affichent que l’objet ou l’ensemble lui-même",タイルにライブビューの装備を着せます。オフにするとアイテムまたはセットだけを表示します
 ({0} schon gefärbt),({0} already dyed),({0} déjà teints),（{0}箇所染色済み）
 {0} schon so in der Kommode gefärbt,{0} already dyed like this in the Glamour Dresser,{0} déjà teints ainsi dans la commode à mirages,{0}箇所はミラージュドレッサーで染色済み
+Glamour-Plate {0} importieren,Import glamour plate {0},Importer la tenue de mirage {0},ミラージュプレート{0}を取り込む
+Ausgewählte Glamour-Plate importieren,Import selected glamour plate,Importer la tenue de mirage choisie,選択中のミラージュプレートを取り込む
+Glamour-Plate {0} importiert,Glamour plate {0} imported,Tenue de mirage {0} importée,ミラージュプレート{0}を取り込みました
+Glamour-Plate {0} ist leer oder schon als Set da,Glamour plate {0} is empty or already a set,La tenue de mirage {0} est vide ou déjà un ensemble,ミラージュプレート{0}は空か、すでにセットにあります
+Den Glamour-Plate-Editor an der Kommode öffnen und dort eine Plate wählen,Open the glamour plate editor at the dresser and choose a plate there,Ouvre l’éditeur de tenues de mirage à la commode et choisis-y une tenue,ミラージュドレッサーでプレート編集を開き、プレートを選んでください
+"Die im Glamour-Plate-Editor gewählte Plate, wie sie gespeichert ist","The plate chosen in the glamour plate editor, as it is saved","La tenue choisie dans l’éditeur de tenues de mirage, telle qu’elle est enregistrée",プレート編集で選んだプレート（保存済みの内容）

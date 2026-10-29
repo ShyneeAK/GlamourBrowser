@@ -309,6 +309,7 @@ public sealed class TileGrid
         }
         if (!plates.PlatesLoaded && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip(Loc.T("Glamour-Plates zuerst an der Kommode öffnen"));
+        DrawImportSelectedPlate(store);
         if (importStatus is { } status && DateTime.Now - status.At < TimeSpan.FromSeconds(5))
         {
             ImGui.SameLine();
@@ -337,6 +338,30 @@ public sealed class TileGrid
     }
 
     private bool IsKnown(uint itemId) => state.ItemOf(itemId) != null;
+
+    /// <summary>Imports only the plate chosen in the game's open plate editor (as saved, without unsaved changes).</summary>
+    private void DrawImportSelectedPlate(CustomSetStore store)
+    {
+        var selected = plates.PlatesLoaded ? plates.SelectedPlate : null;
+        ImGui.SameLine();
+        using (ImRaii.Disabled(selected == null))
+        {
+            var label = selected is { } shown ? Loc.F("Glamour-Plate {0} importieren", shown + 1) : Loc.T("Ausgewählte Glamour-Plate importieren");
+            if (ImGui.Button($"{label}##importselected") && selected is { } index)
+            {
+                importStatus = (plates.ImportPlate(index, store, IsKnown) switch
+                {
+                    true => Loc.F("Glamour-Plate {0} importiert", index + 1),
+                    false => Loc.F("Glamour-Plate {0} ist leer oder schon als Set da", index + 1),
+                    null => Loc.T("Glamour-Plates zuerst an der Kommode öffnen"),
+                }, DateTime.Now);
+            }
+        }
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip(selected == null
+                ? Loc.T("Den Glamour-Plate-Editor an der Kommode öffnen und dort eine Plate wählen")
+                : Loc.T("Die im Glamour-Plate-Editor gewählte Plate, wie sie gespeichert ist"));
+    }
 
     /// <summary>The start point "Glamour-Plate": one entry per saved plate with its number of pieces, once the game has the plates.</summary>
     private void DrawPlateStart()

@@ -91,6 +91,19 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
 
     public bool IsTransferring => running != null;
 
+    /// <summary>The plate chosen in the open plate editor (0-based), null while it is closed.</summary>
+    public int? SelectedPlate
+    {
+        get
+        {
+            var agent = AgentMiragePrismMiragePlate.Instance();
+            if (agent == null || !agent->IsAgentActive() || agent->Data == null)
+                return null;
+            var index = (int)agent->Data->SelectedMiragePlateIndex;
+            return index >= 0 && index < PlateCount ? index : null;
+        }
+    }
+
     /// <summary>The outcome of the last transfer until the UI has shown it (<see cref="ClearResult"/>).</summary>
     public TransferResult? LastResult { get; private set; }
 
@@ -333,6 +346,19 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
         foreach (var (plate, pieces) in imported.Reverse())
             store.Add(Loc.F("Glamour-Plate {0}", plate + 1), pieces, now);
         return (imported.Count, plates.Count(p => p.Count > 0) - imported.Count);
+    }
+
+    /// <summary>One saved plate as a set ("Glamour-Plate {n}"), unless it is empty or an existing set already has its pieces and dyes.</summary>
+    /// <returns>Whether a set was added; null while the plates are not loaded.</returns>
+    /// <param name="isKnown">Whether the catalog knows the item, see <see cref="ReadPlate"/>.</param>
+    public bool? ImportPlate(int index, CustomSetStore store, Func<uint, bool> isKnown)
+    {
+        if (ReadPlate(index, isKnown) is not { } pieces)
+            return null;
+        if (PlateImport.NewSets([pieces], store.Sets, variants) is not [var (_, imported)])
+            return false;
+        store.Add(Loc.F("Glamour-Plate {0}", index + 1), imported, DateTimeOffset.Now);
+        return true;
     }
 
     private IReadOnlyList<string> PlacesOf(uint itemId) => ownership.Current?.LocationsOf(itemId).Select(l => l.DisplayName).ToList() ?? [];
