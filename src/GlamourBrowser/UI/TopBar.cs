@@ -52,10 +52,10 @@ public sealed class TopBar
         if (ImGui.IsItemHovered() && !searchActive)
             ImGui.SetTooltip(Loc.T("Ein Wort mit Minus davor blendet aus, z. B. „robe -rock“"));
 
-        // Sort does not apply to the wishlist and the item lists (newest first); "Meine Sets" has its own.
-        var onlySearch = BrowseModes.OnlySearch(state.Filter.Mode);
-        var mySets = state.Filter.Mode == BrowseMode.MySets;
-        var unsorted = state.Filter.Mode == BrowseMode.Wishlist || BrowseModes.ItemList(state.Filter.Mode);
+        // "Zuletzt benutzt" keeps its order (newest first); "Meine Sets", the wishlist and the favourites have their own.
+        var mode = state.Filter.Mode;
+        var ownSort = mode is BrowseMode.MySets or BrowseMode.Wishlist or BrowseMode.Favorites;
+        var unsorted = mode == BrowseMode.History;
 
         // The tile mode (current outfit or underwear) is the "Alles anlegen" button of the live view, as in the game's try-on.
         var sort = Array.IndexOf(SortOrders, state.Sort);
@@ -64,11 +64,12 @@ public sealed class TopBar
             if (LabeledCombo("##sort", Loc.T("Sortierung"), 150 * scale, ref sort, SortOrders.Select(SortName).ToArray()) && sort >= 0)
                 state.SetSort(SortOrders[sort]);
         }
-        if (unsorted && !onlySearch && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+        if (unsorted && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip(Loc.T("Neueste zuerst"));
-        else if (mySets && ImGui.IsItemHovered())
-            ImGui.SetTooltip(Loc.T("Eigene Reihenfolge für Meine Sets; neueste und älteste nach dem Datum der letzten Änderung"));
-        DisabledHint(unsorted && onlySearch);
+        else if (ownSort && ImGui.IsItemHovered())
+            ImGui.SetTooltip(mode == BrowseMode.MySets
+                ? Loc.T("Eigene Reihenfolge für Meine Sets; neueste und älteste nach dem Datum der letzten Änderung")
+                : Loc.T("Eigene Reihenfolge für diese Liste; neueste und älteste nach dem Datum, an dem ein Eintrag dazukam"));
 
         // A picker instead of drag fields: its grid shows the size and takes a new one with one click.
         var columns = config.Columns;
@@ -153,11 +154,4 @@ public sealed class TopBar
     }
 
     private static string SlotName(EquipSlot slot) => SlotNames.All.FirstOrDefault(s => s.Slot == slot).Name ?? slot.ToString();
-
-    /// <summary>Why the control before it is grayed out in the wishlist and custom set modes.</summary>
-    private void DisabledHint(bool onlySearch)
-    {
-        if (onlySearch && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
-            ImGui.SetTooltip(BrowseModes.NotApplicable(state.Filter.Mode));
-    }
 }

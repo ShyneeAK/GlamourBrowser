@@ -8,11 +8,5 @@ public static class CustomSetSorting
 {
     /// <param name="changedOf">When a custom set (by id) was last changed.</param>
     public static IReadOnlyList<SetSubject> Apply(IEnumerable<SetSubject> sets, SortOrder sort, Func<uint, DateTimeOffset> changedOf)
-        => sort switch
-        {
-            // The same date: the set made later first (or last).
-            SortOrder.Newest => sets.OrderByDescending(s => changedOf(s.Set.Id.Value)).ThenByDescending(s => s.Set.Id.Value).ToList(),
-            SortOrder.Oldest => sets.OrderBy(s => changedOf(s.Set.Id.Value)).ThenBy(s => s.Set.Id.Value).ToList(),
-            _ => Sorting.Apply(sets, sort, s => s.Set.Level, s => s.Name, patch: null),
-        };
+        => Sorting.ByDate(sets, sort, s => changedOf(s.Set.Id.Value), s => s.Set.Level, s => s.Name, s => s.Set.Id.Value);
 }

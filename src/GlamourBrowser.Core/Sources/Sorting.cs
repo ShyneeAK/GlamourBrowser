@@ -1,8 +1,9 @@
-using GlamourBrowser.Core.Localization;
-
 namespace GlamourBrowser.Core.Sources;
 
-/// <summary>Orders items or sets after a <see cref="SortOrder"/>; names compare in the language's alphabet (Ä with A).</summary>
+/// <summary>
+/// Orders items or sets after a <see cref="SortOrder"/>; names compare in the language's alphabet (Ä with A), numbers in
+/// them by value (<see cref="NaturalComparer"/>).
+/// </summary>
 public static class Sorting
 {
     /// <param name="patch">The patch (0 = unknown); null sorts the patch orders by level instead.</param>
@@ -10,7 +11,7 @@ public static class Sorting
     public static IReadOnlyList<T> Apply<T>(IEnumerable<T> subjects, SortOrder sort, Func<T, int> level, Func<T, string> name,
                                             Func<T, float>? patch, Func<T, uint>? id = null)
     {
-        var names = StringComparer.Create(Loc.Culture, ignoreCase: true);
+        var names = NaturalComparer.ForLanguage();
         if (sort is SortOrder.Newest or SortOrder.Oldest && patch != null)
         {
             var newest = sort == SortOrder.Newest;
@@ -30,4 +31,19 @@ public static class Sorting
             _ => subjects.OrderByDescending(level).ThenBy(name, names).ToList(),
         };
     }
+
+    /// <summary>
+    /// The lists sorted by the date of their entries (wishlist, favourites, "Meine Sets"): newest and oldest by that date,
+    /// the other orders as <see cref="Apply{T}"/> without patches.
+    /// </summary>
+    /// <param name="dateOf">When the entry was added or last changed.</param>
+    /// <param name="id">Order among the same date (newest first: the highest).</param>
+    public static IReadOnlyList<T> ByDate<T>(IEnumerable<T> subjects, SortOrder sort, Func<T, DateTimeOffset> dateOf, Func<T, int> level,
+                                             Func<T, string> name, Func<T, uint> id)
+        => sort switch
+        {
+            SortOrder.Newest => subjects.OrderByDescending(dateOf).ThenByDescending(id).ToList(),
+            SortOrder.Oldest => subjects.OrderBy(dateOf).ThenBy(id).ToList(),
+            _ => Apply(subjects, sort, level, name, patch: null),
+        };
 }

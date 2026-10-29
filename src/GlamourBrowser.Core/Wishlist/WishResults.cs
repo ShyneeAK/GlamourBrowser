@@ -1,6 +1,7 @@
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Localization;
 using GlamourBrowser.Core.Sets;
+using GlamourBrowser.Core.Sources;
 
 namespace GlamourBrowser.Core.Wishlist;
 
@@ -31,6 +32,21 @@ public static class WishResults
             .Where(s => search.Matches(s.Wear.Select(p => p.Name).Prepend(s.Name)))
             .Where(s => !hideDone || !WishStatus.IsDone(s, isOwned))
             .ToList();
+    }
+
+    /// <summary>
+    /// A list of items and sets (wishlist, favourites) in the chosen order: newest and oldest by the date an entry was
+    /// added, level by the item's (a set's highest piece), or by name.
+    /// </summary>
+    public static IReadOnlyList<TileSubject> Sort(IEnumerable<TileSubject> subjects, SortOrder sort, Func<TileSubject, DateTimeOffset> addedOf)
+        => Sorting.ByDate(subjects, sort, addedOf, s => s switch { ItemSubject i => i.Item.LevelEquip, SetSubject set => set.Set.Level, _ => 0 },
+                          s => s.Name, s => s.Id.ItemId != 0 ? s.Id.ItemId : s.Id.Set.Value);
+
+    /// <summary>When each entry of a list was added, by the entry's subject; an unknown one counts as the oldest.</summary>
+    public static Func<TileSubject, DateTimeOffset> AddedOf(IEnumerable<WishEntry> entries)
+    {
+        var added = entries.ToDictionary(e => e.Key, e => e.Added);
+        return subject => added.GetValueOrDefault(WishKey.Of(subject), DateTimeOffset.MinValue);
     }
 
     /// <summary>What an empty wishlist grid says; null when it shows tiles, or while the sets load (the grid says that already).</summary>

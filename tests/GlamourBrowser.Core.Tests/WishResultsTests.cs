@@ -64,4 +64,17 @@ public class WishResultsTests
     [InlineData(1, 0, "kappe", false, true, "Keine Treffer")]
     public void EmptyHint_SaysWhyTheGridIsEmpty(int resolved, int shown, string search, bool hideDone, bool loading, string? expected)
         => Assert.Equal(expected, WishResults.EmptyHint(resolved, shown, search, hideDone, loading));
+
+    [Fact]
+    public void Sort_ByTheDateAdded_ByLevel_OrByName()
+    {
+        // The robe (level 70) was added before the Asuran set (level 60).
+        var addedOf = WishResults.AddedOf([new WishEntry(WishKey.ForItem(1), Now), new WishEntry(WishKey.ForSet(Known), Now.AddHours(1))]);
+        TileSubject[] list = [Robe, Asuran];
+
+        Assert.Equal([Asuran, Robe], WishResults.Sort(list, Sources.SortOrder.Newest, addedOf));
+        Assert.Equal([Robe, Asuran], WishResults.Sort(list, Sources.SortOrder.Oldest, addedOf));
+        Assert.Equal([Robe, Asuran], WishResults.Sort(list, Sources.SortOrder.Level, addedOf));
+        Assert.Equal([Asuran, Robe], WishResults.Sort(list, Sources.SortOrder.NameAscending, addedOf));
+    }
 }

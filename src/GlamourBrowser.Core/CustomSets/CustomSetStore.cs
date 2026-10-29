@@ -143,7 +143,7 @@ public sealed class CustomSetStore(ulong contentId, IReadOnlyDictionary<uint, ui
 
     private void InsertFolder(CustomFolder folder)
     {
-        var comparer = StringComparer.Create(Loc.Culture, true);
+        var comparer = Sources.NaturalComparer.ForLanguage();
         var index = folders.FindIndex(f => comparer.Compare(f.Name, folder.Name) > 0);
         folders.Insert(index < 0 ? folders.Count : index, folder);
     }

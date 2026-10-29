@@ -430,16 +430,30 @@ public sealed class BrowserState
         RequestTiles();
     }
 
-    /// <summary>The order the sort box shows and sets: the items' and sets', or that of "Meine Sets".</summary>
-    public SortOrder Sort => filter.Mode == BrowseMode.MySets ? config.MySetsSort : config.Sort;
+    /// <summary>
+    /// The order the sort box shows and sets: the items' and sets', or that of "Meine Sets", the wishlist or the
+    /// favourites (each its own); "Zuletzt benutzt" has none.
+    /// </summary>
+    public SortOrder Sort => filter.Mode switch
+    {
+        BrowseMode.MySets => config.MySetsSort,
+        BrowseMode.Wishlist => config.WishlistSort,
+        BrowseMode.Favorites => config.FavoritesSort,
+        _ => config.Sort,
+    };
 
     public void SetSort(SortOrder sort)
     {
+        switch (filter.Mode)
+        {
+            case BrowseMode.History:
+                return;
+            case BrowseMode.MySets: config.MySetsSort = sort; break;
+            case BrowseMode.Wishlist: config.WishlistSort = sort; break;
+            case BrowseMode.Favorites: config.FavoritesSort = sort; break;
+            default: config.Sort = sort; break;
+        }
         // Another order is another list: from its start, and remembered pages no longer apply.
-        if (filter.Mode == BrowseMode.MySets)
-            config.MySetsSort = sort;
-        else
-            config.Sort = sort;
         config.Save();
         pages.Forget();
         PageIndex = 0;
@@ -554,7 +568,8 @@ public sealed class BrowserState
                                                 filter.SearchText.Trim().Length > 0);
             }
             else if (filter.Mode == BrowseMode.Wishlist)
-                Results = WishResults.Filter(WishlistEntries, filter.SearchText, config.HideDoneWishes, isOwned);
+                Results = WishResults.Sort(WishResults.Filter(WishlistEntries, filter.SearchText, config.HideDoneWishes, isOwned),
+                                           config.WishlistSort, WishResults.AddedOf(wishlist.Current?.Entries ?? []));
             else if (filter.Mode == BrowseMode.Sets)
             {
                 // Without the index there are no sets yet (the grid says so).
@@ -567,7 +582,11 @@ public sealed class BrowserState
             else if (BrowseModes.ItemList(filter.Mode))
             {
                 if (filter.Mode == BrowseMode.Favorites)
-                    ShowItems(ListedItems(Favorites), keepOrder: true);
+                {
+                    var addedOf = WishResults.AddedOf(Favorites.Current?.Entries ?? []);
+                    ShowItems(Sorting.ByDate(ListedItems(Favorites), config.FavoritesSort, item => addedOf(itemSubjects[item.Id]), item => item.LevelEquip,
+                                             item => item.Name, item => item.Id), keepOrder: true);
+                }
                 else
                 {
                     if (historyShown == null || historyStore != History.Current)
