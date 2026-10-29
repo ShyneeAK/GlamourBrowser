@@ -1,5 +1,10 @@
 # What's new
 
+## 0.7.3.0
+- Transfer to glamour plate: sets with a dyed piece from an outfit in the dresser (e.g. boots from an outfit) are saved now. Until now the plate editor showed the set, but "Save" silently kept the old plate.
+- Language: a language change takes effect at once, also on slot names, tile texts, sources, window titles, the command help and this news.
+- The news after an update open with the main window the first time you open it, no longer when the plugin loads.
+
 ## 0.7.2.0
 - My Sets: the tiles show only the pieces saved in the set. A weapon from your outfit no longer joins them either.
 

@@ -1,5 +1,10 @@
 # Nouveautés
 
+## 0.7.3.0
+- Transférer vers une plaque de mirage : les ensembles avec une pièce teinte issue d’une tenue de la commode (p. ex. des bottes d’une tenue) sont maintenant enregistrés. Jusqu’ici, l’éditeur de plaque montrait l’ensemble, mais « Enregistrer » gardait l’ancienne plaque sans rien dire.
+- Langue : un changement de langue s’applique aussitôt, aussi aux noms d’emplacements, aux textes des vignettes, aux sources, aux titres des fenêtres, à l’aide des commandes et à ces nouveautés.
+- Les nouveautés après une mise à jour s’ouvrent avec la fenêtre principale la première fois que tu l’ouvres, et non plus au chargement du plugin.
+
 ## 0.7.2.0
 - Mes ensembles : les vignettes montrent seulement les pièces enregistrées dans l’ensemble. Une arme de ta tenue ne s’y ajoute plus non plus.
 

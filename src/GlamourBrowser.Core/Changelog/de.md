@@ -1,5 +1,10 @@
 # Neuigkeiten
 
+## 0.7.3.0
+- In Glamour-Plate übertragen: Sets mit einem gefärbten Teil aus einem Kleidungsset der Kommode (z. B. Stiefel aus einem Outfit) werden jetzt gespeichert. Bisher zeigte der Plate-Editor das Set, aber „Speichern“ behielt still die alte Plate.
+- Sprache: Ein Sprachwechsel wirkt sofort, auch auf Slot-Namen, Kacheltexte, Bezugsquellen, Fenstertitel, die Befehlshilfe und diese Neuigkeiten.
+- Die Neuigkeiten nach einem Update öffnen sich mit dem Hauptfenster, wenn du es das erste Mal öffnest, nicht schon beim Laden des Plugins.
+
 ## 0.7.2.0
 - Meine Sets: Die Kacheln zeigen nur die Teile, die im Set gespeichert sind. Auch eine Waffe aus deinem Outfit kommt nicht mehr dazu.
 
