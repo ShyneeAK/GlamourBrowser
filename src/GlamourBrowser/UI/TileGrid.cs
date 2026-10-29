@@ -147,9 +147,11 @@ public sealed class TileGrid
             ImGui.TextDisabled(wishlist.LoadFailed ? Loc.T("Wunschliste konnte nicht geladen werden") : Loc.T("Nicht eingeloggt"));
             return;
         }
-        if (state.Filter.Mode == BrowseMode.History && !DrawItemListState(state.History, Loc.T("Noch keine Items angeklickt")))
+        // An opened model or set stays when the list empties meanwhile (its last favourite taken off on a twin's tile).
+        if (state.Filter.Mode == BrowseMode.History && !state.PiecesOpen && !DrawItemListState(state.History, Loc.T("Noch keine Items angeklickt")))
             return;
-        if (state.Filter.Mode == BrowseMode.Favorites && !DrawItemListState(state.Favorites, Loc.T("Noch keine Favoriten – das Herz oben links auf einer Kachel merkt ein Item vor")))
+        if (state.Filter.Mode == BrowseMode.Favorites && !state.PiecesOpen
+            && !DrawItemListState(state.Favorites, Loc.T("Noch keine Favoriten – das Herz oben links auf einer Kachel merkt ein Item vor")))
             return;
 
         if (pool.IsPaused)
@@ -176,7 +178,11 @@ public sealed class TileGrid
             return;
         else if (BrowseModes.ItemList(state.Filter.Mode) && DrawListBar(state.Filter.Mode))
         {
-            planView.Draw(editor, state.Results);
+            // The filters apply to the plan too: with none left it would say "Alles erledigt".
+            if (state.Results.Count == 0)
+                DrawNoResults();
+            else
+                planView.Draw(editor, state.Results);
             return;
         }
         else if (state.Filter.Mode == BrowseMode.Sets && state.Results.Count == 0)
@@ -198,9 +204,7 @@ public sealed class TileGrid
         if (!state.PiecesOpen && state.Filter.Mode is BrowseMode.Items or BrowseMode.Sets or BrowseMode.History or BrowseMode.Favorites
             && state.Results.Count == 0 && !waitsForOwnership)
         {
-            ImGui.TextDisabled(Loc.T("Keine Treffer"));
-            if (FilterChips.CanResetAll(state.Filter) && ImGui.Button(Loc.T("Alle zurücksetzen")))
-                state.Filter = FilterChips.ResetAll(state.Filter);
+            DrawNoResults();
             return;
         }
 
@@ -354,6 +358,14 @@ public sealed class TileGrid
             }
         }
         ImGui.EndMenu();
+    }
+
+    /// <summary>"Keine Treffer" with a way out, instead of an empty grid.</summary>
+    private void DrawNoResults()
+    {
+        ImGui.TextDisabled(Loc.T("Keine Treffer"));
+        if (FilterChips.CanResetAll(state.Filter) && ImGui.Button(Loc.T("Alle zurücksetzen")))
+            state.Filter = FilterChips.ResetAll(state.Filter);
     }
 
     /// <summary>Why "Zuletzt benutzt" or "Favoriten" shows no tiles while logged out or still empty; false when there are none to show.</summary>
@@ -847,7 +859,7 @@ public sealed class TileGrid
                 ImGui.SetTooltip(Loc.T("Löschen"));
         }
         // The places of star and heart stay reserved while they can show, so the marker does not jump when the tile is hovered.
-        var markerX = (showStar || canWish ? 6 + starSize.X + 3 : 6f) + (canFavor || favored ? starSize.X + 8 : 0);
+        var markerX = canFavor || favored ? heartRect.Max.X - pos.X : showStar || canWish ? 6 + starSize.X + 3 : 6f;
         if (pool.Failures.TryGetValue(key, out var error))
         {
             drawList.AddText(pos + new Vector2(markerX, 4), ErrorColor, "!");

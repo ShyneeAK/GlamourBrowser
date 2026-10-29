@@ -57,7 +57,8 @@ public static class FilterChips
         if (state.Ownership != OwnershipFilter.All)
             chips.Add(new FilterChip(Loc.T(state.Ownership == OwnershipFilter.Owned ? "Habe ich" : "Fehlt mir"), state with { Ownership = OwnershipFilter.All }));
 
-        if (state.HideDuplicates)
+        // Sets have no duplicates (the checkbox is grayed out there).
+        if (state.HideDuplicates && state.Mode != BrowseMode.Sets)
             chips.Add(new FilterChip(DuplicatesName, state with { HideDuplicates = false }));
 
         if (!state.WearableOnly)

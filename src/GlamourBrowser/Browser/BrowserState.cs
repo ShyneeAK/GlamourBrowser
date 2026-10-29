@@ -31,9 +31,11 @@ public sealed class BrowserState
     private readonly SourceService sources;
     private readonly SetCatalog sets;
     private readonly CharacterListService wishlist;
-    // The list "Zuletzt benutzt" shows: while it is open, its own clicks do not reorder it (the tiles would jump away under
-    // the mouse); another character's list (login) does.
-    private WishlistStore? historyShown;
+    // "Zuletzt benutzt" as it was when the view was opened: while it is open, the clicks in it do not reorder it (the tiles
+    // would jump away under the mouse), whatever else refreshes it; opening the view again or another character's list
+    // (login) take it anew. Null when it needs taking.
+    private IReadOnlyList<GlamourItem>? historyShown;
+    private WishlistStore? historyStore;
     private readonly CustomSetService customSets;
     // A job's base class, for the job filter (gear made for one job may list its base class too).
     private readonly Func<uint, uint> parentOf;
@@ -121,6 +123,9 @@ public sealed class BrowserState
             // Another mode closes an open folder of "Meine Sets".
             if (value.Mode != BrowseMode.MySets)
                 OpenFolder = 0;
+            // Opened anew, "Zuletzt benutzt" shows the latest clicks.
+            if (value.Mode == BrowseMode.History && filter.Mode != BrowseMode.History)
+                historyShown = null;
             // Kept for the next start; the search is not, so typing does not write the configuration. Written at most once
             // a second (the level slider changes the filter on every frame of a drag), the last change by SaveFilterIfDue.
             if (!SavedFilter.SameKept(filter, value))
@@ -554,10 +559,14 @@ public sealed class BrowserState
             }
             else if (BrowseModes.ItemList(filter.Mode))
             {
-                var list = filter.Mode == BrowseMode.History ? History : Favorites;
-                if (filter.Mode == BrowseMode.History)
-                    historyShown = History.Current;
-                ShowItems(ListedItems(list), keepOrder: true);
+                if (filter.Mode == BrowseMode.Favorites)
+                    ShowItems(ListedItems(Favorites), keepOrder: true);
+                else
+                {
+                    if (historyShown == null || historyStore != History.Current)
+                        (historyShown, historyStore) = (ListedItems(History).ToList(), History.Current);
+                    ShowItems(historyShown, keepOrder: true);
+                }
             }
             else
                 ShowItems(catalog, keepOrder: false);
@@ -689,7 +698,7 @@ public sealed class BrowserState
 
     private void OnHistoryChanged()
     {
-        if (filter.Mode == BrowseMode.History && History.Current != historyShown)
+        if (filter.Mode == BrowseMode.History && History.Current != historyStore)
             Refresh();
     }
 

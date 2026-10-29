@@ -113,7 +113,8 @@ public sealed class Plugin : IDalamudPlugin
         ownership = new OwnershipService(variants);
         wishlist = new CharacterListService("wishlist", "Wishlist", variants);
         favorites = new CharacterListService("favorites", "Favorites", variants);
-        history = new CharacterListService("history", "History", variants);
+        // Changed with every click: saved at most once a second.
+        history = new CharacterListService("history", "History", variants, TimeSpan.FromSeconds(1));
         customSets = new CustomSetService(variants);
         inventoryReader = new InventoryReader(ownership);
         retainerReader = new RetainerReader(ownership);

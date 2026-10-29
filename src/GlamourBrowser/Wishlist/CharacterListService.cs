@@ -18,8 +18,13 @@ public sealed class CharacterListService : IDisposable
     private readonly string label;
     private readonly IReadOnlyDictionary<uint, uint> variants;
     private string? path;
-    // Changed since the last frame: saved and announced on the next one.
+    // Changed since the last frame: announced on the next one, and saved (see saveInterval).
     private bool dirty;
+    // Changed since the last save.
+    private bool saveDue;
+    // At most one save per interval (the history changes with every click); the last change is saved after it.
+    private readonly TimeSpan saveInterval;
+    private DateTime lastSave = DateTime.MinValue;
     // The last save failed: tried again with the next change and at logout, not on every frame.
     private bool unsaved;
 
@@ -37,8 +42,10 @@ public sealed class CharacterListService : IDisposable
     /// <param name="folder">The folder of the list's files in the plugin configuration, e.g. "wishlist".</param>
     /// <param name="label">The list's name in the log.</param>
     /// <param name="variants">"+N" variants mapped to their base item: a wish for a variant is a wish for its base.</param>
-    public CharacterListService(string folder, string label, IReadOnlyDictionary<uint, uint> variants)
+    /// <param name="saveInterval">The least time between two saves; zero saves every change on the next frame.</param>
+    public CharacterListService(string folder, string label, IReadOnlyDictionary<uint, uint> variants, TimeSpan saveInterval = default)
     {
+        this.saveInterval = saveInterval;
         this.variants = variants;
         this.label = label;
         directory = Path.Combine(Plugin.PluginInterface.ConfigDirectory.FullName, folder);
@@ -76,16 +83,20 @@ public sealed class CharacterListService : IDisposable
 
     private void Flush(IFramework framework) => Flush(retry: false);
 
-    /// <param name="retry">Also save when nothing changed but the last save failed (logout, unload).</param>
-    private void Flush(bool retry)
+    /// <param name="retry">
+    /// Save now: also a change within the save interval, and when nothing changed but the last save failed (logout,
+    /// unload).
+    /// </param>
+    /// <param name="announce">Raise <see cref="Changed"/> for a change; not at unload, when the browser is gone.</param>
+    private void Flush(bool retry, bool announce = true)
     {
         // The UI changes the list while drawing; the lock keeps saving from reading it halfway.
         lock (RenderSync.Lock)
         {
-            if (!dirty && !(retry && unsaved))
-                return;
-
-            if (Current != null && path != null)
+            if (dirty)
+                saveDue = true;
+            var save = saveDue && (retry || DateTime.UtcNow - lastSave >= saveInterval) || retry && unsaved;
+            if (save && Current != null && path != null)
             {
                 try
                 {
@@ -97,12 +108,16 @@ public sealed class CharacterListService : IDisposable
                     unsaved = true;
                     Plugin.Log.Warning(e, $"Saving {label} file {path} failed");
                 }
+                lastSave = DateTime.UtcNow;
             }
+            if (save)
+                saveDue = false;
 
             if (dirty)
             {
                 dirty = false;
-                Changed?.Invoke();
+                if (announce)
+                    Changed?.Invoke();
             }
         }
     }
@@ -155,13 +170,14 @@ public sealed class CharacterListService : IDisposable
         Current = null;
         path = null;
         unsaved = false;
+        saveDue = false;
         LoadFailed = false;
     }
 
     public void Dispose()
     {
         Plugin.Framework.Update -= Flush;
-        Flush(retry: true);
+        Flush(retry: true, announce: false);
         Plugin.ClientState.Login -= OnLogin;
         Plugin.ClientState.Logout -= OnLogout;
     }

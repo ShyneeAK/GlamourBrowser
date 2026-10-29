@@ -96,6 +96,8 @@ public class FilterChipsTests
         var chip = Assert.Single(Chips(new FilterState { HideDuplicates = true }));
         Assert.Equal("Modell-Duplikate ausblenden", chip.Label);
         Assert.False(chip.WithoutThis.HideDuplicates);
+        // Sets have no duplicates.
+        Assert.DoesNotContain(Chips(new FilterState { HideDuplicates = true, Mode = BrowseMode.Sets }), c => c.Label == chip.Label);
     }
 
     [Fact]
