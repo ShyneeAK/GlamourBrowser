@@ -40,6 +40,8 @@ public sealed class Configuration : IPluginConfiguration
 
     public AccentColor Accent { get; set; } = AccentColor.Blue;
     public SortOrder Sort { get; set; } = SortOrder.Level;
+    /// <summary>The order of "Meine Sets", apart from the items' (see <see cref="Core.CustomSets.CustomSetSorting"/>): the last changed first by default.</summary>
+    public SortOrder MySetsSort { get; set; } = SortOrder.Newest;
     public bool UseIdlePose { get; set; } = true;
     /// <summary>Weapon tiles with the weapon drawn (slower: every tile plays the draw); off = on the back.</summary>
     public bool TileWeaponsDrawn { get; set; }

@@ -52,12 +52,13 @@ public sealed class TopBar
         if (ImGui.IsItemHovered() && !searchActive)
             ImGui.SetTooltip(Loc.T("Ein Wort mit Minus davor blendet aus, z. B. „robe -rock“"));
 
-        // Sort does not apply to the wishlist, the custom sets and the item lists (newest first).
+        // Sort does not apply to the wishlist and the item lists (newest first); "Meine Sets" has its own.
         var onlySearch = BrowseModes.OnlySearch(state.Filter.Mode);
-        var unsorted = onlySearch || BrowseModes.ItemList(state.Filter.Mode);
+        var mySets = state.Filter.Mode == BrowseMode.MySets;
+        var unsorted = state.Filter.Mode == BrowseMode.Wishlist || BrowseModes.ItemList(state.Filter.Mode);
 
         // The tile mode (current outfit or underwear) is the "Alles anlegen" button of the live view, as in the game's try-on.
-        var sort = Array.IndexOf(SortOrders, config.Sort);
+        var sort = Array.IndexOf(SortOrders, state.Sort);
         using (ImRaii.Disabled(unsorted))
         {
             if (LabeledCombo("##sort", Loc.T("Sortierung"), 150 * scale, ref sort, SortOrders.Select(SortName).ToArray()) && sort >= 0)
@@ -65,7 +66,9 @@ public sealed class TopBar
         }
         if (unsorted && !onlySearch && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip(Loc.T("Neueste zuerst"));
-        DisabledHint(onlySearch);
+        else if (mySets && ImGui.IsItemHovered())
+            ImGui.SetTooltip(Loc.T("Eigene Reihenfolge für Meine Sets; neueste und älteste nach dem Datum der letzten Änderung"));
+        DisabledHint(unsorted && onlySearch);
 
         // A picker instead of drag fields: its grid shows the size and takes a new one with one click.
         var columns = config.Columns;

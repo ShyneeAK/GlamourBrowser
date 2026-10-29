@@ -430,10 +430,16 @@ public sealed class BrowserState
         RequestTiles();
     }
 
+    /// <summary>The order the sort box shows and sets: the items' and sets', or that of "Meine Sets".</summary>
+    public SortOrder Sort => filter.Mode == BrowseMode.MySets ? config.MySetsSort : config.Sort;
+
     public void SetSort(SortOrder sort)
     {
         // Another order is another list: from its start, and remembered pages no longer apply.
-        config.Sort = sort;
+        if (filter.Mode == BrowseMode.MySets)
+            config.MySetsSort = sort;
+        else
+            config.Sort = sort;
         config.Save();
         pages.Forget();
         PageIndex = 0;
@@ -542,7 +548,8 @@ public sealed class BrowserState
                 // A deleted folder (or another character's) closes.
                 if (OpenFolder != 0 && folders.All(f => f.Id != OpenFolder))
                     OpenFolder = 0;
-                var found = WishResults.Filter(MySets, filter.SearchText, hideDone: false, isOwned).OfType<SetSubject>().ToList();
+                var found = CustomSetSorting.Apply(WishResults.Filter(MySets, filter.SearchText, hideDone: false, isOwned).OfType<SetSubject>(),
+                                                   config.MySetsSort, id => customSets.Current?.Find(id)?.Changed ?? default);
                 Results = CustomSetFolders.View(found, folders, id => customSets.Current?.Find(id)?.Folder ?? 0, OpenFolder,
                                                 filter.SearchText.Trim().Length > 0);
             }
