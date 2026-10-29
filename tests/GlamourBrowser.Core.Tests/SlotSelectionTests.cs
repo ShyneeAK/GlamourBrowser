@@ -66,6 +66,8 @@ public class SlotSelectionTests
         Assert.False(SlotSelection.KeepsSelection(Chest, new FilterState { Slots = Set(EquipSlot.Feet) }));
         Assert.False(SlotSelection.KeepsSelection(Chest, new FilterState { Mode = BrowseMode.Sets }));
         Assert.True(SlotSelection.KeepsSelection(Chest, new FilterState { Mode = BrowseMode.Wishlist }));
+        Assert.True(SlotSelection.KeepsSelection(Chest, new FilterState { Mode = BrowseMode.History }));
+        Assert.True(SlotSelection.KeepsSelection(Chest, new FilterState { Mode = BrowseMode.Favorites }));
         Assert.True(SlotSelection.KeepsSelection(null, new FilterState { Slots = Set(EquipSlot.Feet) }));
     }
 

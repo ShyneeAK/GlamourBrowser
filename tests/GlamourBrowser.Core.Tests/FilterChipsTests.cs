@@ -91,6 +91,14 @@ public class FilterChipsTests
     }
 
     [Fact]
+    public void DuplicatesChip_ShowsTheDuplicatesAgain()
+    {
+        var chip = Assert.Single(Chips(new FilterState { HideDuplicates = true }));
+        Assert.Equal("Modell-Duplikate ausblenden", chip.Label);
+        Assert.False(chip.WithoutThis.HideDuplicates);
+    }
+
+    [Fact]
     public void DyeChip_RemovesTheDyeFilter()
         => Assert.False(Assert.Single(Chips(new FilterState { DyeableOnly = true })).WithoutThis.DyeableOnly);
 

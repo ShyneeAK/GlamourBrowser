@@ -1,5 +1,5 @@
 // Offline check of the source index against the game data (not part of the plugin).
-// Usage: SourceProbe <sqpack> [itemId ...] [--find "name part"] [--samples] [--sets] [--blocks] [--timeline [id ...]] [--accessories]
+// Usage: SourceProbe <sqpack> [itemId ...] [--find "name part"] [--samples] [--sets] [--blocks] [--timeline [id ...]] [--accessories] [--dyes]
 using System.Diagnostics;
 using GlamourBrowser.Core.Items;
 using GlamourBrowser.Core.Sets;
@@ -22,6 +22,14 @@ if (findIndex >= 0 && findIndex + 1 < args.Length)
 {
     foreach (var item in items.Where(i => i.EquipSlotCategory.RowId != 0 && i.Name.ExtractText().Contains(args[findIndex + 1], StringComparison.OrdinalIgnoreCase)).Take(20))
         Console.WriteLine($"{item.RowId}: {item.Name.ExtractText()}  ModelMain {item.ModelMain:X16} ModelSub {item.ModelSub:X16}");
+    return 0;
+}
+
+if (args.Contains("--dyes"))
+{
+    // Every dye of the Stain sheet and the items that give it (the generic dye or a dye of its own).
+    foreach (var stain in data.GetExcelSheet<Stain>()!.Where(s => !s.Name.IsEmpty))
+        Console.WriteLine($"{stain.RowId}: {stain.Name.ExtractText()}  -> {string.Join(", ", stain.Item.Where(i => i.RowId != 0).Select(i => $"{i.RowId} {i.Value.Name.ExtractText()}"))}");
     return 0;
 }
 

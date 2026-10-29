@@ -10,10 +10,14 @@ namespace GlamourBrowser.Data;
 /// <param name="Items">The items that give this dye (e.g. "Einfacher Farbstoff"), as the game's plate editor takes them.</param>
 public sealed record DyeInfo(byte Id, string Name, uint Color, byte Shade, byte SubOrder, IReadOnlyList<uint> Items);
 
+/// <summary>An item that gives dyes ("Einfacher Farbstoff", "Wolkenweißer Farbstoff"), for the dye counter.</summary>
+public sealed record DyeItem(uint Id, string Name, uint IconId);
+
 /// <summary>All dyes from the Stain sheet, by shade and then the game's order.</summary>
 public sealed class DyeCatalog
 {
     private readonly Dictionary<byte, DyeInfo> byId;
+    private readonly Dictionary<uint, DyeItem> dyeItems;
 
     public DyeCatalog(IDataManager data)
     {
@@ -25,7 +29,15 @@ public sealed class DyeCatalog
             .ThenBy(d => d.SubOrder)
             .ToList();
         byId = All.ToDictionary(d => d.Id);
+        var items = data.GetExcelSheet<Item>();
+        dyeItems = All.SelectMany(d => d.Items).Distinct()
+            .Select(id => items.TryGetRow(id, out var item) ? new DyeItem(id, item.Name.ExtractText(), item.Icon) : null)
+            .OfType<DyeItem>()
+            .ToDictionary(i => i.Id);
     }
+
+    /// <summary>An item that gives a dye; null for any other item.</summary>
+    public DyeItem? DyeItemOf(uint itemId) => dyeItems.GetValueOrDefault(itemId);
 
     public IReadOnlyList<DyeInfo> All { get; }
 

@@ -30,6 +30,8 @@ public sealed record FilterState
     /// <summary>The tile dye ("Farbe 1/2" next to the job picker): dyeable items render in it on their channels, nothing is hidden.</summary>
     public DyePair Dye { get; init; }
     public OwnershipFilter Ownership { get; init; } = OwnershipFilter.All;
+    /// <summary>Only the first item of each model, in the shown order ("Modell-Duplikate ausblenden"); see <see cref="SameModel.FirstOfEach"/>.</summary>
+    public bool HideDuplicates { get; init; }
     public bool WearableOnly { get; init; } = true;
     public IReadOnlySet<SourceCategory> Categories { get; init; } = new HashSet<SourceCategory>();
     public IReadOnlySet<Expansion> Expansions { get; init; } = new HashSet<Expansion>();

@@ -95,4 +95,24 @@ public class WishlistStoreTests
         Assert.Equal(new WishKey(WishKind.Item, 1, default), WishKey.Of(new ItemSubject(head)));
         Assert.Equal(new WishKey(WishKind.Set, 0, Dresser), WishKey.Of(set));
     }
+
+    [Fact]
+    public void Touch_PutsTheKeyAtTheEnd_AndDropsTheOldestBeyondTheLimit()
+    {
+        var store = new WishlistStore(1);
+        var changes = 0;
+        store.Changed += () => changes++;
+        store.Touch(WishKey.ForItem(1), Now, 3);
+        store.Touch(WishKey.ForItem(2), Now.AddMinutes(1), 3);
+        store.Touch(WishKey.ForItem(3), Now.AddMinutes(2), 3);
+        store.Touch(WishKey.ForItem(1), Now.AddMinutes(3), 3);
+        // The newest again changes nothing.
+        store.Touch(WishKey.ForItem(1), Now.AddMinutes(4), 3);
+        store.Touch(WishKey.ForItem(4), Now.AddMinutes(5), 3);
+
+        Assert.Equal([WishKey.ForItem(3), WishKey.ForItem(1), WishKey.ForItem(4)], store.Entries.Select(e => e.Key));
+        Assert.Equal(Now.AddMinutes(3), store.Entries[1].Added);
+        Assert.False(store.Contains(WishKey.ForItem(2)));
+        Assert.Equal(5, changes);
+    }
 }

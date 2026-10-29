@@ -26,10 +26,9 @@ public static class WishResults
     /// <summary>Only the search (the subject's name or a piece's) and "Erledigte ausblenden" apply to the wishlist.</summary>
     public static IReadOnlyList<TileSubject> Filter(IReadOnlyList<TileSubject> subjects, string searchText, bool hideDone, Func<uint, bool> isOwned)
     {
-        var search = searchText.Trim();
+        var search = SearchQuery.Parse(searchText);
         return subjects
-            .Where(s => search.Length == 0 || s.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
-                        || s.Wear.Any(p => p.Name.Contains(search, StringComparison.OrdinalIgnoreCase)))
+            .Where(s => search.Matches(s.Wear.Select(p => p.Name).Prepend(s.Name)))
             .Where(s => !hideDone || !WishStatus.IsDone(s, isOwned))
             .ToList();
     }

@@ -88,6 +88,35 @@ public sealed class TileFilterControls
         DisabledHint(onlySearch);
     }
 
+    /// <summary>
+    /// "Modell-Duplikate ausblenden", centred on the row of the job button (<paramref name="edge"/> high): only the first
+    /// item of a model shows, its model button the others. Sets have no duplicates.
+    /// </summary>
+    public void DrawDuplicates(float edge)
+    {
+        var mode = state.Filter.Mode;
+        var onlySearch = BrowseModes.OnlySearch(mode);
+        var hide = state.Filter.HideDuplicates;
+        // In a group starting at the row's top: what follows on the row stays at its height.
+        using var group = ImRaii.Group();
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (edge - ImGui.GetFrameHeight()) / 2);
+        using (ImRaii.Disabled(onlySearch || mode == BrowseMode.Sets))
+        {
+            if (ImGui.Checkbox(FilterChips.DuplicatesName, ref hide))
+                state.Filter = state.Filter with { HideDuplicates = hide };
+        }
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+        {
+            ImGui.SetTooltip(onlySearch ? BrowseModes.NotApplicable(mode)
+                             : mode == BrowseMode.Sets ? Loc.T("gilt nur für einzelne Items")
+                             : Loc.T("Zeigt von jedem Modell nur das erste Item; die übrigen zeigt der Modell-Knopf unten links auf der Kachel"));
+        }
+    }
+
+    /// <summary>The width of "Modell-Duplikate ausblenden", to tell whether it still fits on the row.</summary>
+    public static float DuplicatesWidth()
+        => ImGui.GetFrameHeight() + ImGui.GetStyle().ItemInnerSpacing.X + ImGui.CalcTextSize(FilterChips.DuplicatesName).X;
+
     /// <summary>The width of the job button, to tell whether it still fits on the row.</summary>
     public float JobsWidth()
     {

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
@@ -66,6 +67,7 @@ public sealed class SetEditorPane
         DrawDiscardDraftQuestion();
         ImGui.SameLine();
         PlateTransferUi.DrawButton(plates, draft.Pieces);
+        DyeCounter.Draw(draft.Pieces.Select(p => (p.Stain0, p.Stain1, state.ItemOf(p.ItemId)?.DyeCount ?? 0)), dyes, theme);
         ImGui.Separator();
 
         using (var slots = ImRaii.Child("##slots", Vector2.Zero))

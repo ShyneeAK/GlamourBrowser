@@ -49,7 +49,9 @@ public sealed class Plugin : IDalamudPlugin
     private readonly SettingsWindow settingsWindow;
     private readonly ChangelogWindow changelogWindow;
     private readonly OwnershipService ownership;
-    private readonly WishlistService wishlist;
+    private readonly CharacterListService wishlist;
+    private readonly CharacterListService favorites;
+    private readonly CharacterListService history;
     private readonly CustomSetService customSets;
     private readonly TryOnService tryOn;
     private readonly Market.MarketService market = new();
@@ -109,7 +111,9 @@ public sealed class Plugin : IDalamudPlugin
         framing = new AutoFramingService();
         var (catalog, variants) = ItemCatalogLoader.Load(DataManager);
         ownership = new OwnershipService(variants);
-        wishlist = new WishlistService(variants);
+        wishlist = new CharacterListService("wishlist", "Wishlist", variants);
+        favorites = new CharacterListService("favorites", "Favorites", variants);
+        history = new CharacterListService("history", "History", variants);
         customSets = new CustomSetService(variants);
         inventoryReader = new InventoryReader(ownership);
         retainerReader = new RetainerReader(ownership);
@@ -129,7 +133,8 @@ public sealed class Plugin : IDalamudPlugin
         var sets = new SetCatalog(byId, variants, sources);
         var jobs = new JobCatalog(DataManager);
         var dyes = new DyeCatalog(DataManager);
-        browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets, wishlist, jobs, customSets, tryOn, wristSides);
+        browser = new BrowserState(catalog, ownership, appearance, queue, cache, pool, config, sources, sets, wishlist, favorites, history, jobs, customSets,
+                                   tryOn, wristSides);
         // A new measure of the body frames the slots anew.
         framing.Changed += browser.InvalidateTiles;
         // The side of every bracelet for its filter, read in the background.
@@ -398,6 +403,8 @@ public sealed class Plugin : IDalamudPlugin
         inventoryReader.Dispose();
         customSets.Dispose();
         wishlist.Dispose();
+        favorites.Dispose();
+        history.Dispose();
         ownership.Dispose();
     }
 }

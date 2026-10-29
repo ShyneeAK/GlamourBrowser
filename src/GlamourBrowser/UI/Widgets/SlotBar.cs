@@ -12,7 +12,8 @@ namespace GlamourBrowser.UI.Widgets;
 
 /// <summary>
 /// Row of slot icons: click selects only that slot (again clears), Ctrl+click adds or removes. The last icon switches to
-/// the mode "Ausrüstungs-Sets"; "Meine Sets" and "Wunschliste" sit in a second row (<see cref="DrawModes"/>).
+/// the mode "Ausrüstungs-Sets"; "Meine Sets", "Wunschliste", "Zuletzt benutzt" and "Favoriten" sit in a second row
+/// (<see cref="DrawModes"/>).
 /// </summary>
 public static class SlotBar
 {
@@ -61,7 +62,10 @@ public static class SlotBar
         drawList.AddText(at, 0xFFFFFFFF, hand);
     }
 
-    /// <summary>The modes "Meine Sets" and "Wunschliste", for the row under the slot icons.</summary>
+    /// <summary>
+    /// The modes "Meine Sets" and "Wunschliste", for the row under the slot icons, and apart from them "Zuletzt benutzt"
+    /// and "Favoriten", whose tiles wear the outfit like the item tiles.
+    /// </summary>
     public static bool DrawModes(string id, ref FilterState filter, Theme.Theme theme, float edge)
     {
         var changed = false;
@@ -74,6 +78,20 @@ public static class SlotBar
         if (IconToggle.Draw($"{id}-wishlist", SlotIcons.Wishlist, new Vector2(edge), filter.Mode == BrowseMode.Wishlist, Loc.T("Wunschliste"), theme, FontAwesomeIcon.Star))
         {
             filter = SlotSelection.ToggleMode(filter, BrowseMode.Wishlist);
+            changed = true;
+        }
+        ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X * 3);
+        if (IconToggle.Draw($"{id}-history", SlotIcons.History, new Vector2(edge), filter.Mode == BrowseMode.History, Loc.T("Zuletzt benutzt"), theme,
+                FontAwesomeIcon.History))
+        {
+            filter = SlotSelection.ToggleMode(filter, BrowseMode.History);
+            changed = true;
+        }
+        ImGui.SameLine();
+        if (IconToggle.Draw($"{id}-favorites", SlotIcons.Favorites, new Vector2(edge), filter.Mode == BrowseMode.Favorites, Loc.T("Favoriten"), theme,
+                FontAwesomeIcon.Heart))
+        {
+            filter = SlotSelection.ToggleMode(filter, BrowseMode.Favorites);
             changed = true;
         }
         return changed;

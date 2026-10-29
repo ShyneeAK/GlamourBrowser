@@ -55,15 +55,15 @@ public static class SlotSelection
 
     /// <summary>
     /// Whether a selection stays when the slot bar changes the view: an item while its slot is shown (all slots, or one of
-    /// them chosen) or in the wishlist, a set in the set modes and the wishlist. Otherwise it would stay selected for
+    /// them chosen) or in the lists (wishlist, history, favourites), a set in the set modes and the wishlist. Otherwise it would stay selected for
     /// another slot, and a camera set for it would overwrite that slot's calibration unnoticed.
     /// </summary>
     public static bool KeepsSelection(TileSubject? selected, FilterState filter) => selected switch
     {
         null => true,
-        ItemSubject { Item: var item } => filter.Mode == BrowseMode.Wishlist
+        ItemSubject { Item: var item } => filter.Mode is BrowseMode.Wishlist or BrowseMode.History or BrowseMode.Favorites
                                           || filter.Mode == BrowseMode.Items && (filter.Slots.Count == 0 || filter.Slots.Contains(item.Slot)
                                                                               && (item.Slot is not (EquipSlot.RingRight or EquipSlot.RingLeft) || item.Slot == RingHand(filter.Slots))),
-        _ => filter.Mode != BrowseMode.Items,
+        _ => filter.Mode is BrowseMode.Sets or BrowseMode.MySets or BrowseMode.Wishlist,
     };
 }

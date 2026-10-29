@@ -8,10 +8,11 @@ public static class ItemFilter
     /// <param name="patchOf">Patch per item (0 = unknown); null ignores the expansion filter and sorts by level.</param>
     /// <param name="parentOf">A job's base class (ClassJob.ClassJobParent) for the job filter; null treats every id as its own.</param>
     /// <param name="wristOf">The arm a bracelet is on; null while not every bracelet is read (side filter ignored).</param>
+    /// <param name="keepOrder">Keep the items' order (a list newest first) instead of sorting them.</param>
     public static IReadOnlyList<GlamourItem> Apply(IEnumerable<GlamourItem> items, FilterState filter, Func<uint, bool> isOwned, byte race, byte sex,
                                                    Func<uint, IReadOnlySet<SourceCategory>>? categoriesOf = null, Func<uint, float>? patchOf = null,
-                                                   Func<uint, uint>? parentOf = null, Func<uint, Rendering.WristSide>? wristOf = null)
-        => Sort(Matching(items, filter, isOwned, race, sex, patchOf, parentOf, wristOf).Where(i => InCategories(i, filter, categoriesOf)), filter.Sort, patchOf);
+                                                   Func<uint, uint>? parentOf = null, Func<uint, Rendering.WristSide>? wristOf = null, bool keepOrder = false)
+        => Finish(Matching(items, filter, isOwned, race, sex, patchOf, parentOf, wristOf).Where(i => InCategories(i, filter, categoriesOf)), filter, patchOf, keepOrder);
 
     /// <summary>
     /// <see cref="Apply"/> plus the items that pass every filter except the source categories (the base of the
@@ -20,10 +21,17 @@ public static class ItemFilter
     public static (IReadOnlyList<GlamourItem> Results, IReadOnlyList<GlamourItem> WithoutCategories) ApplyWithCategoryBase(
         IEnumerable<GlamourItem> items, FilterState filter, Func<uint, bool> isOwned, byte race, byte sex,
         Func<uint, IReadOnlySet<SourceCategory>>? categoriesOf = null, Func<uint, float>? patchOf = null, Func<uint, uint>? parentOf = null,
-        Func<uint, Rendering.WristSide>? wristOf = null)
+        Func<uint, Rendering.WristSide>? wristOf = null, bool keepOrder = false)
     {
         var withoutCategories = Matching(items, filter, isOwned, race, sex, patchOf, parentOf, wristOf).ToList();
-        return (Sort(withoutCategories.Where(i => InCategories(i, filter, categoriesOf)), filter.Sort, patchOf), withoutCategories);
+        return (Finish(withoutCategories.Where(i => InCategories(i, filter, categoriesOf)), filter, patchOf, keepOrder), withoutCategories);
+    }
+
+    /// <summary>Sorted (unless the order is kept), then the first item of each model alone when duplicates are hidden.</summary>
+    private static IReadOnlyList<GlamourItem> Finish(IEnumerable<GlamourItem> items, FilterState filter, Func<uint, float>? patchOf, bool keepOrder)
+    {
+        var ordered = keepOrder ? items.ToList() : Sort(items, filter.Sort, patchOf);
+        return filter.HideDuplicates ? SameModel.FirstOfEach(ordered) : ordered;
     }
 
     private static bool InCategories(GlamourItem item, FilterState filter, Func<uint, IReadOnlySet<SourceCategory>>? categoriesOf)
@@ -33,10 +41,10 @@ public static class ItemFilter
     private static IEnumerable<GlamourItem> Matching(IEnumerable<GlamourItem> items, FilterState filter, Func<uint, bool> isOwned, byte race, byte sex,
                                                      Func<uint, float>? patchOf, Func<uint, uint>? parentOf, Func<uint, Rendering.WristSide>? wristOf)
     {
-        var search = filter.SearchText.Trim();
+        var search = SearchQuery.Parse(filter.SearchText);
         var jobs = new JobFilter(filter.Jobs, parentOf ?? (job => job), filter.JobsExclusive);
         return items
-            .Where(i => search.Length == 0 || i.Name.Contains(search, StringComparison.OrdinalIgnoreCase))
+            .Where(i => search.Matches(i.Name))
             .Where(i => Ui.SlotSelection.Shows(filter.Slots, i.Slot))
             .Where(i => filter.Jobs.Count == 0 || jobs.Fits(i.ClassJobIds))
             .Where(i => i.LevelEquip >= filter.MinLevel && i.LevelEquip <= filter.MaxLevel)

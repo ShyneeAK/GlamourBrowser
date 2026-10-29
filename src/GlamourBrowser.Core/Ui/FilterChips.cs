@@ -57,6 +57,9 @@ public static class FilterChips
         if (state.Ownership != OwnershipFilter.All)
             chips.Add(new FilterChip(Loc.T(state.Ownership == OwnershipFilter.Owned ? "Habe ich" : "Fehlt mir"), state with { Ownership = OwnershipFilter.All }));
 
+        if (state.HideDuplicates)
+            chips.Add(new FilterChip(DuplicatesName, state with { HideDuplicates = false }));
+
         if (!state.WearableOnly)
             chips.Add(new FilterChip(Loc.T("Auch nicht tragbare"), state with { WearableOnly = true }));
 
@@ -81,6 +84,9 @@ public static class FilterChips
         => BrowseModes.OnlySearch(state.Mode)
             ? state.SearchText.Trim().Length > 0
             : state.Jobs.Count > 0 || From(state with { Mode = BrowseMode.Items }, _ => "", _ => []).Count > 0;
+
+    /// <summary>The checkbox and the chip of <see cref="FilterState.HideDuplicates"/>.</summary>
+    public static string DuplicatesName => Loc.T("Modell-Duplikate ausblenden");
 
     /// <summary>The name of a bracelet side, for its checkbox and its chip.</summary>
     public static string WristSideName(WristSide side) => side switch

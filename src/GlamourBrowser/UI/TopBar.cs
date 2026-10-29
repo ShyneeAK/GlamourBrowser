@@ -49,17 +49,22 @@ public sealed class TopBar
         if (ImGui.InputTextWithHint("##search", Loc.T("Suchen …"), ref search, 100))
             state.Filter = state.Filter with { SearchText = search };
         searchActive = ImGui.IsItemActive();
+        if (ImGui.IsItemHovered() && !searchActive)
+            ImGui.SetTooltip(Loc.T("Ein Wort mit Minus davor blendet aus, z. B. „robe -rock“"));
 
-        // Sort does not apply to the wishlist and the custom sets (newest first).
+        // Sort does not apply to the wishlist, the custom sets and the item lists (newest first).
         var onlySearch = BrowseModes.OnlySearch(state.Filter.Mode);
+        var unsorted = onlySearch || BrowseModes.ItemList(state.Filter.Mode);
 
         // The tile mode (current outfit or underwear) is the "Alles anlegen" button of the live view, as in the game's try-on.
         var sort = Array.IndexOf(SortOrders, config.Sort);
-        using (ImRaii.Disabled(onlySearch))
+        using (ImRaii.Disabled(unsorted))
         {
             if (LabeledCombo("##sort", Loc.T("Sortierung"), 150 * scale, ref sort, SortOrders.Select(SortName).ToArray()) && sort >= 0)
                 state.SetSort(SortOrders[sort]);
         }
+        if (unsorted && !onlySearch && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+            ImGui.SetTooltip(Loc.T("Neueste zuerst"));
         DisabledHint(onlySearch);
 
         // A picker instead of drag fields: its grid shows the size and takes a new one with one click.

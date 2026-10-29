@@ -35,7 +35,7 @@ public sealed class WishlistPlanView
     private int version;
     private int planVersion;
 
-    public WishlistPlanView(BrowserState state, OwnershipService ownership, WishlistService wishlist, SourceService sources, LivePreview live,
+    public WishlistPlanView(BrowserState state, OwnershipService ownership, CharacterListService wishlist, SourceService sources, LivePreview live,
                             Theme.Theme theme, CustomSetService customSets, TryOnService tryOn)
     {
         this.tryOn = tryOn;

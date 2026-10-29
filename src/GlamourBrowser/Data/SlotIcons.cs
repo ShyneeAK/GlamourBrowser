@@ -33,6 +33,12 @@ public static class SlotIcons
     /// <summary>The copper star of the item categories ("Anderes").</summary>
     public const uint Wishlist = 60159;
 
+    /// <summary>The main menu's "Inhaltsrückblende" (a turning arrow around a play symbol), for "Zuletzt benutzt".</summary>
+    public const uint History = 73;
+
+    /// <summary>The emote "Herzpose" (hands forming a heart), for the favourites.</summary>
+    public const uint Favorites = 246423;
+
     /// <summary>The "Projektionsplatte" button of the game's character window.</summary>
     public static readonly UiIcon MySets = UiIcon.Part("ui/uld/CharacterGearSet_hr1.tex", new Vector2(0, 0.5f), new Vector2(1 / 3f, 1));
 

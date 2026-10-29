@@ -18,6 +18,33 @@ public class SameModelTests
     }
 
     [Fact]
+    public void FirstOfEach_KeepsTheFirstItemOfAModelInTheGivenOrder()
+    {
+        var items = new[]
+        {
+            Item(1, EquipSlot.Body, 0x301CA), Item(2, EquipSlot.Body, 200), Item(3, EquipSlot.Body, 0x101CA),
+            Item(4, EquipSlot.Legs, 0x101CA), Item(5, EquipSlot.Body, 0), Item(6, EquipSlot.Body, 0),
+        };
+
+        // Another variant is the same model, another slot is not; items without a model all stay.
+        Assert.Equal([1u, 2u, 4u, 5u, 6u], SameModel.FirstOfEach(items).Select(i => i.Id));
+        // In another order (another sort) another item of the model is the first.
+        Assert.Equal([3u, 4u, 5u, 6u, 2u], SameModel.FirstOfEach(items.Skip(2).Concat(items.Take(2))).Select(i => i.Id));
+    }
+
+    [Fact]
+    public void Counts_CountAModelOncePerCategory_WhenOneOfItsItemsHasIt()
+    {
+        var items = new[] { Item(1, EquipSlot.Body, 100), Item(2, EquipSlot.Body, 100), Item(3, EquipSlot.Body, 200) };
+        string[] CategoriesOf(uint id) => id switch { 1 => ["Shop"], 2 => ["Shop", "Raid"], _ => ["Shop"] };
+
+        var counts = SameModel.Counts(items, CategoriesOf);
+
+        Assert.Equal(2, counts["Shop"]);
+        Assert.Equal(1, counts["Raid"]);
+    }
+
+    [Fact]
     public void AnotherVariantIsTheSameModel_TheSameVariantTogether()
     {
         // Mhigischer Rock des Zielens (0x101CA) and der Magie (0x301CA): model 0x1CA, variants 1 and 3.

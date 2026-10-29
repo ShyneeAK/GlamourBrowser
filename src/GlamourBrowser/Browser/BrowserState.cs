@@ -30,7 +30,10 @@ public sealed class BrowserState
     private readonly Configuration config;
     private readonly SourceService sources;
     private readonly SetCatalog sets;
-    private readonly WishlistService wishlist;
+    private readonly CharacterListService wishlist;
+    // The list "Zuletzt benutzt" shows: while it is open, its own clicks do not reorder it (the tiles would jump away under
+    // the mouse); another character's list (login) does.
+    private WishlistStore? historyShown;
     private readonly CustomSetService customSets;
     // A job's base class, for the job filter (gear made for one job may list its base class too).
     private readonly Func<uint, uint> parentOf;
@@ -49,8 +52,11 @@ public sealed class BrowserState
 
     public BrowserState(IReadOnlyList<GlamourItem> catalog, OwnershipService ownership, AppearanceTracker appearance,
                         TileQueue queue, TileCache<IDalamudTextureWrap> cache, RenderPool pool, Configuration config, SourceService sources, SetCatalog sets,
-                        WishlistService wishlist, JobCatalog jobs, CustomSetService customSets, TryOnService tryOn, WristSides wristSides)
+                        CharacterListService wishlist, CharacterListService favorites, CharacterListService history, JobCatalog jobs,
+                        CustomSetService customSets, TryOnService tryOn, WristSides wristSides)
     {
+        Favorites = favorites;
+        History = history;
         this.wristSides = wristSides;
         this.tryOn = tryOn;
         this.customSets = customSets;
@@ -80,12 +86,20 @@ public sealed class BrowserState
         appearance.PoseChanged += RequestTiles;
         ownership.Changed += OnOwnershipChanged;
         wishlist.Changed += OnWishlistChanged;
+        favorites.Changed += OnFavoritesChanged;
+        history.Changed += OnHistoryChanged;
         customSets.Changed += OnCustomSetsChanged;
         pool.Disrupted += RequestTiles;
         sources.Ready += Refresh;
         wristSides.Ready += Refresh;
         Refresh();
     }
+
+    /// <summary>The items marked with the heart of their tile ("Favoriten").</summary>
+    public CharacterListService Favorites { get; }
+
+    /// <summary>The items clicked last ("Zuletzt benutzt"), the newest first.</summary>
+    public CharacterListService History { get; }
 
     public FilterState Filter
     {
@@ -499,18 +513,35 @@ public sealed class BrowserState
                 if (index != null)
                     CountsWithoutCategories = SetFilter.Counts(withoutCategories, index.CategoriesOf);
             }
-            else if (index == null)
-                Results = Subjects(ItemFilter.Apply(catalog, sorted, isOwned, appearance.Race, appearance.Sex, parentOf: parentOf, wristOf: WristOf));
-            else
+            else if (BrowseModes.ItemList(filter.Mode))
             {
-                // One pass for both: the numbers behind the category checkboxes ignore the categories themselves.
-                var (items, withoutCategories) = ItemFilter.ApplyWithCategoryBase(catalog, sorted, isOwned,
-                    appearance.Race, appearance.Sex, index.CategoriesOf, index.PatchOf, parentOf, wristOf: WristOf);
-                Results = Subjects(items);
-                CountsWithoutCategories = index.Counts(withoutCategories.Select(i => i.Id));
+                var list = filter.Mode == BrowseMode.History ? History : Favorites;
+                if (filter.Mode == BrowseMode.History)
+                    historyShown = History.Current;
+                ShowItems(ListedItems(list), keepOrder: true);
             }
+            else
+                ShowItems(catalog, keepOrder: false);
             PageIndex = ItemFilter.ClampPage(PageIndex, Results.Count, PageSize);
             RequestTiles();
+
+            void ShowItems(IEnumerable<GlamourItem> items, bool keepOrder)
+            {
+                if (index == null)
+                {
+                    Results = Subjects(ItemFilter.Apply(items, sorted, isOwned, appearance.Race, appearance.Sex, parentOf: parentOf, wristOf: WristOf,
+                                                        keepOrder: keepOrder));
+                    return;
+                }
+                // One pass for both: the numbers behind the category checkboxes ignore the categories themselves.
+                var (shown, withoutCategories) = ItemFilter.ApplyWithCategoryBase(items, sorted, isOwned,
+                    appearance.Race, appearance.Sex, index.CategoriesOf, index.PatchOf, parentOf, wristOf: WristOf, keepOrder: keepOrder);
+                Results = Subjects(shown);
+                // With the duplicates hidden a model counts once, like its single tile.
+                CountsWithoutCategories = filter.HideDuplicates
+                    ? SameModel.Counts(withoutCategories, index.CategoriesOf)
+                    : index.Counts(withoutCategories.Select(i => i.Id));
+            }
         }
     }
 
@@ -580,6 +611,13 @@ public sealed class BrowserState
             ? WishResults.Resolve(store.Entries, id => itemSubjects.GetValueOrDefault(id), SetSubjectFor)
             : [];
 
+    /// <summary>The items of a list (favourites, history) the catalog knows, the newest first.</summary>
+    private IEnumerable<GlamourItem> ListedItems(CharacterListService list)
+        => (list.Current?.Entries ?? []).Reverse()
+            .Where(e => e.Key.Kind == WishKind.Item)
+            .Select(e => itemSubjects.GetValueOrDefault(e.Key.ItemId)?.Item)
+            .OfType<GlamourItem>();
+
     private IReadOnlyList<SetSubject> ResolveMySets()
         => customSets.Current?.Sets.Select(set => CustomSetSubjects.ToSubject(set, ItemOf)).OfType<SetSubject>().ToList() ?? [];
 
@@ -602,6 +640,18 @@ public sealed class BrowserState
                 WishlistEntries = ResolveWishlist();
             }
         }
+    }
+
+    private void OnFavoritesChanged()
+    {
+        if (filter.Mode == BrowseMode.Favorites)
+            Refresh();
+    }
+
+    private void OnHistoryChanged()
+    {
+        if (filter.Mode == BrowseMode.History && History.Current != historyShown)
+            Refresh();
     }
 
     private void OnWishlistChanged()

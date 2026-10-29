@@ -37,6 +37,8 @@ namespace GlamourBrowser.UI;
 public sealed class TileGrid
 {
     private const uint ErrorColor = 0xFF4040E0;
+    // The heart of a favourite: a warm pink, apart from the amber of the wishlist star.
+    private const uint FavoriteColor = 0xFF8C5AF0;
     // Trait and source icons at the bottom of a tile, relative to the line height.
     private const float TraitIconScale = 1.5f;
     // Upper bound for cached tile texts before they are dropped and rebuilt for the shown pages.
@@ -61,7 +63,7 @@ public sealed class TileGrid
     private readonly Theme.Theme theme;
     private readonly SourceService sources;
     private readonly JobCatalog jobs;
-    private readonly WishlistService wishlist;
+    private readonly CharacterListService wishlist;
     private readonly WishlistPlanView planView;
     private readonly CustomSetService customSets;
     private readonly CustomSetEditor editor;
@@ -90,7 +92,7 @@ public sealed class TileGrid
 
     public TileGrid(BrowserState state, TileCache<IDalamudTextureWrap> cache, RenderPool pool, OwnershipService ownership,
                     LivePreview live, Configuration config, Theme.Theme theme, SourceService sources, JobCatalog jobs,
-                    WishlistService wishlist, WishlistPlanView planView, CustomSetService customSets, CustomSetEditor editor, GlamourPlateBridge plates,
+                    CharacterListService wishlist, WishlistPlanView planView, CustomSetService customSets, CustomSetEditor editor, GlamourPlateBridge plates,
                     MemoryStats memory, TryOnService tryOn, TileFilterControls filterControls, MarketService market, DyeCatalog dyes)
     {
         this.dyes = dyes;
@@ -119,7 +121,7 @@ public sealed class TileGrid
     public void Draw()
     {
         // Slot selection sits above the tiles it filters, the tile display options right-aligned next to it; the modes
-        // "Meine Sets" and "Wunschliste", the tile dye and the jobs in a second row below.
+        // ("Meine Sets", "Wunschliste", "Zuletzt benutzt", "Favoriten"), the tile dye and the jobs in a second row below.
         var filter = state.Filter;
         var edge = SlotBar.Edge(DisplayOptionsWidth());
         var changed = SlotBar.Draw("slotbar", ref filter, theme, edge);
@@ -145,6 +147,10 @@ public sealed class TileGrid
             ImGui.TextDisabled(wishlist.LoadFailed ? Loc.T("Wunschliste konnte nicht geladen werden") : Loc.T("Nicht eingeloggt"));
             return;
         }
+        if (state.Filter.Mode == BrowseMode.History && !DrawItemListState(state.History, Loc.T("Noch keine Items angeklickt")))
+            return;
+        if (state.Filter.Mode == BrowseMode.Favorites && !DrawItemListState(state.Favorites, Loc.T("Noch keine Favoriten – das Herz oben links auf einer Kachel merkt ein Item vor")))
+            return;
 
         if (pool.IsPaused)
         {
@@ -184,7 +190,8 @@ public sealed class TileGrid
         // Nothing found instead of an empty grid, with a way out; not while the ownership filter waits for the ownership
         // data (at login), where a click would throw away the restored filter.
         var waitsForOwnership = state.Filter.Ownership != OwnershipFilter.All && ownership.Current == null;
-        if (!state.PiecesOpen && state.Filter.Mode is BrowseMode.Items or BrowseMode.Sets && state.Results.Count == 0 && !waitsForOwnership)
+        if (!state.PiecesOpen && state.Filter.Mode is BrowseMode.Items or BrowseMode.Sets or BrowseMode.History or BrowseMode.Favorites
+            && state.Results.Count == 0 && !waitsForOwnership)
         {
             ImGui.TextDisabled(Loc.T("Keine Treffer"));
             if (FilterChips.CanResetAll(state.Filter) && ImGui.Button(Loc.T("Alle zurücksetzen")))
@@ -342,6 +349,20 @@ public sealed class TileGrid
             }
         }
         ImGui.EndMenu();
+    }
+
+    /// <summary>Why "Zuletzt benutzt" or "Favoriten" shows no tiles while logged out or still empty; false when there are none to show.</summary>
+    private static bool DrawItemListState(CharacterListService list, string emptyHint)
+    {
+        if (list.Current is not { } store)
+        {
+            ImGui.TextDisabled(list.LoadFailed ? Loc.T("Liste konnte nicht geladen werden") : Loc.T("Nicht eingeloggt"));
+            return false;
+        }
+        if (store.Entries.Count > 0)
+            return true;
+        ImGui.TextDisabled(emptyHint);
+        return false;
     }
 
     /// <summary>The wishlist mode's hints, view switch and filter (tiles only), or the plan by source; false when no grid follows.</summary>
@@ -502,7 +523,10 @@ public sealed class TileGrid
 
     private static float CheckboxWidth(string label) => ImGui.GetFrameHeight() + ImGui.GetStyle().ItemInnerSpacing.X + ImGui.CalcTextSize(label).X;
 
-    /// <summary>Tile dye and jobs right of the mode icons, as high as they are; the jobs wrap when the row is full.</summary>
+    /// <summary>
+    /// Tile dye, jobs and "Modell-Duplikate ausblenden" right of the mode icons, as high as they are; the jobs (and the
+    /// checkbox) wrap when the row is full.
+    /// </summary>
     private void DrawFilterControls(float edge)
     {
         var spacing = ImGui.GetStyle().ItemSpacing.X;
@@ -512,6 +536,10 @@ public sealed class TileGrid
         if (ImGui.GetContentRegionAvail().X < filterControls.JobsWidth())
             ImGui.NewLine();
         filterControls.DrawJobs(edge);
+        ImGui.SameLine(0, spacing * 3);
+        if (ImGui.GetContentRegionAvail().X < TileFilterControls.DuplicatesWidth())
+            ImGui.NewLine();
+        filterControls.DrawDuplicates(edge);
         DrawUndoButtons(edge);
     }
 
@@ -633,6 +661,10 @@ public sealed class TileGrid
         // Decided where the button went down: a press on the star toggles the wish wherever it is released on the tile.
         var pressed = ImGui.GetIO().MouseClickedPos[0];
         var pressedOnStar = canWish && pressed.X >= starMin.X && pressed.Y >= starMin.Y && pressed.X <= starMax.X && pressed.Y <= starMax.Y;
+        // An item has the heart of the favourites right of the star, decided the same way.
+        var canFavor = state.Favorites.Current != null && subject is ItemSubject;
+        var heartRect = GlyphRect(starPos + new Vector2(starSize.X + 8, 0), starSize);
+        var overHeart = hovered && canFavor && ImGui.IsMouseHoveringRect(heartRect.Min, heartRect.Max);
         // An own set has "Bearbeiten" and "Löschen" below the star (while no set is edited), decided the same way.
         var ownSet = !editor.IsOpen && subject is SetSubject { Set.Id: { Kind: SetKind.Custom } ownId } ? customSets.Current?.Find(ownId.Value) : null;
         var editRect = GlyphRect(starPos + new Vector2(0, starSize.Y + 8), starSize);
@@ -655,6 +687,8 @@ public sealed class TileGrid
         var pressedBox = Array.FindIndex(boxes, b => Inside(pressed, b));
         if (clicked && pressedOnStar)
             wishlist.Toggle(subject);
+        else if (clicked && canFavor && Inside(pressed, heartRect))
+            state.Favorites.Toggle(subject);
         else if (clicked && twins.Count > 0 && Inside(pressed, twinsRect) && subject is ItemSubject { Item: var opened })
             state.ShowSameModel(opened);
         else if (clicked && pressedBox >= 0 && dyeItem != null)
@@ -675,10 +709,16 @@ public sealed class TileGrid
         }
         // While a custom set is edited, a tile goes into it instead of being selected.
         else if (clicked && editor.IsOpen)
+        {
             editor.Put(subject, state.DyeFor(subject), RingHand(subject));
+            if (subject is ItemSubject { Item: var used })
+                state.History.Touch(used);
+        }
         // Otherwise it is selected and put on in the try-on, dyed like its tile.
         else if (clicked)
         {
+            if (subject is ItemSubject { Item: var used })
+                state.History.Touch(used);
             state.Selected = subject;
             live.Select(subject);
             tryOn.Put(subject, state.DyeFor(subject), RingHand(subject));
@@ -751,6 +791,15 @@ public sealed class TileGrid
                                      ? "\n" + Loc.F("Gleiches Modell auf der Wunschliste:\n{0}", string.Join("\n", wishedTwins.Take(5).Select(t => t.Name)))
                                      : ""));
         }
+        // Like the star: pink when a favourite, faint on a hovered tile.
+        var favored = subject is ItemSubject && state.Favorites.IsListed(subject);
+        if (favored || overHeart || hovered && canFavor)
+        {
+            DrawTileGlyph(drawList, FontAwesomeIcon.Heart, heartRect,
+                          favored ? FavoriteColor : overHeart ? colors.Text : (colors.TextMuted & 0x00FFFFFF) | 0xA0000000);
+            if (overHeart)
+                ImGui.SetTooltip(favored ? Loc.T("Aus den Favoriten nehmen") : Loc.T("Zu den Favoriten"));
+        }
         // Always shown, unlike the star: it tells which items have others of their model; green when one of them is owned.
         if (twins.Count > 0)
         {
@@ -773,8 +822,8 @@ public sealed class TileGrid
             else if (overDelete)
                 ImGui.SetTooltip(Loc.T("Löschen"));
         }
-        // The star's place stays reserved while it can show, so the marker does not jump when the tile is hovered.
-        var markerX = showStar || canWish ? 6 + starSize.X + 3 : 6f;
+        // The places of star and heart stay reserved while they can show, so the marker does not jump when the tile is hovered.
+        var markerX = (showStar || canWish ? 6 + starSize.X + 3 : 6f) + (canFavor || favored ? starSize.X + 8 : 0);
         if (pool.Failures.TryGetValue(key, out var error))
         {
             drawList.AddText(pos + new Vector2(markerX, 4), ErrorColor, "!");
@@ -782,7 +831,7 @@ public sealed class TileGrid
             var label = Truncate(Loc.T("Renderfehler"), size.X - 12);
             drawList.AddText(labelPos, ErrorColor, label);
             // Like the trait icons, only the marker itself shows a tooltip: the reason of the failure.
-            if (hovered && !overStar && ImGui.IsMouseHoveringRect(pos, labelPos + ImGui.CalcTextSize(label)))
+            if (hovered && !overStar && !overHeart && ImGui.IsMouseHoveringRect(pos, labelPos + ImGui.CalcTextSize(label)))
                 ImGui.SetTooltip(Loc.F("Renderfehler: {0}", error));
         }
         drawList.PopClipRect();

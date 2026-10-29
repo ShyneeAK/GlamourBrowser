@@ -20,6 +20,7 @@ public sealed class SavedFilter
     public byte Dye1 { get; set; }
     public byte Dye2 { get; set; }
     public OwnershipFilter Ownership { get; set; }
+    public bool HideDuplicates { get; set; }
     public bool WearableOnly { get; set; } = true;
     public List<SourceCategory> Categories { get; set; } = [];
     public List<Expansion> Expansions { get; set; } = [];
@@ -37,6 +38,7 @@ public sealed class SavedFilter
         Dye1 = f.Dye.First,
         Dye2 = f.Dye.Second,
         Ownership = f.Ownership,
+        HideDuplicates = f.HideDuplicates,
         WearableOnly = f.WearableOnly,
         Categories = f.Categories.Order().ToList(),
         Expansions = f.Expansions.Order().ToList(),
@@ -59,6 +61,7 @@ public sealed class SavedFilter
             Wrists = Known(Wrists),
             Dye = new DyePair(Dye1, Dye2),
             Ownership = Enum.IsDefined(Ownership) ? Ownership : OwnershipFilter.All,
+            HideDuplicates = HideDuplicates,
             WearableOnly = WearableOnly,
             Categories = Known(Categories),
             Expansions = Known(Expansions),
@@ -69,6 +72,6 @@ public sealed class SavedFilter
     public static bool SameKept(FilterState a, FilterState b)
         => a.Mode == b.Mode && a.Slots.SetEquals(b.Slots) && a.Jobs.SetEquals(b.Jobs) && a.JobsExclusive == b.JobsExclusive
            && a.MinLevel == b.MinLevel && a.MaxLevel == b.MaxLevel && a.DyeableOnly == b.DyeableOnly && a.Wrists.SetEquals(b.Wrists)
-           && a.Dye == b.Dye && a.Ownership == b.Ownership && a.WearableOnly == b.WearableOnly && a.Categories.SetEquals(b.Categories)
+           && a.Dye == b.Dye && a.Ownership == b.Ownership && a.HideDuplicates == b.HideDuplicates && a.WearableOnly == b.WearableOnly && a.Categories.SetEquals(b.Categories)
            && a.Expansions.SetEquals(b.Expansions);
 }

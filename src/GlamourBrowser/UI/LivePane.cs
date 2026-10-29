@@ -40,7 +40,7 @@ public sealed unsafe class LivePane
     private readonly JobCatalog jobs;
     private readonly Theme.Theme theme;
     private readonly SourceService sources;
-    private readonly WishlistService wishlist;
+    private readonly CharacterListService wishlist;
     private readonly CustomSetService customSets;
     private readonly DyeCatalog dyes;
     private readonly CustomSetEditor editor;
@@ -66,7 +66,7 @@ public sealed unsafe class LivePane
     private string outsideFilters = "";
 
     public LivePane(BrowserState state, OwnershipService ownership, LivePreview live, CalibrationService calibration, JobCatalog jobs, Theme.Theme theme,
-                    SourceService sources, WishlistService wishlist, CustomSetService customSets, DyeCatalog dyes, CustomSetEditor editor,
+                    SourceService sources, CharacterListService wishlist, CustomSetService customSets, DyeCatalog dyes, CustomSetEditor editor,
                     SetEditorPane editorPane, GlamourPlateBridge plates, TryOnService tryOn, MarketService market, Configuration config,
                     NativeItemTooltip itemTooltip)
     {
@@ -213,6 +213,7 @@ public sealed unsafe class LivePane
         }
 
         DrawWornPieces();
+        DyeCounter.Draw(tryOn.TryOn.Pieces.Select(p => (p.Stain0, p.Stain1, state.ItemOf(p.ItemId)?.DyeCount ?? 0)), dyes, theme);
     }
 
     /// <summary>
@@ -574,6 +575,8 @@ public sealed unsafe class LivePane
                 ImGui.SameLine();
             PlateTransferUi.DrawButton(plates, toTransfer.Pieces);
         }
+        // An own set's dyes (detected sets have none).
+        DyeCounter.Draw(set.Pieces.Select(p => (set.StainsOf(p.Slot).Stain0, set.StainsOf(p.Slot).Stain1, p.DyeCount)), dyes, theme);
         ImGui.Separator();
 
         var iconSize = new Vector2(ImGui.GetFrameHeight());

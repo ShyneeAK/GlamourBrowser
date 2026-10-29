@@ -19,6 +19,7 @@ public class SavedFilterTests
         Wrists = new HashSet<WristSide> { WristSide.Left },
         Dye = new DyePair(81, 82),
         Ownership = OwnershipFilter.Missing,
+        HideDuplicates = true,
         WearableOnly = false,
         Categories = new HashSet<SourceCategory> { SourceCategory.Crafting },
         Expansions = new HashSet<Expansion> { Expansion.Heavensward },
@@ -39,6 +40,7 @@ public class SavedFilterTests
         Assert.True(SavedFilter.SameKept(Full, Full with { SearchText = "" }));
         Assert.False(SavedFilter.SameKept(Full, Full with { Slots = new HashSet<EquipSlot> { EquipSlot.Body } }));
         Assert.False(SavedFilter.SameKept(Full, Full with { Dye = default }));
+        Assert.False(SavedFilter.SameKept(Full, Full with { HideDuplicates = false }));
     }
 
     [Fact]

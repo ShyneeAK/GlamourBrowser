@@ -15,11 +15,10 @@ public static class SetFilter
         IEnumerable<SetSubject> sets, FilterState filter, Func<uint, bool> isOwned, byte race, byte sex,
         Func<uint, IReadOnlySet<SourceCategory>>? categoriesOf = null, Func<uint, float>? patchOf = null, Func<uint, uint>? parentOf = null)
     {
-        var search = filter.SearchText.Trim();
+        var search = SearchQuery.Parse(filter.SearchText);
         var jobs = new JobFilter(filter.Jobs, parentOf ?? (job => job), filter.JobsExclusive);
         var withoutCategories = sets
-            .Where(s => search.Length == 0 || s.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
-                        || s.Pieces.Any(p => p.Name.Contains(search, StringComparison.OrdinalIgnoreCase)))
+            .Where(s => search.Matches(s.Pieces.Select(p => p.Name).Prepend(s.Name)))
             .Where(s => filter.Jobs.Count == 0 || s.JobPieces.All(p => jobs.Fits(p.ClassJobIds)))
             .Where(s => s.Set.Level >= filter.MinLevel && s.Set.Level <= filter.MaxLevel)
             .Where(s => filter.Ownership switch

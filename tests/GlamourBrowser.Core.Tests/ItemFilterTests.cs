@@ -36,6 +36,36 @@ public class ItemFilterTests
     }
 
     [Fact]
+    public void Search_LeavesOutNamesWithAnExcludedWord()
+    {
+        var items = new[] { Item(1, "Robe der Weisen", EquipSlot.Body), Item(2, "Rock der Weisen", EquipSlot.Legs), Item(3, "Hut", EquipSlot.Head) };
+
+        Assert.Equal([1u], Ids(Apply(items, new FilterState { SearchText = "weisen -rock" })));
+        Assert.Equal([1u, 3u], Ids(Apply(items, new FilterState { SearchText = "-ROCK" })).Order());
+    }
+
+    [Fact]
+    public void HideDuplicates_KeepsTheFirstItemOfAModelAfterSorting()
+    {
+        GlamourItem Modelled(uint id, int level, ulong model) => Item(id, $"Robe {id}", EquipSlot.Body, level) with { ModelMain = model };
+        var items = new[] { Modelled(1, 30, 100), Modelled(2, 90, 100), Modelled(3, 50, 200) };
+
+        Assert.Equal([2u, 3u], Ids(Apply(items, new FilterState { HideDuplicates = true, Sort = SortOrder.Level })));
+        Assert.Equal([1u, 3u], Ids(Apply(items, new FilterState { HideDuplicates = true, Sort = SortOrder.LevelAscending })));
+    }
+
+    [Fact]
+    public void KeepOrder_LeavesTheGivenOrder()
+    {
+        var items = new[] { Item(1, "B", EquipSlot.Body, 10), Item(2, "A", EquipSlot.Body, 90), Item(3, "C", EquipSlot.Head, 50) };
+
+        var result = ItemFilter.Apply(items, new FilterState { MinLevel = 20 }, _ => false, Miqote, Female, keepOrder: true);
+
+        Assert.Equal([2u, 3u], Ids(result));
+        Assert.Equal([3u, 2u], Ids(ItemFilter.Apply(items.Reverse(), new FilterState { MinLevel = 20 }, _ => false, Miqote, Female, keepOrder: true)));
+    }
+
+    [Fact]
     public void Dye_DoesNotFilter()
     {
         var items = new[] { Item(1, "Robe", EquipSlot.Body, dyes: 2), Item(2, "Wams", EquipSlot.Body) };
