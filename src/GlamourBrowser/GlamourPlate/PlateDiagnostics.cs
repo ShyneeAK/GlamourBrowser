@@ -87,6 +87,7 @@ public static unsafe class PlateDiagnostics
                     if (item.PendingStainIds[c] != 0 || item.PendingStainItemIds[c] != 0)
                         Log($"    pending[{c}] stain {item.PendingStainIds[c]} | item {item.PendingStainItemIds[c]} {NameOf(item.PendingStainItemIds[c])} "
                             + $"| inventory {item.PendingStainInventoryTypes[c]} slot {item.PendingStainInventorySlots[c]} "
+                            + $"(stack {StackSize(item.PendingStainInventoryTypes[c], item.PendingStainInventorySlots[c])}) "
                             + $"| from inventory item {item.IsPendingStainFromInventoryItem[c]} | from item id {item.IsPendingStainFromItemId[c]}");
                 }
             }
@@ -277,6 +278,14 @@ public static unsafe class PlateDiagnostics
 
     private static string NameOf(uint itemId)
         => itemId != 0 && Plugin.DataManager.GetExcelSheet<ItemRow>().TryGetRow(itemId, out var item) ? item.Name.ExtractText() : "";
+
+    private static int StackSize(InventoryType type, int slot)
+    {
+        var manager = InventoryManager.Instance();
+        var container = manager != null ? manager->GetInventoryContainer(type) : null;
+        var item = container != null && container->IsLoaded ? container->GetInventorySlot(slot) : null;
+        return item != null ? item->Quantity : -1;
+    }
 
     private static void Log(string message) => Plugin.Log.Information($"[plate] {message}");
 }
