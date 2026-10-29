@@ -105,7 +105,8 @@ public class PlateTransferTests
             new Dictionary<uint, IReadOnlyList<uint>> { [500] = [21, 22] }, new Dictionary<uint, uint> { [12] = 10 });
 
         Assert.Equal(new PlateSource(PlateSourceKind.Dresser, 1, 1_000_012, 3, 0), dresserOf(10));
-        Assert.Equal(new PlateSource(PlateSourceKind.Dresser, 2, 22, 7, 8), dresserOf(22));
+        // An outfit's piece comes undyed, whatever values the outfit's entry holds (the editor shows it so by hand).
+        Assert.Equal(new PlateSource(PlateSourceKind.Dresser, 2, 22, 0, 0), dresserOf(22));
         Assert.Equal(new PlateSource(PlateSourceKind.Dresser, 3, 30, 0, 0), dresserOf(30));
         Assert.Null(dresserOf(99));
     }

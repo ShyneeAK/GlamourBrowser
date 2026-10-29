@@ -167,10 +167,12 @@ public static class PlateSources
             var id = raw > DresserContents.HqOffset ? raw - DresserContents.HqOffset : raw;
             var isVariant = variants.TryGetValue(id, out var baseId);
             Offer(isVariant ? baseId : id, isVariant ? 1 : 0, new PlateSource(PlateSourceKind.Dresser, (uint)i, raw, stain0[i], stain1[i]));
+            // The editor takes an outfit's piece undyed: the outfit entry's values (e.g. 4/0) are no dyes of the piece, and
+            // a removal marked for them made the server drop the whole save, silently.
             if (outfitSets.TryGetValue(id, out var contained))
             {
                 foreach (var piece in contained)
-                    Offer(variants.GetValueOrDefault(piece, piece), 2, new PlateSource(PlateSourceKind.Dresser, (uint)i, piece, stain0[i], stain1[i]));
+                    Offer(variants.GetValueOrDefault(piece, piece), 2, new PlateSource(PlateSourceKind.Dresser, (uint)i, piece, 0, 0));
             }
         }
         return itemId => best.TryGetValue(itemId, out var found) ? found.Source : null;
