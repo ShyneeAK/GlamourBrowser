@@ -1,5 +1,15 @@
 # What's new
 
+## 0.8.0.0
+- Recently used: a new view next to the wishlist shows the items you clicked last, the newest on top (up to 1000).
+- Favorites: a heart next to the wishlist star marks an item; the favorites have their own view. Every filter applies in both new views.
+- Wishlist, Recently used and Favorites have "Tiles / By source" and "Outfit on tiles": if you like, the tiles wear your outfit.
+- Hide model duplicates: a checkbox next to the classes/jobs shows only the first item of each model; the cube at the bottom left of the tile shows the others.
+- Search with exclusion: a word with a minus in front is left out, e.g. "robe -skirt".
+- Dye counter under the try-on, on an own set's card and in the set editor: how many dyes you need, which ones (mostly the new generic dye) and how many pieces in the dresser are dyed like this already. When transferring to a glamour plate, the plugin takes the copy from the dresser that is already dyed to match.
+- My Sets: "Import glamour plate N" takes only the plate chosen in the plate editor.
+- Sorting: My Sets, the wishlist and the favorites can be sorted now (name, level, newest or oldest first), each view on its own. Numbers in names count properly: "Set 3" before "Set 13".
+
 ## 0.7.3.0
 - Transfer to glamour plate: sets with a dyed piece from an outfit in the dresser (e.g. boots from an outfit) are saved now. Until now the plate editor showed the set, but "Save" silently kept the old plate.
 - Language: a language change takes effect at once, also on slot names, tile texts, sources, window titles, the command help and this news.

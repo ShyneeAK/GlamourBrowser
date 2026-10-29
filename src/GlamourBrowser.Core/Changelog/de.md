@@ -1,5 +1,15 @@
 # Neuigkeiten
 
+## 0.8.0.0
+- Zuletzt benutzt: Eine neue Ansicht neben der Wunschliste zeigt die zuletzt angeklickten Items, das neueste oben (bis zu 1000).
+- Favoriten: Ein Herz neben dem Wunschlisten-Stern merkt ein Item vor; die Favoriten haben ihre eigene Ansicht. In beiden neuen Ansichten gelten alle Filter.
+- Wunschliste, Zuletzt benutzt und Favoriten haben „Kacheln / Nach Quelle“ und „Outfit auf Kacheln“: Die Kacheln tragen auf Wunsch dein Outfit.
+- Modell-Duplikate ausblenden: Ein Haken neben Klassen/Jobs zeigt von jedem Modell nur das erste Item; die übrigen zeigt der Würfel unten links auf der Kachel.
+- Suche mit Ausschluss: Ein Wort mit Minus davor blendet aus, z. B. „robe -rock“.
+- Farbstoff-Zähler unter der Anprobe, auf der Karte eines eigenen Sets und im Set-Editor: wie viele Farbstoffe du brauchst, welche (meist „Einfacher Farbstoff“) und wie viele Teile in der Kommode schon so gefärbt sind. Beim Übertragen in eine Glamour-Plate nimmt das Plugin die schon passend gefärbte Kopie aus der Kommode.
+- Meine Sets: „Glamour-Plate N importieren“ übernimmt nur die im Plate-Editor gewählte Plate.
+- Sortierung: Meine Sets, Wunschliste und Favoriten lassen sich jetzt sortieren (Name, Level, neueste oder älteste zuerst), jede Ansicht für sich. Zahlen in Namen zählen richtig: „Set 3“ vor „Set 13“.
+
 ## 0.7.3.0
 - In Glamour-Plate übertragen: Sets mit einem gefärbten Teil aus einem Kleidungsset der Kommode (z. B. Stiefel aus einem Outfit) werden jetzt gespeichert. Bisher zeigte der Plate-Editor das Set, aber „Speichern“ behielt still die alte Plate.
 - Sprache: Ein Sprachwechsel wirkt sofort, auch auf Slot-Namen, Kacheltexte, Bezugsquellen, Fenstertitel, die Befehlshilfe und diese Neuigkeiten.

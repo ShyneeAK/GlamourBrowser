@@ -1,5 +1,15 @@
 # Nouveautés
 
+## 0.8.0.0
+- Utilisés récemment : une nouvelle vue à côté de la liste de souhaits montre les derniers objets cliqués, le plus récent en haut (jusqu’à 1000).
+- Favoris : un cœur à côté de l’étoile de la liste de souhaits marque un objet ; les favoris ont leur propre vue. Tous les filtres s’appliquent dans les deux nouvelles vues.
+- La liste de souhaits, Utilisés récemment et Favoris ont « Vignettes / Par source » et « Tenue sur les vignettes » : si tu veux, les vignettes portent ta tenue.
+- Masquer les doublons de modèle : une case à côté des classes/jobs n’affiche que le premier objet de chaque modèle ; le cube en bas à gauche de la vignette affiche les autres.
+- Recherche avec exclusion : un mot précédé d’un moins est exclu, p. ex. « robe -jupe ».
+- Compteur de teintures sous l’essayage, sur la carte d’un ensemble perso et dans l’éditeur d’ensemble : combien de teintures il te faut, lesquelles (surtout la nouvelle teinture générique) et combien de pièces de la commode sont déjà teintes ainsi. En transférant vers une tenue de mirage, le plugin prend la copie de la commode déjà teinte comme il faut.
+- Mes ensembles : « Importer la tenue de mirage N » ne reprend que la tenue choisie dans l’éditeur.
+- Tri : Mes ensembles, la liste de souhaits et les favoris peuvent maintenant être triés (nom, niveau, plus récents ou plus anciens d’abord), chaque vue à part. Les nombres dans les noms comptent correctement : « Set 3 » avant « Set 13 ».
+
 ## 0.7.3.0
 - Transférer vers une plaque de mirage : les ensembles avec une pièce teinte issue d’une tenue de la commode (p. ex. des bottes d’une tenue) sont maintenant enregistrés. Jusqu’ici, l’éditeur de plaque montrait l’ensemble, mais « Enregistrer » gardait l’ancienne plaque sans rien dire.
 - Langue : un changement de langue s’applique aussitôt, aussi aux noms d’emplacements, aux textes des vignettes, aux sources, aux titres des fenêtres, à l’aide des commandes et à ces nouveautés.
