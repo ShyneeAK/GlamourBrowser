@@ -174,6 +174,11 @@ public sealed class TileGrid
             return;
         else if (state.Filter.Mode == BrowseMode.Wishlist && !DrawWishlistHeader())
             return;
+        else if (BrowseModes.ItemList(state.Filter.Mode) && DrawListBar(state.Filter.Mode))
+        {
+            planView.Draw(editor, state.Results);
+            return;
+        }
         else if (state.Filter.Mode == BrowseMode.Sets && state.Results.Count == 0)
         {
             if (!sources.IsReady)
@@ -365,6 +370,38 @@ public sealed class TileGrid
         return false;
     }
 
+    /// <summary>
+    /// The bar of the wishlist, "Zuletzt benutzt" and the favourites: tiles or the missing pieces by source; with tiles
+    /// "Erledigte ausblenden" (wishlist only) and whether the tiles wear the outfit. Returns whether the list shows by source.
+    /// </summary>
+    private bool DrawListBar(BrowseMode mode)
+    {
+        var bySource = state.BySource(mode);
+        if (ImGui.RadioButton(Loc.T("Kacheln"), !bySource) && bySource)
+            state.SetBySource(mode, false);
+        ImGui.SameLine();
+        if (ImGui.RadioButton(Loc.T("Nach Quelle"), bySource) && !bySource)
+            state.SetBySource(mode, true);
+        // The plan lists only missing pieces anyway, and shows no tiles.
+        if (bySource)
+            return true;
+
+        if (mode == BrowseMode.Wishlist)
+        {
+            ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X * 4);
+            var hideDone = config.HideDoneWishes;
+            if (ImGui.Checkbox(Loc.T("Erledigte ausblenden"), ref hideDone))
+                state.SetHideDoneWishes(hideDone);
+        }
+        ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X * 4);
+        var outfit = state.WearsOutfit(mode);
+        if (ImGui.Checkbox(Loc.T("Outfit auf Kacheln"), ref outfit))
+            state.SetWearsOutfit(mode, outfit);
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip(Loc.T("Die Kacheln tragen das Outfit der Live-Ansicht; aus zeigen sie nur das Item bzw. Set selbst"));
+        return false;
+    }
+
     /// <summary>The wishlist mode's hints, view switch and filter (tiles only), or the plan by source; false when no grid follows.</summary>
     private bool DrawWishlistHeader()
     {
@@ -379,27 +416,14 @@ public sealed class TileGrid
             return false;
         }
 
-        var bySource = config.WishlistBySource;
-        if (ImGui.RadioButton(Loc.T("Kacheln"), !bySource) && bySource)
-            state.SetWishlistBySource(false);
-        ImGui.SameLine();
-        if (ImGui.RadioButton(Loc.T("Nach Quelle"), bySource) && !bySource)
-            state.SetWishlistBySource(true);
-        // The plan lists only missing pieces anyway.
-        if (!bySource)
-        {
-            ImGui.SameLine(0, ImGui.GetStyle().ItemSpacing.X * 4);
-            var hideDone = config.HideDoneWishes;
-            if (ImGui.Checkbox(Loc.T("Erledigte ausblenden"), ref hideDone))
-                state.SetHideDoneWishes(hideDone);
-        }
+        var bySource = DrawListBar(BrowseMode.Wishlist);
 
         // Set entries resolve only once the source index is there (the plan says it loads on its own).
         if (!bySource && state.WishlistEntries.Count < store.Entries.Count && !sources.IsReady)
             ImGui.TextDisabled(Loc.T("Ausrüstungs-Sets werden geladen …"));
         if (bySource)
         {
-            planView.Draw(editor);
+            planView.Draw(editor, state.WishlistEntries);
             return false;
         }
 

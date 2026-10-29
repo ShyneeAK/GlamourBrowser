@@ -379,11 +379,50 @@ public sealed class BrowserState
         Refresh();
     }
 
-    public void SetWishlistBySource(bool bySource)
+    /// <summary>Whether a list (wishlist, history, favourites) shows its missing pieces by source instead of tiles.</summary>
+    public bool BySource(BrowseMode mode) => mode switch
     {
-        config.WishlistBySource = bySource;
+        BrowseMode.Wishlist => config.WishlistBySource,
+        BrowseMode.History => config.HistoryBySource,
+        BrowseMode.Favorites => config.FavoritesBySource,
+        _ => false,
+    };
+
+    public void SetBySource(BrowseMode mode, bool bySource)
+    {
+        switch (mode)
+        {
+            case BrowseMode.Wishlist: config.WishlistBySource = bySource; break;
+            case BrowseMode.History: config.HistoryBySource = bySource; break;
+            case BrowseMode.Favorites: config.FavoritesBySource = bySource; break;
+            default: return;
+        }
         config.Save();
         Refresh();
+    }
+
+    /// <summary>Whether a list's tiles wear the try-on around the item or set ("Outfit auf Kacheln"); never in "Meine Sets".</summary>
+    public bool WearsOutfit(BrowseMode mode) => mode switch
+    {
+        BrowseMode.Wishlist => config.WishlistOutfit,
+        BrowseMode.History => config.HistoryOutfit,
+        BrowseMode.Favorites => config.FavoritesOutfit,
+        BrowseMode.MySets => false,
+        _ => true,
+    };
+
+    /// <summary>A new cover is a new tile key: the tiles render anew, the others stay cached for switching back.</summary>
+    public void SetWearsOutfit(BrowseMode mode, bool wears)
+    {
+        switch (mode)
+        {
+            case BrowseMode.Wishlist: config.WishlistOutfit = wears; break;
+            case BrowseMode.History: config.HistoryOutfit = wears; break;
+            case BrowseMode.Favorites: config.FavoritesOutfit = wears; break;
+            default: return;
+        }
+        config.Save();
+        RequestTiles();
     }
 
     public void SetSort(SortOrder sort)
@@ -455,16 +494,16 @@ public sealed class BrowserState
         }
     }
 
-    // Every slot: a wishlist or "Meine Sets" tile wears nothing of the try-on.
+    // Every slot: a tile without the outfit wears nothing of the try-on.
     private static readonly ushort AllSlots = SlotMask.Of(CustomSetSubjects.Slots);
 
     /// <summary>
-    /// The slots a tile leaves free of the try-on around it (<see cref="LiveWeapons.TileCover(TileSubject, bool)"/>); in
-    /// the wishlist and in "Meine Sets" all of them, so a wish or an own set shows only what it holds (no weapon of the
-    /// outfit either), like with everything off.
+    /// The slots a tile leaves free of the try-on around it (<see cref="LiveWeapons.TileCover(TileSubject, bool)"/>); all
+    /// of them in "Meine Sets" and in a list without "Outfit auf Kacheln", so an own set or a wish shows only what it
+    /// holds (no weapon of the outfit either), like with everything off.
     /// </summary>
     public ushort CoverOf(TileSubject subject)
-        => filter.Mode is BrowseMode.Wishlist or BrowseMode.MySets && !PiecesOpen ? AllSlots : LiveWeapons.TileCover(subject, WeaponsHidden);
+        => !WearsOutfit(filter.Mode) && !PiecesOpen ? AllSlots : LiveWeapons.TileCover(subject, WeaponsHidden);
 
     public Stance StanceFor(GlamourItem item)
         => config.TileWeaponsDrawn && item.Slot is EquipSlot.MainHand or EquipSlot.OffHand
@@ -575,7 +614,7 @@ public sealed class BrowserState
         {
             CurrentPage = ItemFilter.Page(Results, PageIndex, PageSize);
             // The plan by source shows no tiles: nothing to render, the cached ones stay for switching back.
-            if (!appearance.IsValid || filter.Mode == BrowseMode.Wishlist && config.WishlistBySource && !PiecesOpen)
+            if (!appearance.IsValid || BySource(filter.Mode) && !PiecesOpen)
             {
                 queue.Clear();
                 return;

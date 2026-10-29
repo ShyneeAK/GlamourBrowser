@@ -463,3 +463,5 @@ Noch keine Items angeklickt,No items clicked yet,Aucun objet cliqué pour l’in
 Noch keine Favoriten – das Herz oben links auf einer Kachel merkt ein Item vor,No favorites yet – the heart top left on a tile marks an item,Pas encore de favoris – le cœur en haut à gauche d’une vignette marque un objet,お気に入りはまだありません。タイル左上のハートでアイテムを登録できます
 Farbstoffe: {0},Dyes: {0},Teintures : {0},カララント: {0}
 "Ein Wort mit Minus davor blendet aus, z. B. „robe -rock“","A word with a minus in front is left out, e.g. “robe -skirt”","Un mot précédé d’un moins est exclu, p. ex. « robe -jupe »","前にマイナスを付けた語は除外されます（例: 「ローブ -スカート」）"
+Outfit auf Kacheln,Outfit on tiles,Tenue sur les vignettes,タイルに装備を表示
+Die Kacheln tragen das Outfit der Live-Ansicht; aus zeigen sie nur das Item bzw. Set selbst,"The tiles wear the outfit of the live view; off, they show only the item or set itself","Les vignettes portent la tenue de la vue en direct ; désactivé, elles n’affichent que l’objet ou l’ensemble lui-même",タイルにライブビューの装備を着せます。オフにするとアイテムまたはセットだけを表示します

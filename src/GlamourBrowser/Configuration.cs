@@ -50,6 +50,16 @@ public sealed class Configuration : IPluginConfiguration
     public bool HideDoneWishes { get; set; }
     /// <summary>The wishlist mode shows the missing pieces grouped by source instead of tiles.</summary>
     public bool WishlistBySource { get; set; }
+    /// <summary>"Zuletzt benutzt" shows the missing pieces grouped by source instead of tiles.</summary>
+    public bool HistoryBySource { get; set; }
+    /// <summary>The favourites show the missing pieces grouped by source instead of tiles.</summary>
+    public bool FavoritesBySource { get; set; }
+    /// <summary>The wishlist's tiles wear the try-on around the wish ("Outfit auf Kacheln"); off, only what the wish holds.</summary>
+    public bool WishlistOutfit { get; set; }
+    /// <summary>The tiles of "Zuletzt benutzt" wear the try-on around the item.</summary>
+    public bool HistoryOutfit { get; set; } = true;
+    /// <summary>The favourites' tiles wear the try-on around the item.</summary>
+    public bool FavoritesOutfit { get; set; } = true;
     /// <summary>The plugin's own UI scale on top of Dalamud's, 0.5–3.</summary>
     public float UiScale { get; set; } = 1f;
     /// <summary>The text size on top of the UI scale, 0.8–2; icons and the slot bar keep their size.</summary>

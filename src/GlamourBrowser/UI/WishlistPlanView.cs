@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
@@ -18,7 +19,7 @@ using GlamourBrowser.CustomSets;
 namespace GlamourBrowser.UI;
 
 /// <summary>
-/// The wishlist's missing pieces grouped by source ("Nach Quelle"), to see where a run pays off. A group's action sits in
+/// The missing pieces of a list (wishlist, history, favourites) grouped by source ("Nach Quelle"), to see where a run pays off. A group's action sits in
 /// its header when all pieces share it, otherwise (recipes, store products) on each piece next to its cost; a click on a
 /// piece shows it in the live preview and the item card.
 /// </summary>
@@ -31,6 +32,8 @@ public sealed class WishlistPlanView
     private readonly LivePreview live;
     private readonly Theme.Theme theme;
     private WishPlan? plan;
+    // The entries the plan was made from: another list (or the same one filtered anew) makes it again.
+    private IReadOnlyList<TileSubject>? planEntries;
     // Bumped by every event that can change the plan; the plan is rebuilt on the next draw, not every frame.
     private int version;
     private int planVersion;
@@ -52,7 +55,8 @@ public sealed class WishlistPlanView
     }
 
     /// <param name="editor">While a custom set is edited, a click on a piece puts it in (as on a tile).</param>
-    public void Draw(CustomSetEditor editor)
+    /// <param name="entries">The list's items and sets; the browser hands out a new list whenever they change.</param>
+    public void Draw(CustomSetEditor editor, IReadOnlyList<TileSubject> entries)
     {
         // Without the index every piece would land under "Quelle unbekannt".
         if (!sources.IsReady)
@@ -61,10 +65,10 @@ public sealed class WishlistPlanView
             return;
         }
 
-        if (plan == null || planVersion != version)
+        if (plan == null || planVersion != version || !ReferenceEquals(planEntries, entries))
         {
-            plan = WishPlanner.Plan(state.WishlistEntries, IsOwned, sources.Index.SourcesOf);
-            planVersion = version;
+            plan = WishPlanner.Plan(entries, IsOwned, sources.Index.SourcesOf);
+            (planVersion, planEntries) = (version, entries);
         }
 
         if (plan.Missing == 0)
