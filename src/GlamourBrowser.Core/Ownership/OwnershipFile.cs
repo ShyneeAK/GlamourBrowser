@@ -19,7 +19,10 @@ public static class OwnershipFile
             var dto = JsonSerializer.Deserialize<FileDto>(File.ReadAllText(path), Options)
                       ?? throw new JsonException("empty document");
             foreach (var c in dto.Containers)
-                store.ReplaceContainer(new ContainerSnapshot(new ContainerId(c.Kind, c.Key), c.Name ?? LegacyName(c.Kind, c.DisplayName), c.Seen, c.ItemIds));
+                store.ReplaceContainer(new ContainerSnapshot(new ContainerId(c.Kind, c.Key), c.Name ?? LegacyName(c.Kind, c.DisplayName), c.Seen, c.ItemIds)
+                {
+                    Entries = c.Entries?.Select(e => new DresserEntry(e.Id, e.Stain0, e.Stain1)).ToList() ?? [],
+                });
             return store;
         }
         catch (Exception e) when (e is JsonException or NotSupportedException)
@@ -33,7 +36,8 @@ public static class OwnershipFile
     public static void Save(OwnershipStore store, string path)
     {
         var dto = new FileDto(store.ContentId, store.Containers
-            .Select(c => new ContainerDto(c.Id.Kind, c.Id.Key, c.Name, c.DisplayName, c.Seen, c.ItemIds.ToList()))
+            .Select(c => new ContainerDto(c.Id.Kind, c.Id.Key, c.Name, c.DisplayName, c.Seen, c.ItemIds.ToList(),
+                                          c.Entries.Count > 0 ? c.Entries.Select(e => new EntryDto(e.RawId, e.Stain0, e.Stain1)).ToList() : null))
             .ToList());
 
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
@@ -52,5 +56,9 @@ public static class OwnershipFile
     private sealed record FileDto(ulong ContentId, List<ContainerDto> Containers);
 
     /// <param name="DisplayName">Read only from older files, see <see cref="LegacyName"/>; still written for older plugin versions.</param>
-    private sealed record ContainerDto(ContainerKind Kind, string Key, string? Name, string? DisplayName, DateTimeOffset Seen, List<uint> ItemIds);
+    /// <param name="Entries">The dresser's entries with their dyes; missing in older files and for the other containers.</param>
+    private sealed record ContainerDto(ContainerKind Kind, string Key, string? Name, string? DisplayName, DateTimeOffset Seen, List<uint> ItemIds,
+                                       List<EntryDto>? Entries = null);
+
+    private sealed record EntryDto(uint Id, byte Stain0, byte Stain1);
 }

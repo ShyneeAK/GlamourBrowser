@@ -9,7 +9,7 @@ using Lumina.Excel.Sheets;
 
 namespace GlamourBrowser.Ownership;
 
-/// <summary>Reads the glamour dresser once the game has loaded it (window opened).</summary>
+/// <summary>Reads the glamour dresser once the game has loaded it (window opened), with the dyes of its entries.</summary>
 public sealed unsafe class DresserReader : IDisposable
 {
     private const string Addon = "MiragePrismPrismBox";
@@ -35,8 +35,12 @@ public sealed unsafe class DresserReader : IDisposable
         if (mirage == null || !mirage->PrismBoxLoaded)
             return;
 
-        var items = DresserContents.Resolve(mirage->PrismBoxItemIds.ToArray(), outfitSets);
-        service.Submit(new ContainerSnapshot(new ContainerId(ContainerKind.Dresser, ""), "", DateTimeOffset.Now, items));
+        var rawIds = mirage->PrismBoxItemIds.ToArray();
+        var (stain0, stain1) = (mirage->PrismBoxStain0Ids.ToArray(), mirage->PrismBoxStain1Ids.ToArray());
+        var items = DresserContents.Resolve(rawIds, outfitSets);
+        // The empty places stay out: only the dyes of the entries matter (their index is read anew for a transfer).
+        var entries = rawIds.Select((raw, i) => new DresserEntry(raw, stain0[i], stain1[i])).Where(e => e.RawId != 0).ToList();
+        service.Submit(new ContainerSnapshot(new ContainerId(ContainerKind.Dresser, ""), "", DateTimeOffset.Now, items) { Entries = entries });
     }
 
     public void Dispose() => Plugin.AddonLifecycle.UnregisterListener(AddonEvent.PostRefresh, Addon, OnAddon);

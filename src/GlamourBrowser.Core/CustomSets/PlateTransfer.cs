@@ -42,6 +42,13 @@ public static class PlateDyes
     }
 
     /// <summary>
+    /// The dyes the piece already has where the plate takes it from: the dresser copy closest to its dyes (see
+    /// <see cref="PlateSources.Pick"/>); none without a copy in the dresser (the armoire's pieces carry no dye).
+    /// </summary>
+    public static (byte Stain0, byte Stain1) InDresser(CustomPiece piece, int dyeCount, IReadOnlyList<PlateSource> copies, Func<byte, bool> isDye)
+        => PlateSources.Pick(copies, piece, dyeCount, isDye) is { } source ? BaseStains(source, dyeCount, isDye) : ((byte)0, (byte)0);
+
+    /// <summary>
     /// The dyes the piece really has in the dresser, for the channels it has. A first value that is no dye (the dresser
     /// holds e.g. 128/7 or 232/4) marks an undyed piece: picked by hand, the game shows such a piece without dye.
     /// </summary>
@@ -96,8 +103,9 @@ public static class PlateTransfer
     }
 
     /// <summary>One entry per plate slot: its source (dresser before armoire), else why it is missing; empty set slots clear the plate's slot.</summary>
+    /// <param name="dresserOf">The dresser copy for a piece, e.g. the one already dyed like it (<see cref="PlateSources.Pick"/>).</param>
     /// <param name="placesOf">Where the player keeps an item (container names, best first), for the reason.</param>
-    public static IReadOnlyList<PlateSlot> Plan(IReadOnlyList<CustomPiece> pieces, Func<uint, PlateSource?> dresserOf, Func<uint, PlateSource?> armoireOf,
+    public static IReadOnlyList<PlateSlot> Plan(IReadOnlyList<CustomPiece> pieces, Func<CustomPiece, PlateSource?> dresserOf, Func<uint, PlateSource?> armoireOf,
                                                 Func<uint, IReadOnlyList<string>> placesOf)
     {
         var result = new List<PlateSlot>();
@@ -109,7 +117,7 @@ public static class PlateTransfer
                 continue;
             }
 
-            if ((dresserOf(piece.ItemId) ?? armoireOf(piece.ItemId)) is not { } source)
+            if ((dresserOf(piece) ?? armoireOf(piece.ItemId)) is not { } source)
             {
                 var places = placesOf(piece.ItemId);
                 result.Add(new PlateSlot(slot, piece, null, places.Count > 0 ? Loc.F("liegt in: {0}", places[0]) : Loc.T("nicht im Besitz")));
@@ -152,11 +160,24 @@ public static class PlateSources
     public static Func<uint, PlateSource?> Dresser(IReadOnlyList<uint> rawIds, IReadOnlyList<byte> stain0, IReadOnlyList<byte> stain1,
                                                    IReadOnlyDictionary<uint, IReadOnlyList<uint>> outfitSets, IReadOnlyDictionary<uint, uint> variants)
     {
-        var best = new Dictionary<uint, (int Rank, PlateSource Source)>();
+        var copies = DresserCopies(rawIds, stain0, stain1, outfitSets, variants);
+        return itemId => copies(itemId) is [var first, ..] ? first : null;
+    }
+
+    /// <summary>
+    /// Every copy of an item in the dresser, in the order of <see cref="Dresser"/>: the item itself, a "+N" variant, the
+    /// item in an outfit; among equals by index.
+    /// </summary>
+    public static Func<uint, IReadOnlyList<PlateSource>> DresserCopies(IReadOnlyList<uint> rawIds, IReadOnlyList<byte> stain0, IReadOnlyList<byte> stain1,
+                                                                     IReadOnlyDictionary<uint, IReadOnlyList<uint>> outfitSets,
+                                                                     IReadOnlyDictionary<uint, uint> variants)
+    {
+        var found = new Dictionary<uint, List<(int Rank, PlateSource Source)>>();
         void Offer(uint baseId, int rank, PlateSource source)
         {
-            if (!best.TryGetValue(baseId, out var known) || rank < known.Rank)
-                best[baseId] = (rank, source);
+            if (!found.TryGetValue(baseId, out var list))
+                found[baseId] = list = new List<(int Rank, PlateSource Source)>();
+            list.Add((rank, source));
         }
 
         for (var i = 0; i < rawIds.Count; i++)
@@ -175,8 +196,30 @@ public static class PlateSources
                     Offer(variants.GetValueOrDefault(piece, piece), 2, new PlateSource(PlateSourceKind.Dresser, (uint)i, piece, 0, 0));
             }
         }
-        return itemId => best.TryGetValue(itemId, out var found) ? found.Source : null;
+        // Stable: among equal ranks the lower index stays first.
+        var ordered = found.ToDictionary(f => f.Key, f => (IReadOnlyList<PlateSource>)f.Value.OrderBy(c => c.Rank).Select(c => c.Source).ToList());
+        return itemId => ordered.GetValueOrDefault(itemId) ?? [];
     }
+
+    /// <summary>
+    /// The copy for a piece: the one that needs the fewest dye changes for the set's dyes (already dyed like it), among
+    /// those the first; null without a copy.
+    /// </summary>
+    public static PlateSource? Pick(IReadOnlyList<PlateSource> copies, CustomPiece piece, int dyeCount, Func<byte, bool> isDye)
+    {
+        return copies.Count == 0 ? null : copies.OrderBy(Changes).First();
+
+        int Changes(PlateSource copy)
+        {
+            var (first, second) = PlateDyes.Changes(piece, copy, dyeCount, isDye, _ => []);
+            return (first == null ? 0 : 1) + (second == null ? 0 : 1);
+        }
+    }
+
+    /// <summary>The same from the dresser's entries as last read and saved (<see cref="DresserEntry"/>).</summary>
+    public static Func<uint, IReadOnlyList<PlateSource>> DresserCopies(IReadOnlyList<DresserEntry> entries, IReadOnlyDictionary<uint, IReadOnlyList<uint>> outfitSets,
+                                                                     IReadOnlyDictionary<uint, uint> variants)
+        => DresserCopies(entries.Select(e => e.RawId).ToList(), entries.Select(e => e.Stain0).ToList(), entries.Select(e => e.Stain1).ToList(), outfitSets, variants);
 
     /// <summary>Looks an item up in the armoire (rows of the Cabinet sheet that hold it): the item itself before a variant. Armoire pieces carry no dye.</summary>
     public static Func<uint, PlateSource?> Armoire(IEnumerable<(uint Row, uint ItemId)> rows, IReadOnlyDictionary<uint, uint> variants)

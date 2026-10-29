@@ -67,7 +67,7 @@ public sealed class SetEditorPane
         DrawDiscardDraftQuestion();
         ImGui.SameLine();
         PlateTransferUi.DrawButton(plates, draft.Pieces);
-        DyeCounter.Draw(draft.Pieces.Select(p => (p.Stain0, p.Stain1, state.ItemOf(p.ItemId)?.DyeCount ?? 0)), dyes, theme);
+        DyeCounter.Draw(draft.Pieces, id => state.ItemOf(id)?.DyeCount ?? 0, plates, dyes, theme);
         ImGui.Separator();
 
         using (var slots = ImRaii.Child("##slots", Vector2.Zero))

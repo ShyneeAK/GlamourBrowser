@@ -29,6 +29,20 @@ public sealed class OwnershipFileTests : IDisposable
     }
 
     [Fact]
+    public void SaveAndLoad_KeepsTheDresserEntriesWithTheirDyes()
+    {
+        var store = new OwnershipStore(123);
+        DresserEntry[] entries = [new(10, 5, 7), new(1_000_012, 0, 0)];
+        store.ReplaceContainer(new ContainerSnapshot(new ContainerId(ContainerKind.Dresser, ""), "", DateTimeOffset.Now, [10, 12]) { Entries = entries });
+        store.ReplaceContainer(new ContainerSnapshot(new ContainerId(ContainerKind.Inventory, ""), "", DateTimeOffset.Now, [40]));
+        OwnershipFile.Save(store, FilePath);
+
+        var loaded = OwnershipFile.Load(FilePath, 123).Containers.ToDictionary(c => c.Id.Kind);
+        Assert.Equal(entries, loaded[ContainerKind.Dresser].Entries);
+        Assert.Empty(loaded[ContainerKind.Inventory].Entries);
+    }
+
+    [Fact]
     public void Load_OlderFile_KeepsOnlyTheRetainersOwnName()
     {
         File.WriteAllText(FilePath, """
@@ -41,6 +55,8 @@ public sealed class OwnershipFileTests : IDisposable
         var byKind = loaded.Containers.ToDictionary(c => c.Id.Kind, c => c.Name);
         Assert.Equal("Mira", byKind[ContainerKind.Retainer]);
         Assert.Equal("", byKind[ContainerKind.Dresser]);
+        // Without dresser entries (read before they were kept).
+        Assert.All(loaded.Containers, c => Assert.Empty(c.Entries));
     }
 
     [Fact]

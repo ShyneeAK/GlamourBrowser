@@ -8,7 +8,7 @@ public class PlateTransferTests
     private static readonly Dictionary<uint, IReadOnlyList<string>> Places = new() { [40] = ["Gehilfe Mira"] };
 
     private static IReadOnlyList<PlateSlot> Plan(IReadOnlyList<CustomPiece> pieces, Func<uint, PlateSource?>? dresser = null, Func<uint, PlateSource?>? armoire = null)
-        => PlateTransfer.Plan(pieces, dresser ?? (_ => null), armoire ?? (_ => null), id => Places.GetValueOrDefault(id) ?? []);
+        => PlateTransfer.Plan(pieces, piece => dresser?.Invoke(piece.ItemId), armoire ?? (_ => null), id => Places.GetValueOrDefault(id) ?? []);
 
     private static PlateSlot SlotOf(IReadOnlyList<PlateSlot> plan, Items.EquipSlot slot) => plan.Single(s => s.Slot == slot);
 
@@ -117,6 +117,35 @@ public class PlateTransferTests
         var dresserOf = PlateSources.Dresser([12, 500, 10], [0, 0, 0], [0, 0, 0],
             new Dictionary<uint, IReadOnlyList<uint>> { [500] = [10] }, new Dictionary<uint, uint> { [12] = 10 });
         Assert.Equal(2u, dresserOf(10)!.Value.Id);
+    }
+
+    [Fact]
+    public void Pick_TakesTheCopyDyedLikeThePiece_ElseTheFirst()
+    {
+        // Three copies of item 10: undyed, dyed 5/0, dyed 5/7.
+        var copiesOf = PlateSources.DresserCopies([10, 10, 10], [0, 5, 5], [0, 0, 7], new Dictionary<uint, IReadOnlyList<uint>>(), new Dictionary<uint, uint>());
+        var copies = copiesOf(10);
+
+        Assert.Equal(3, copies.Count);
+        Assert.Equal(2u, PlateSources.Pick(copies, new CustomPiece(Body, 10, 5, 7), 2, IsDye)!.Value.Id);
+        Assert.Equal(1u, PlateSources.Pick(copies, new CustomPiece(Body, 10, 5, 0), 2, IsDye)!.Value.Id);
+        // Closest: one channel right is better than none.
+        Assert.Equal(1u, PlateSources.Pick(copies, new CustomPiece(Body, 10, 5, 9), 2, IsDye)!.Value.Id);
+        Assert.Equal(0u, PlateSources.Pick(copies, new CustomPiece(Body, 10, 9, 9), 2, IsDye)!.Value.Id);
+        Assert.Null(PlateSources.Pick(copiesOf(11), new CustomPiece(Body, 11, 5, 0), 2, IsDye));
+    }
+
+    [Fact]
+    public void InDresser_TheDyesOfThePickedCopy_NoneWithoutOne()
+    {
+        var entries = new[] { new Ownership.DresserEntry(10, 5, 7), new Ownership.DresserEntry(1_000_020, 3, 0) };
+        var copiesOf = PlateSources.DresserCopies(entries, new Dictionary<uint, IReadOnlyList<uint>>(), new Dictionary<uint, uint>());
+
+        Assert.Equal(((byte)5, (byte)7), PlateDyes.InDresser(new CustomPiece(Body, 10, 5, 1), 2, copiesOf(10), IsDye));
+        // Only the channels the item has.
+        Assert.Equal(((byte)5, (byte)0), PlateDyes.InDresser(new CustomPiece(Body, 10, 5, 1), 1, copiesOf(10), IsDye));
+        Assert.Equal(((byte)3, (byte)0), PlateDyes.InDresser(new CustomPiece(Body, 20, 3, 0), 2, copiesOf(20), IsDye));
+        Assert.Equal(((byte)0, (byte)0), PlateDyes.InDresser(new CustomPiece(Body, 30, 3, 0), 2, copiesOf(30), IsDye));
     }
 
     [Fact]

@@ -465,3 +465,5 @@ Farbstoffe: {0},Dyes: {0},Teintures : {0},カララント: {0}
 "Ein Wort mit Minus davor blendet aus, z. B. „robe -rock“","A word with a minus in front is left out, e.g. “robe -skirt”","Un mot précédé d’un moins est exclu, p. ex. « robe -jupe »","前にマイナスを付けた語は除外されます（例: 「ローブ -スカート」）"
 Outfit auf Kacheln,Outfit on tiles,Tenue sur les vignettes,タイルに装備を表示
 Die Kacheln tragen das Outfit der Live-Ansicht; aus zeigen sie nur das Item bzw. Set selbst,"The tiles wear the outfit of the live view; off, they show only the item or set itself","Les vignettes portent la tenue de la vue en direct ; désactivé, elles n’affichent que l’objet ou l’ensemble lui-même",タイルにライブビューの装備を着せます。オフにするとアイテムまたはセットだけを表示します
+({0} schon gefärbt),({0} already dyed),({0} déjà teints),（{0}箇所染色済み）
+{0} schon so in der Kommode gefärbt,{0} already dyed like this in the Glamour Dresser,{0} déjà teints ainsi dans la commode à mirages,{0}箇所はミラージュドレッサーで染色済み

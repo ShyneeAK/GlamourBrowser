@@ -213,7 +213,7 @@ public sealed unsafe class LivePane
         }
 
         DrawWornPieces();
-        DyeCounter.Draw(tryOn.TryOn.Pieces.Select(p => (p.Stain0, p.Stain1, state.ItemOf(p.ItemId)?.DyeCount ?? 0)), dyes, theme);
+        DyeCounter.Draw(tryOn.TryOn.Pieces, id => state.ItemOf(id)?.DyeCount ?? 0, plates, dyes, theme);
     }
 
     /// <summary>
@@ -576,7 +576,8 @@ public sealed unsafe class LivePane
             PlateTransferUi.DrawButton(plates, toTransfer.Pieces);
         }
         // An own set's dyes (detected sets have none).
-        DyeCounter.Draw(set.Pieces.Select(p => (set.StainsOf(p.Slot).Stain0, set.StainsOf(p.Slot).Stain1, p.DyeCount)), dyes, theme);
+        DyeCounter.Draw(set.Pieces.Select(p => new CustomPiece(p.Slot, p.Id, set.StainsOf(p.Slot).Stain0, set.StainsOf(p.Slot).Stain1)),
+                        id => state.ItemOf(id)?.DyeCount ?? 0, plates, dyes, theme);
         ImGui.Separator();
 
         var iconSize = new Vector2(ImGui.GetFrameHeight());

@@ -23,6 +23,19 @@ public class OwnershipStoreTests
     }
 
     [Fact]
+    public void ReplaceContainer_ANewDyeInTheDresserIsAChange()
+    {
+        var store = new OwnershipStore(1);
+        var changes = 0;
+        store.Changed += () => changes++;
+        store.ReplaceContainer(Snap(ContainerKind.Dresser, "", "", 10) with { Entries = [new DresserEntry(10, 5, 0)] });
+        store.ReplaceContainer(Snap(ContainerKind.Dresser, "", "", 10) with { Entries = [new DresserEntry(10, 5, 0)] });
+        store.ReplaceContainer(Snap(ContainerKind.Dresser, "", "", 10) with { Entries = [new DresserEntry(10, 6, 0)] });
+
+        Assert.Equal(2, changes);
+    }
+
+    [Fact]
     public void LocationsOf_OneEntryPerContainer()
     {
         var store = new OwnershipStore(1);

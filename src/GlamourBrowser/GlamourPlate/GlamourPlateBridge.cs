@@ -40,6 +40,8 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
     private readonly Func<uint, int> dyeCountOf;
     private readonly Dictionary<uint, IReadOnlyList<uint>> outfitSets;
     private Transfer? running;
+    // The copies in the dresser as last read, for the dye counter; made again when a new read replaced the snapshot.
+    private (ContainerSnapshot? Snapshot, Func<uint, IReadOnlyList<PlateSource>> CopiesOf) savedDresser = (null, _ => []);
 
     private sealed class Transfer(IReadOnlyList<(int Index, PlateSlot Slot)> steps, uint selectedBefore)
     {
@@ -284,13 +286,27 @@ public sealed unsafe class GlamourPlateBridge : IDisposable
         LastResult = new TransferResult(editorClosed, report.Transferred, report.Total, report.Notes, DateTime.Now);
     }
 
-    private Func<uint, PlateSource?> DresserLookup()
+    /// <summary>The dresser copy for each piece, the one already dyed like it first (<see cref="PlateSources.Pick"/>).</summary>
+    private Func<CustomPiece, PlateSource?> DresserLookup()
     {
         var mirage = MirageManager.Instance();
         if (mirage == null || !mirage->PrismBoxLoaded)
             return _ => null;
-        return PlateSources.Dresser(mirage->PrismBoxItemIds.ToArray(), mirage->PrismBoxStain0Ids.ToArray(), mirage->PrismBoxStain1Ids.ToArray(),
-            outfitSets, variants);
+        var copiesOf = PlateSources.DresserCopies(mirage->PrismBoxItemIds.ToArray(), mirage->PrismBoxStain0Ids.ToArray(),
+            mirage->PrismBoxStain1Ids.ToArray(), outfitSets, variants);
+        return piece => PlateSources.Pick(copiesOf(piece.ItemId), piece, dyeCountOf(piece.ItemId), IsDye);
+    }
+
+    /// <summary>
+    /// The dyes a piece already has where the plate would take it from (its dresser copy closest to its dyes, as the
+    /// dresser was last read); none without a copy there. For the dye counter's "schon gefärbt".
+    /// </summary>
+    public (byte Stain0, byte Stain1) StainsInDresser(CustomPiece piece)
+    {
+        var snapshot = ownership.Current?.Containers.FirstOrDefault(c => c.Id.Kind == ContainerKind.Dresser);
+        if (!ReferenceEquals(snapshot, savedDresser.Snapshot))
+            savedDresser = (snapshot, snapshot == null ? _ => [] : PlateSources.DresserCopies(snapshot.Entries, outfitSets, variants));
+        return PlateDyes.InDresser(piece, dyeCountOf(piece.ItemId), savedDresser.CopiesOf(piece.ItemId), IsDye);
     }
 
     private Func<uint, PlateSource?> ArmoireLookup()

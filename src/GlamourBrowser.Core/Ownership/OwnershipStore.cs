@@ -15,7 +15,7 @@ public sealed class OwnershipStore(ulong contentId, IReadOnlyDictionary<uint, ui
 
     /// <summary>
     /// Replaces everything previously known about this container. Returns false (and stays quiet) when
-    /// only the read time moved: same name and the same items, in any order.
+    /// only the read time moved: same name and the same items, in any order, and the same dresser entries.
     /// </summary>
     public bool ReplaceContainer(ContainerSnapshot snapshot)
     {
@@ -30,7 +30,7 @@ public sealed class OwnershipStore(ulong contentId, IReadOnlyDictionary<uint, ui
     }
 
     private static bool SameContent(ContainerSnapshot a, ContainerSnapshot b)
-        => a.Name == b.Name && a.ItemIds.Order().SequenceEqual(b.ItemIds.Order());
+        => a.Name == b.Name && a.ItemIds.Order().SequenceEqual(b.ItemIds.Order()) && a.Entries.SequenceEqual(b.Entries);
 
     public bool IsOwned(uint itemId) => index.ContainsKey(itemId);
 
