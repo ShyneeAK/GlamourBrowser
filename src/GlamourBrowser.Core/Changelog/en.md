@@ -1,5 +1,9 @@
 # What's new
 
+## 0.8.1.0
+- New source category "Hunt": items for Allied Seals, Centurio Seals and Sacks of Nuts are listed there instead of under "Marks & Tokens". If an item is also sold for tomestones, the tile shows the hunt icon.
+- Vendor locations: many vendors showed "Location unknown", among them the hunt vendors in Kugane, Rhalgr's Reach, Eulmore and Radz-at-Han. They now have coordinates and a map flag.
+
 ## 0.8.0.0
 - Recently used: a new view next to the wishlist shows the items you clicked last, the newest on top (up to 1000).
 - Favorites: a heart next to the wishlist star marks an item; the favorites have their own view. Every filter applies in both new views.

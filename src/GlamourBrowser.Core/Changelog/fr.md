@@ -1,5 +1,9 @@
 # Nouveautés
 
+## 0.8.1.0
+- Nouvelle catégorie de source « Contrats de chasse » : les objets contre des insignes alliés, des insignes Centurio et des insignes de chasse y figurent désormais au lieu de « Marques et jetons ». Si un objet s’achète aussi contre des mémoquartz, la vignette montre l’icône de la chasse.
+- Emplacement des marchands : beaucoup de marchands affichaient « Lieu inconnu », dont ceux de la chasse à Kugane, à L’Étendue de Rhalgr, à Eulmore et à Radz-at-Han. Ils ont maintenant des coordonnées et un repère sur la carte.
+
 ## 0.8.0.0
 - Utilisés récemment : une nouvelle vue à côté de la liste de souhaits montre les derniers objets cliqués, le plus récent en haut (jusqu’à 1000).
 - Favoris : un cœur à côté de l’étoile de la liste de souhaits marque un objet ; les favoris ont leur propre vue. Tous les filtres s’appliquent dans les deux nouvelles vues.

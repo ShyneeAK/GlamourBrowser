@@ -1,5 +1,9 @@
 # Neuigkeiten
 
+## 0.8.1.0
+- Neue Quellen-Kategorie „Hunt“: Items für Jagdabzeichen, Centurio-Abzeichen und Kupo-Trophäen stehen jetzt dort statt unter „Marken & Token“. Gibt es ein Item auch für Tomestones, zeigt die Kachel das Hunt-Icon.
+- Händler-Orte: Viele Händler hatten „Ort unbekannt“, darunter die Hunt-Händler in Kugane, Rhalgrs Wacht, Eulmore und Radz-at-Han. Sie haben jetzt Koordinaten und eine Kartenmarkierung.
+
 ## 0.8.0.0
 - Zuletzt benutzt: Eine neue Ansicht neben der Wunschliste zeigt die zuletzt angeklickten Items, das neueste oben (bis zu 1000).
 - Favoriten: Ein Herz neben dem Wunschlisten-Stern merkt ein Item vor; die Favoriten haben ihre eigene Ansicht. In beiden neuen Ansichten gelten alle Filter.
