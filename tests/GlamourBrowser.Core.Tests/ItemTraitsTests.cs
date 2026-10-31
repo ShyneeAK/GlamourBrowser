@@ -62,6 +62,10 @@ public class ItemTraitsTests
     }
 
     [Fact]
+    public void Icons_HuntBeatsTomestones()
+        => Assert.Equal([Hunt], SourceRanking.Icons(new HashSet<SourceCategory> { Tomestones, Hunt }));
+
+    [Fact]
     public void Top_SavageBeatsVendor() => Assert.Equal(RaidSavage, SourceRanking.Top(new HashSet<SourceCategory> { GilVendor, RaidSavage }));
 
     [Fact]

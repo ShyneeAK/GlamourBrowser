@@ -16,7 +16,8 @@ public static class SourceRanking
         [SourceCategory.RaidSavage, SourceCategory.RaidUltimate, SourceCategory.RaidNormal, SourceCategory.RaidAlliance,
          SourceCategory.Trial, SourceCategory.Dungeon, SourceCategory.OtherContent],
         [SourceCategory.Quest, SourceCategory.JobGear, SourceCategory.Achievement, SourceCategory.SeasonalEvent, SourceCategory.Crafting],
-        [SourceCategory.Tomestones, SourceCategory.Scrips, SourceCategory.Tokens, SourceCategory.Hunt, SourceCategory.GrandCompany,
+        // Hunt first: hunt vendors also sell older tomestone gear, and the tile shows the hunt for it.
+        [SourceCategory.Hunt, SourceCategory.Tomestones, SourceCategory.Scrips, SourceCategory.Tokens, SourceCategory.GrandCompany,
          SourceCategory.GoldSaucer, SourceCategory.PvP],
         [SourceCategory.GilVendor, SourceCategory.MogStation, SourceCategory.Other],
     ];
