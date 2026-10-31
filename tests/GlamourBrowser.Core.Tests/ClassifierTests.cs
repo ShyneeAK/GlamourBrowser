@@ -31,7 +31,17 @@ public class ClassifierTests
     [InlineData(20u, GrandCompany)]
     [InlineData(1u, GilVendor)]
     [InlineData(26807u, Tokens)]
+    [InlineData(27u, Hunt)]
+    [InlineData(10307u, Hunt)]
+    [InlineData(26533u, Hunt)]
     public void Currency(uint item, SourceCategory expected) => Assert.Equal(expected, CurrencyCategory.From(item, TomestoneIds));
+
+    [Fact]
+    public void DisplayOrderHasEveryCategoryOnce()
+    {
+        Assert.Equal(Enum.GetValues<SourceCategory>().Order(), SourceCategories.All.Order());
+        Assert.Equal(SourceCategories.Order(Tokens) + 1, SourceCategories.Order(Hunt));
+    }
 
     [Theory]
     [InlineData(97u, SeasonalEvent)]

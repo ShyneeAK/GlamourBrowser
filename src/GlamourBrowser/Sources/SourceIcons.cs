@@ -27,6 +27,7 @@ public static class SourceIcons
             SourceCategory.Tomestones => ItemIcon(28),
             SourceCategory.Scrips => ItemIcon(25199),
             SourceCategory.Tokens => ItemIcon(26807),
+            SourceCategory.Hunt => ItemIcon(26533),
             SourceCategory.GrandCompany => ItemIcon(20),
             SourceCategory.GoldSaucer => ItemIcon(29),
             SourceCategory.PvP => ItemIcon(25),

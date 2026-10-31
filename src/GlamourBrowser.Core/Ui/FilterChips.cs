@@ -64,7 +64,7 @@ public static class FilterChips
         if (!state.WearableOnly)
             chips.Add(new FilterChip(Loc.T("Auch nicht tragbare"), state with { WearableOnly = true }));
 
-        foreach (var category in Enum.GetValues<SourceCategory>().Where(state.Categories.Contains))
+        foreach (var category in SourceCategories.All.Where(state.Categories.Contains))
             chips.Add(new FilterChip(SourceCategories.DisplayName(category), state with { Categories = state.Categories.Where(c => c != category).ToHashSet() }));
 
         foreach (var expansion in Enum.GetValues<Expansion>().Where(state.Expansions.Contains))

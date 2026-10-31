@@ -191,7 +191,7 @@ public sealed class FilterColumn
         var style = ImGui.GetStyle();
         var counts = state.CountsWithoutCategories;
         var checkbox = ImGui.GetFrameHeight() + style.ItemInnerSpacing.X;
-        var categories = Enum.GetValues<SourceCategory>()
+        var categories = SourceCategories.All
             .Select(c => ImGui.CalcTextSize($"{SourceCategories.DisplayName(c)} ({counts.GetValueOrDefault(c)})").X)
             .Max() + ImGui.GetFrameHeight() * 2 + style.ItemSpacing.X * 2;
         var expansions = Enum.GetValues<Expansion>().Select(e => ImGui.CalcTextSize(Expansions.LongName(e)).X).Max() + checkbox;
@@ -208,7 +208,7 @@ public sealed class FilterColumn
         var counts = state.CountsWithoutCategories;
         // The icons as large as the checkboxes, the text centred on the row.
         var iconSize = new Vector2(ImGui.GetFrameHeight());
-        foreach (var category in Enum.GetValues<SourceCategory>())
+        foreach (var category in SourceCategories.All)
         {
             var on = f.Categories.Contains(category);
             var changed = ImGui.Checkbox($"##cat{category}", ref on);

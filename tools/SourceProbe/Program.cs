@@ -150,7 +150,7 @@ foreach (var arg in args.Skip(1).Where(a => uint.TryParse(a, out _)))
 
 if (args.Contains("--samples"))
 {
-    foreach (var category in Enum.GetValues<SourceCategory>())
+    foreach (var category in SourceCategories.All)
     {
         Console.WriteLine($"\n== {SourceCategories.DisplayName(category)}");
         foreach (var id in relevant.Where(i => index.SourcesOf(i).Any(s => s.Category == category)).OrderBy(i => i).Where((_, n) => n % 97 == 0).Take(3))
@@ -162,7 +162,7 @@ if (args.Contains("--samples"))
 }
 
 Console.WriteLine("\nCounts:");
-foreach (var (category, count) in index.Counts(relevant).OrderBy(kv => kv.Key))
+foreach (var (category, count) in index.Counts(relevant).OrderBy(kv => SourceCategories.Order(kv.Key)))
     Console.WriteLine($"  {SourceCategories.DisplayName(category)}: {count}");
 Console.WriteLine(index.HasFailures ? "Failures: " + string.Join(", ", index.Failures) : "No failures");
 return 0;

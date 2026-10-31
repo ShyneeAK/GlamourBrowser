@@ -9,6 +9,8 @@ public static class CurrencyCategory
     private static readonly HashSet<uint> PvP = [25, 21067, 36656, 40479];
     private static readonly HashSet<uint> GoldSaucer = [29, 41629, 52322];
     private static readonly HashSet<uint> GrandCompanySeals = [20, 21, 22];
+    // Allied Seals, Centurio Seals, Sacks of Nuts.
+    private static readonly HashSet<uint> Hunt = [27, 10307, 26533];
 
     /// <param name="tomestoneItemIds">Item ids from the TomestonesItem sheet.</param>
     public static SourceCategory From(uint currencyItemId, IReadOnlySet<uint> tomestoneItemIds)
@@ -24,6 +26,8 @@ public static class CurrencyCategory
             return SourceCategory.GoldSaucer;
         if (GrandCompanySeals.Contains(currencyItemId))
             return SourceCategory.GrandCompany;
+        if (Hunt.Contains(currencyItemId))
+            return SourceCategory.Hunt;
         if (tomestoneItemIds.Contains(currencyItemId))
             return SourceCategory.Tomestones;
         return SourceCategory.Tokens;

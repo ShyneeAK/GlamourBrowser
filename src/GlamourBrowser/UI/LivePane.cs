@@ -662,7 +662,7 @@ public sealed unsafe class LivePane
             ImGui.TextDisabled(Loc.T("Keine Quelle bekannt"));
 
         var iconSize = new Vector2(ImGui.GetFrameHeight());
-        foreach (var group in all.GroupBy(s => s.Category).OrderBy(g => g.Key))
+        foreach (var group in all.GroupBy(s => s.Category).OrderBy(g => SourceCategories.Order(g.Key)))
         {
             var iconMin = ImGui.GetCursorScreenPos();
             ImGui.Dummy(iconSize);
