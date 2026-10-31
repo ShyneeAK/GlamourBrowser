@@ -2,6 +2,8 @@ using System.Numerics;
 using System.Text.RegularExpressions;
 using GlamourBrowser.Core.Sources;
 using Lumina;
+using Lumina.Data.Files;
+using Lumina.Data.Parsing.Layer;
 using Lumina.Excel.Sheets;
 using LuminaSupplemental.Excel.Model;
 using LuminaSupplemental.Excel.Services;
@@ -14,7 +16,8 @@ public sealed record NpcPlace(uint TerritoryId, uint MapId, Vector2 MapPosition,
 /// Which NPCs sell a shop and where they stand. Shops are reached from ENpcBase.ENpcData directly or via
 /// TopicSelect, PreHandler, CustomTalk and InclusionShop; FateShop rows share their id with the NPC.
 /// LuminaSupplemental adds a few special cases (ENpcShop). Positions come from the Level sheet (world
-/// coordinates converted to map coordinates), with ENpcPlace (already map coordinates) filling gaps.
+/// coordinates converted to map coordinates), with ENpcPlace (already map coordinates) filling gaps and the
+/// zones' event layouts (planevent.lgb) last, for sellers neither knows (e.g. the hunt vendors in Kugane).
 /// </summary>
 public sealed class ShopNpcResolver
 {
@@ -33,6 +36,7 @@ public sealed class ShopNpcResolver
         Step("Händler-Zuordnung (Supplemental)", () => MapSupplementalShops(log), log);
         Step("Händler-Orte", LoadLevelPlaces, log);
         Step("Händler-Orte (Supplemental)", () => LoadSupplementalPlaces(log), log);
+        Step("Händler-Orte (Zonen-Layout)", LoadLayoutPlaces, log);
     }
 
     /// <summary>Steps that threw; the resolver still works with what the other steps found.</summary>
@@ -206,6 +210,44 @@ public sealed class ShopNpcResolver
                 MapCoordinates.FromWorld(level.Z, map.SizeFactor, map.OffsetY));
             var name = map.PlaceName.IsValid ? map.PlaceName.Value.Name.ExtractText() : "";
             places[npcId] = new NpcPlace(level.Territory.RowId, map.RowId, position, name);
+        }
+    }
+
+    // Sellers without a place yet are looked up in each zone's event layout; one file per background, the first
+    // territory using it names the zone.
+    private void LoadLayoutPlaces()
+    {
+        var missing = npcsByShop.Values.SelectMany(l => l).Where(n => !places.ContainsKey(n)).ToHashSet();
+        var backgrounds = new HashSet<string>();
+        foreach (var territory in data.GetExcelSheet<TerritoryType>()!)
+        {
+            if (missing.Count == 0)
+                return;
+            var bg = territory.Bg.ExtractText();
+            var level = bg.IndexOf("/level/", StringComparison.Ordinal);
+            if (level < 0 || !territory.Map.IsValid || !backgrounds.Add(bg))
+                continue;
+            var layout = data.GetFile<LgbFile>($"bg/{bg[..(level + 7)]}planevent.lgb");
+            if (layout == null)
+                continue;
+
+            var map = territory.Map.Value;
+            foreach (var layer in layout.Layers)
+            {
+                foreach (var instance in layer.InstanceObjects)
+                {
+                    if (instance.AssetType != LayerEntryType.EventNPC)
+                        continue;
+                    var npcId = ((LayerCommon.ENPCInstanceObject)instance.Object).ParentData.ParentData.BaseId;
+                    if (!missing.Remove(npcId))
+                        continue;
+                    var position = new Vector2(
+                        MapCoordinates.FromWorld(instance.Transform.Translation.X, map.SizeFactor, map.OffsetX),
+                        MapCoordinates.FromWorld(instance.Transform.Translation.Z, map.SizeFactor, map.OffsetY));
+                    var name = map.PlaceName.IsValid ? map.PlaceName.Value.Name.ExtractText() : "";
+                    places[npcId] = new NpcPlace(territory.RowId, map.RowId, position, name);
+                }
+            }
         }
     }
 
